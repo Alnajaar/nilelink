@@ -126,7 +126,7 @@ contract InvestorVault is IInvestorVault, Ownable, Pausable, ReentrancyGuard {
         address _usdc,
         address _orderSettlement,
         address _feeRecipient
-    ) Ownable(msg.sender) {
+    ) {
         usdc = IERC20(_usdc);
         orderSettlement = _orderSettlement;
         feeRecipient = _feeRecipient;

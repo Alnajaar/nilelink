@@ -103,7 +103,7 @@ contract OrderSettlement is IOrderSettlement, Ownable, Pausable, ReentrancyGuard
         address _restaurantRegistry,
         address _usdc,
         address _feeRecipient
-    ) Ownable(msg.sender) {
+    ) {
         restaurantRegistry = RestaurantRegistry(_restaurantRegistry);
         usdc = IERC20(_usdc);
         feeRecipient = _feeRecipient;
@@ -195,9 +195,9 @@ contract OrderSettlement is IOrderSettlement, Ownable, Pausable, ReentrancyGuard
         if (uint64(block.timestamp) > order.createdAt + 7 days) {
             emit IFraudDetection.AnomalyFlagged(
                 bytes32(orderId),
-                keccak256("ORDER_EXPIRED"),
+                keccak256(bytes("ORDER_EXPIRED")),
                 5,
-                keccak256("Order payment attempted after expiration"),
+                keccak256(bytes("Order payment attempted after expiration")),
                 uint64(block.timestamp)
             );
             revert NileLinkLibs.DeadlineExceeded();

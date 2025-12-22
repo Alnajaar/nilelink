@@ -1,0 +1,8 @@
+{
+  "name": "nilelink-mobile",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

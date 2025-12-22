@@ -91,7 +91,7 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         _;
     }
     
-    constructor() Ownable(msg.sender) {}
+    constructor() {}
     
     /// @notice Flag an anomaly in the system
     /// @param subject Subject being flagged (restaurant address, orderId, etc.)
@@ -172,9 +172,9 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         if (amount > maxOrderAmount) {
             flagAnomaly(
                 bytes32(uint256(uint160(restaurant))),
-                keccak256("LARGE_ORDER"),
+                keccak256(bytes("LARGE_ORDER")),
                 _calculateSeverity(amount, maxOrderAmount),
-                keccak256("Order amount exceeds threshold")
+                keccak256(bytes("Order amount exceeds threshold"))
             );
             
             return (true, _calculateSeverity(amount, maxOrderAmount), "BLOCK_ORDER");
@@ -191,9 +191,9 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         if (hourly.ordersCount > maxOrdersPerHour) {
             flagAnomaly(
                 bytes32(uint256(uint160(restaurant))),
-                keccak256("HIGH_ORDER_FREQUENCY"),
+                keccak256(bytes("HIGH_ORDER_FREQUENCY")),
                 7,
-                keccak256("Orders per hour exceed threshold")
+                keccak256(bytes("Orders per hour exceed threshold"))
             );
             
             return (true, 7, "REVIEW_ORDER");
@@ -208,9 +208,9 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         if (daily.totalVolumeUsd6 > maxDailyVolume) {
             flagAnomaly(
                 bytes32(uint256(uint160(restaurant))),
-                keccak256("HIGH_DAILY_VOLUME"),
+                keccak256(bytes("HIGH_DAILY_VOLUME")),
                 6,
-                keccak256("Daily volume exceeds threshold")
+                keccak256(bytes("Daily volume exceeds threshold"))
             );
             
             return (true, 6, "REVIEW_ORDER");
@@ -244,9 +244,9 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         if (refundRate > maxRefundRate) {
             flagAnomaly(
                 bytes32(uint256(uint160(restaurant))),
-                keccak256("HIGH_REFUND_RATE"),
+                keccak256(bytes("HIGH_REFUND_RATE")),
                 8,
-                keccak256("Refund rate exceeds threshold")
+                keccak256(bytes("Refund rate exceeds threshold"))
             );
             
             return true;
