@@ -1,0 +1,205 @@
+version: "0.1"
+lastUpdated: "2025-12-22"
+
+# Country rules are configuration inputs for NileLink services and smart contracts.
+# The system MUST treat this file as a source-of-truth baseline and allow overrides
+# per-restaurant when permitted by local regulation.
+
+countries:
+  Lebanon:
+    iso3166: "LB"
+    localCurrency: "LBP"
+    timezoneDefault: "Asia/Beirut"
+    vatOrSalesTax:
+      name: "VAT (indicative)"
+      defaultPercentage: 10.0
+      rounding:
+        mode: "HALF_UP"
+        scale: 2
+    financialCompliance:
+      regulatorContext: "BDL-advisory"
+      kyc:
+        required: false
+        recommendedDailyVolumeUsd: 5000
+      aml:
+        reportThresholdUsd: 10000
+        enhancedDueDiligenceThresholdUsd: 20000
+      chargeback:
+        disputeWindowDays: 30
+        autoSettleDays: 3
+    payments:
+      onChain:
+        network: "Polygon"
+        stablecoin: "USDC"
+      fiat:
+        supported: true
+        bankIntegrations: ["BLOM", "BankAudi", "AUB"]
+    dataPrivacy:
+      baseline: ["GDPR-like", "Lebanese privacy laws"]
+      dataResidency:
+        required: false
+
+  Egypt:
+    iso3166: "EG"
+    localCurrency: "EGP"
+    timezoneDefault: "Africa/Cairo"
+    vatOrSalesTax:
+      name: "VAT"
+      defaultPercentage: 14.0
+      rounding:
+        mode: "HALF_UP"
+        scale: 2
+    financialCompliance:
+      regulatorContext: "CBE-advisory"
+      kyc:
+        required: false
+        recommendedDailyVolumeUsd: 5000
+      aml:
+        reportThresholdUsd: 10000
+        enhancedDueDiligenceThresholdUsd: 20000
+      chargeback:
+        disputeWindowDays: 30
+        autoSettleDays: 3
+    payments:
+      fiat:
+        supported: true
+        bankIntegrations: ["CIB", "ADIB"]
+      onChain:
+        network: "Polygon"
+        stablecoin: "USDC"
+    dataPrivacy:
+      baseline: ["GDPR-like", "Egypt data protection law"]
+      dataResidency:
+        required: false
+
+  Jordan:
+    iso3166: "JO"
+    localCurrency: "JOD"
+    timezoneDefault: "Asia/Amman"
+    vatOrSalesTax:
+      name: "Sales tax (indicative)"
+      defaultPercentage: 16.0
+      rounding:
+        mode: "HALF_UP"
+        scale: 2
+    financialCompliance:
+      regulatorContext: "CBJ-advisory"
+      kyc:
+        required: false
+        recommendedDailyVolumeUsd: 5000
+      aml:
+        reportThresholdUsd: 10000
+        enhancedDueDiligenceThresholdUsd: 20000
+      chargeback:
+        disputeWindowDays: 30
+        autoSettleDays: 3
+    payments:
+      fiat:
+        supported: true
+        bankIntegrations: ["ArabBank", "CairoAmmanBank"]
+      onChain:
+        network: "Polygon"
+        stablecoin: "USDC"
+    dataPrivacy:
+      baseline: ["GDPR-like", "Jordan Personal Data Protection Law (PDPL)"]
+      dataResidency:
+        required: false
+
+  SaudiArabia:
+    iso3166: "SA"
+    localCurrency: "SAR"
+    timezoneDefault: "Asia/Riyadh"
+    vatOrSalesTax:
+      name: "VAT"
+      defaultPercentage: 15.0
+      rounding:
+        mode: "HALF_UP"
+        scale: 2
+    financialCompliance:
+      regulatorContext: "SAMA / ZATCA-advisory"
+      kyc:
+        required: true
+        requiredDailyVolumeUsd: 5000
+      aml:
+        reportThresholdUsd: 10000
+        enhancedDueDiligenceThresholdUsd: 20000
+      chargeback:
+        disputeWindowDays: 30
+        autoSettleDays: 3
+    payments:
+      fiat:
+        supported: true
+        bankIntegrations: ["AlRajhi", "SNB", "RiyadBank"]
+      onChain:
+        network: "Polygon"
+        stablecoin: "USDC"
+    dataPrivacy:
+      baseline: ["Saudi PDPL"]
+      dataResidency:
+        required: true
+
+  UnitedArabEmirates:
+    iso3166: "AE"
+    localCurrency: "AED"
+    timezoneDefault: "Asia/Dubai"
+    vatOrSalesTax:
+      name: "VAT"
+      defaultPercentage: 5.0
+      rounding:
+        mode: "HALF_UP"
+        scale: 2
+    financialCompliance:
+      regulatorContext: "UAE Central Bank / VARA (context dependent)"
+      kyc:
+        required: true
+        requiredDailyVolumeUsd: 5000
+      aml:
+        reportThresholdUsd: 10000
+        enhancedDueDiligenceThresholdUsd: 20000
+      chargeback:
+        disputeWindowDays: 30
+        autoSettleDays: 3
+    payments:
+      fiat:
+        supported: true
+        bankIntegrations: ["EmiratesNBD", "ADCB", "Mashreq"]
+      onChain:
+        network: "Polygon"
+        stablecoin: "USDC"
+    dataPrivacy:
+      baseline: ["UAE PDPL"]
+      dataResidency:
+        required: false
+
+  Qatar:
+    iso3166: "QA"
+    localCurrency: "QAR"
+    timezoneDefault: "Asia/Qatar"
+    vatOrSalesTax:
+      name: "VAT (planned / indicative)"
+      defaultPercentage: 0.0
+      rounding:
+        mode: "HALF_UP"
+        scale: 2
+    financialCompliance:
+      regulatorContext: "QCB-advisory"
+      kyc:
+        required: true
+        requiredDailyVolumeUsd: 5000
+      aml:
+        reportThresholdUsd: 10000
+        enhancedDueDiligenceThresholdUsd: 20000
+      chargeback:
+        disputeWindowDays: 30
+        autoSettleDays: 3
+    payments:
+      fiat:
+        supported: true
+        bankIntegrations: ["QNB", "CBQ"]
+      onChain:
+        network: "Polygon"
+        stablecoin: "USDC"
+    dataPrivacy:
+      baseline: ["GDPR-like", "Qatar data protection law"]
+      dataResidency:
+        required: false

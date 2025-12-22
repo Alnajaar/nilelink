@@ -1,0 +1,177 @@
+version: "0.1"
+lastUpdated: "2025-12-22"
+
+# NOTE:
+# - Order.status in the entity model represents fulfillment status.
+# - Payment and dispute handling are modeled in separate state machines.
+# - A system implementation may persist these states directly OR derive them from the event log.
+
+stateMachines:
+  order_fulfillment:
+    entity: "Order"
+    field: "status"
+    initialState: "CREATED"
+    terminalStates: ["CANCELLED", "DELIVERED", "PICKED_UP"]
+    states:
+      CREATED:
+        on:
+          KITCHEN_CONFIRMED:
+            to: "CONFIRMED"
+            guards:
+              - "payment.status == CONFIRMED OR order.paymentMethod != BLOCKCHAIN" # fiat / future methods can be 'paid' off-chain
+            emitEvents: ["OrderConfirmed", "KitchenOrderReceived"]
+          CANCELLED_BY_CUSTOMER:
+            to: "CANCELLED"
+            emitEvents: ["OrderCancelled"]
+          CANCELLED_BY_RESTAURANT:
+            to: "CANCELLED"
+            emitEvents: ["OrderCancelled"]
+      CONFIRMED:
+        on:
+          COOKING_STARTED:
+            to: "COOKING"
+            emitEvents: ["KitchenStartCooking"]
+          CANCELLED_BY_RESTAURANT:
+            to: "CANCELLED"
+            emitEvents: ["OrderCancelled"]
+      COOKING:
+        on:
+          ORDER_READY:
+            to: "READY"
+            emitEvents: ["KitchenOrderReady", "OrderReadyForPickup"]
+          OUT_OF_STOCK:
+            to: "COOKING"
+            emitEvents: ["KitchenOutOfStock"]
+      READY:
+        on:
+          DELIVERY_ASSIGNED:
+            to: "READY"
+            emitEvents: ["OrderDeliveryAssigned", "DeliveryPartnerAssigned"]
+          PICKED_UP_BY_CUSTOMER:
+            to: "PICKED_UP"
+            emitEvents: ["OrderDelivered"]
+          PICKED_UP_BY_PARTNER:
+            to: "PICKED_UP"
+            emitEvents: ["DeliveryStarted"]
+      PICKED_UP:
+        on:
+          DELIVERED:
+            to: "DELIVERED"
+            emitEvents: ["DeliveryCompleted", "OrderDelivered"]
+          DELIVERY_FAILED:
+            to: "PICKED_UP"
+            emitEvents: ["DeliveryFailed"]
+      DELIVERED:
+        on:
+          RATE:
+            to: "DELIVERED"
+            emitEvents: ["DeliveryRated"]
+      CANCELLED:
+        on:
+          REFUND_SETTLED:
+            to: "CANCELLED"
+            emitEvents: ["OrderRefunded"]
+
+  payment:
+    entity: "Transaction"
+    field: "status"
+    initialState: "PENDING"
+    terminalStates: ["SETTLED", "REFUNDED"]
+    states:
+      PENDING:
+        on:
+          TX_SUBMITTED:
+            to: "PENDING"
+            emitEvents: ["PaymentSubmittedToBlockchain"]
+          TX_CONFIRMED:
+            to: "CONFIRMED"
+            emitEvents: ["PaymentConfirmed"]
+          TX_DROPPED_OR_REVERTED:
+            to: "DISPUTED"
+            emitEvents: ["PaymentFailed"]
+      CONFIRMED:
+        on:
+          SETTLEMENT_EXECUTED:
+            to: "SETTLED"
+            emitEvents: ["PaymentSettled"]
+          DISPUTE_OPENED:
+            to: "DISPUTED"
+            emitEvents: ["PaymentDisputed"]
+      SETTLED:
+        on:
+          DISPUTE_OPENED:
+            to: "DISPUTED"
+            emitEvents: ["PaymentDisputed"]
+      DISPUTED:
+        on:
+          DISPUTE_RESOLVED_REFUND:
+            to: "REFUNDED"
+            emitEvents: ["DisputeResolved", "OrderRefunded"]
+          DISPUTE_RESOLVED_CONFIRM:
+            to: "SETTLED"
+            emitEvents: ["DisputeResolved"]
+      REFUNDED:
+        on: {}
+
+  delivery:
+    entity: "Delivery"
+    field: "status"
+    initialState: "ASSIGNED"
+    terminalStates: ["DELIVERED", "CANCELLED"]
+    states:
+      ASSIGNED:
+        on:
+          PICKED_UP:
+            to: "PICKED_UP"
+            emitEvents: ["DeliveryStarted"]
+          CANCELLED:
+            to: "CANCELLED"
+            emitEvents: ["DeliveryFailed"]
+      PICKED_UP:
+        on:
+          IN_TRANSIT:
+            to: "IN_TRANSIT"
+            emitEvents: ["DeliveryInProgress"]
+          CANCELLED:
+            to: "CANCELLED"
+            emitEvents: ["DeliveryFailed"]
+      IN_TRANSIT:
+        on:
+          DELIVERED:
+            to: "DELIVERED"
+            emitEvents: ["DeliveryCompleted"]
+          CANCELLED:
+            to: "CANCELLED"
+            emitEvents: ["DeliveryFailed"]
+      DELIVERED:
+        on:
+          RATED:
+            to: "DELIVERED"
+            emitEvents: ["DeliveryRated"]
+      CANCELLED:
+        on: {}
+
+  inventory_quantity:
+    entity: "InventoryItem"
+    field: "qty"
+    # Inventory isn't a classic finite enum state; the "state" is derived from quantities.
+    derivedStates:
+      OK: "qty > minQty"
+      LOW: "qty <= minQty AND qty > 0"
+      OUT: "qty == 0"
+    transitions:
+      - name: "decrement_on_order"
+        from: ["OK", "LOW"]
+        to: ["OK", "LOW", "OUT"]
+        trigger: "InventoryUpdated"
+        guard: "reason == ORDER_CONSUMPTION AND newQty == oldQty - delta"
+      - name: "restock"
+        from: ["LOW", "OUT"]
+        to: ["OK", "LOW"]
+        trigger: "RestockingReceived"
+        guard: "actualQty > 0"
+      - name: "manual_adjustment"
+        from: ["OK", "LOW", "OUT"]
+        to: ["OK", "LOW", "OUT"]
+        trigger: "InventoryUpdated"
+        guard: "reason in {AUDIT_ADJUSTMENT, SPOILAGE, RETURN_TO_STOCK}"

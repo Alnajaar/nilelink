@@ -1,0 +1,40 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Solidity / Foundry / Hardhat / Truffle
+cache/
+out/
+artifacts/
+coverage/
+coverage.json
+broadcast/
+
+# Database
+*.sqlite
+*.db
+
+# Build outputs
+build/
+dist/
+
+# Env files
+.env
+.env.*
