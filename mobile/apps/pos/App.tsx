@@ -1,18 +1,37 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Provider } from 'react-redux';
-import { SafeAreaView, StatusBar } from 'react-native';
+import { LogBox } from 'react-native';
 import { configureStore } from './src/store/configureStore';
-import { POSHomeScreen } from './src/screens/POSHomeScreen';
+import { AppNavigator } from './src/navigation/AppNavigator';
+import { initializeDatabase } from './src/services/database';
+import { initializeSagaContext } from './src/store/rootSaga';
+
+// Ignore specific warnings
+LogBox.ignoreLogs([
+  'Non-serializable values were found in the navigation state',
+  'Require cycle:'
+]);
 
 const store = configureStore();
 
 export default function App() {
+  useEffect(() => {
+    // Initialize database and saga context on app start
+    const initApp = async () => {
+      try {
+        const db = await initializeDatabase();
+        initializeSagaContext(db);
+      } catch (error) {
+        console.error('Failed to initialize app:', error);
+      }
+    };
+
+    initApp();
+  }, []);
+
   return (
     <Provider store={store}>
-      <SafeAreaView style={{ flex: 1 }}>
-        <StatusBar />
-        <POSHomeScreen />
-      </SafeAreaView>
+      <AppNavigator />
     </Provider>
   );
 }
