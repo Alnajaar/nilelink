@@ -1,0 +1,108 @@
+{
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "buildConfiguration": "Debug",
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": "assembleDebug"
+      },
+      "env": {
+        "ENVIRONMENT": "development",
+        "API_URL": "http://localhost:8545"
+      }
+    },
+    "development-device": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "buildConfiguration": "Debug",
+        "simulator": false
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": "assembleDebug"
+      },
+      "env": {
+        "ENVIRONMENT": "development",
+        "API_URL": "http://localhost:8545"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "buildConfiguration": "Release",
+        "simulator": false,
+        "enterpriseProvisioning": "adhoc"
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": "assembleRelease"
+      },
+      "env": {
+        "ENVIRONMENT": "staging",
+        "API_URL": "https://rpc-mumbai.maticvigil.com"
+      }
+    },
+    "preview-simulator": {
+      "distribution": "internal",
+      "ios": {
+        "buildConfiguration": "Release",
+        "simulator": true
+      },
+      "env": {
+        "ENVIRONMENT": "staging",
+        "API_URL": "https://rpc-mumbai.maticvigil.com"
+      }
+    },
+    "production": {
+      "distribution": "store",
+      "ios": {
+        "buildConfiguration": "Release",
+        "simulator": false
+      },
+      "android": {
+        "buildType": "bundle",
+        "gradleCommand": "bundleRelease"
+      },
+      "env": {
+        "ENVIRONMENT": "production",
+        "API_URL": "https://polygon-rpc.com"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "$APPLE_ID",
+        "ascAppId": "$ASC_APP_ID",
+        "appleTeamId": "$APPLE_TEAM_ID"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./android/service-account.json",
+        "track": "production"
+      }
+    },
+    "beta": {
+      "ios": {
+        "appleId": "$APPLE_ID",
+        "ascAppId": "$ASC_APP_ID",
+        "appleTeamId": "$APPLE_TEAM_ID"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./android/service-account.json",
+        "track": "beta"
+      }
+    },
+    "alpha": {
+      "android": {
+        "serviceAccountKeyPath": "./android/service-account.json",
+        "track": "alpha"
+      }
+    }
+  }
+}
