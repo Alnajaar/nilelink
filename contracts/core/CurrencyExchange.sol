@@ -73,6 +73,14 @@ contract CurrencyExchange is ICurrencyExchange, Ownable, Pausable, ReentrancyGua
     );
     
     event RateHistoryPruned(bytes3 indexed currency, uint64 prunedUntil, uint64 timestamp);
+
+    event AnomalyFlagged(
+        bytes32 indexed subject,
+        bytes32 indexed anomalyType,
+        uint8 severity,
+        bytes32 detailsHash,
+        uint64 timestamp
+    );
     
     modifier onlyAuthorizedOracle() {
         if (!authorizedOracles[msg.sender]) {
@@ -81,7 +89,7 @@ contract CurrencyExchange is ICurrencyExchange, Ownable, Pausable, ReentrancyGua
         _;
     }
     
-    constructor() Ownable(msg.sender) {}
+    constructor() Ownable() {}
     
     /// @notice Set Chainlink oracle for a currency
     /// @param currency ISO-4217 currency code
@@ -136,7 +144,7 @@ contract CurrencyExchange is ICurrencyExchange, Ownable, Pausable, ReentrancyGua
             );
             
             // Flag as anomaly but continue
-            emit IFraudDetection.AnomalyFlagged(
+            emit AnomalyFlagged(
                 bytes32(uint256(uint160(oracle))),
                 keccak256("RATE_ANOMALY"),
                 7,

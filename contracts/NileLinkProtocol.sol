@@ -76,7 +76,7 @@ contract NileLinkProtocol is Ownable, Pausable, ReentrancyGuard {
     constructor(
         address _usdc,
         address _feeRecipient
-    ) Ownable(msg.sender) {
+    ) Ownable() {
         usdc = IERC20(_usdc);
         feeRecipient = _feeRecipient;
         
@@ -160,12 +160,11 @@ contract NileLinkProtocol is Ownable, Pausable, ReentrancyGuard {
                 // Continue processing even if individual orders fail
             } catch {
                 // Log failure but continue batch processing
-                emit IFraudDetection.AnomalyFlagged(
+                fraudDetection.flagAnomaly(
                     bytes32(uint256(uint160(restaurants[i]))),
                     keccak256("BATCH_ORDER_FAILED"),
                     5,
-                    keccak256("Individual order in batch failed"),
-                    uint64(block.timestamp)
+                    keccak256("Individual order in batch failed")
                 );
             }
         }
@@ -244,7 +243,23 @@ contract NileLinkProtocol is Ownable, Pausable, ReentrancyGuard {
     function setGovernance(address account, bool isGovernance) external onlyOwner {
         NileLinkLibs.validateAddress(account);
         governance[account] = isGovernance;
+        
+        // Propagate to sub-contracts
+        restaurantRegistry.setGovernance(account, isGovernance);
+        disputeResolution.setGovernance(account, isGovernance);
+        fraudDetection.setGovernance(account, isGovernance);
+        investorVault.setGovernance(account, isGovernance);
+        supplierCredit.setGovernance(account, isGovernance);
+        
         emit GovernanceUpdated(account, isGovernance);
+    }
+    
+    /// @notice Set Chainlink oracle for a currency (via CurrencyExchange)
+    /// @param currency The currency code
+    /// @param oracle Oracle address
+    function setOracle(bytes3 currency, address oracle) external onlyOwner {
+        currencyExchange.setOracle(currency, oracle);
+        restaurantRegistry.setOracle(currency, oracle);
     }
     
     /// @notice Add or remove authorized caller

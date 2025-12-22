@@ -18,7 +18,8 @@ module.exports = {
       chainId: 1337,
       gas: "auto",
       gasPrice: 20000000000, // 20 gwei
-      gasMultiplier: 1.25
+      gasMultiplier: 1.25,
+      allowUnlimitedContractSize: true
     },
     localhost: {
       url: "http://127.0.0.1:8545",

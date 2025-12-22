@@ -40,8 +40,8 @@ contract DisputeResolution is IDisputeResolution, Ownable, Pausable, ReentrancyG
     
     // Governance and timeouts
     mapping(address => bool) public governance;
-    uint64 public constant AUTO_RESOLVE_DEADLINE = 3 days;
-    uint64 public constant DISPUTE_OPENING_DEADLINE = 30 days;
+    uint64 public AUTO_RESOLVE_DEADLINE = 3 days;
+    uint64 public DISPUTE_OPENING_DEADLINE = 30 days;
     
     // Events
     event DisputeOpened(
@@ -93,7 +93,7 @@ contract DisputeResolution is IDisputeResolution, Ownable, Pausable, ReentrancyG
     constructor(
         address _orderSettlement,
         address _usdc
-    ) Ownable(msg.sender) {
+    ) Ownable() {
         orderSettlement = OrderSettlement(_orderSettlement);
         usdc = IERC20(_usdc);
     }

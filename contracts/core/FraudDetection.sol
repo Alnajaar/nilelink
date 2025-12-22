@@ -32,7 +32,7 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         uint256 maxOrderAmount; // Maximum order amount in USD with 6 decimals
         uint256 maxOrdersPerHour; // Maximum orders per hour
         uint256 maxDailyVolume; // Maximum daily volume in USD with 6 decimals
-        uint8 maxRefundRateBps; // Maximum refund rate in basis points
+        uint16 maxRefundRateBps; // Maximum refund rate in basis points
         bool customRulesEnabled;
     }
     
@@ -40,7 +40,7 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
     uint256 public constant DEFAULT_MAX_ORDER_AMOUNT = 10000 * 10**6; // $10,000
     uint256 public constant DEFAULT_MAX_ORDERS_PER_HOUR = 50;
     uint256 public constant DEFAULT_MAX_DAILY_VOLUME = 100000 * 10**6; // $100,000
-    uint8 public constant DEFAULT_MAX_REFUND_RATE_BPS = 500; // 5%
+    uint16 public constant DEFAULT_MAX_REFUND_RATE_BPS = 500; // 5%
     
     // Volume tracking for anomaly detection
     mapping(address => HourlyVolume) public hourlyVolume;
@@ -78,7 +78,7 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         uint256 maxOrderAmount,
         uint256 maxOrdersPerHour,
         uint256 maxDailyVolume,
-        uint8 maxRefundRateBps,
+        uint16 maxRefundRateBps,
         uint64 timestamp
     );
     
@@ -91,7 +91,7 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         _;
     }
     
-    constructor() Ownable(msg.sender) {}
+    constructor() Ownable() {}
     
     /// @notice Flag an anomaly in the system
     /// @param subject Subject being flagged (restaurant address, orderId, etc.)
@@ -142,7 +142,7 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
     
     /// @notice Check if a transaction is blocked
     /// @param txRef Transaction reference
-    /// @return isBlocked Whether the transaction is blocked
+    /// @return blocked Whether the transaction is blocked
     function isBlocked(bytes32 txRef) external view override returns (bool blocked) {
         return blockedTransactions[txRef];
     }
@@ -238,7 +238,7 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         
         // Get refund rate limit
         RuleSet storage rules = restaurantRules[restaurant];
-        uint8 maxRefundRate = rules.customRulesEnabled ? 
+        uint16 maxRefundRate = rules.customRulesEnabled ? 
             rules.maxRefundRateBps : DEFAULT_MAX_REFUND_RATE_BPS;
         
         if (refundRate > maxRefundRate) {
@@ -266,7 +266,7 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         uint256 maxOrderAmount,
         uint256 maxOrdersPerHour,
         uint256 maxDailyVolume,
-        uint8 maxRefundRateBps
+        uint16 maxRefundRateBps
     ) external onlyGovernance {
         NileLinkLibs.validateAddress(restaurant);
         require(maxRefundRateBps <= 10000, "Invalid refund rate");

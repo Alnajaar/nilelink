@@ -66,6 +66,8 @@ contract RestaurantRegistry is IRestaurantRegistry, Ownable, Pausable, Reentranc
         address indexed restaurant,
         uint64 timestamp
     );
+
+    event OracleUpdated(bytes3 indexed localCurrency, address indexed oracle, uint64 timestamp);
     
     modifier onlyGovernance() {
         if (!governance[msg.sender] && owner() != msg.sender) {
@@ -253,10 +255,10 @@ contract RestaurantRegistry is IRestaurantRegistry, Ownable, Pausable, Reentranc
     /// @return status Restaurant status enum
     /// @return limit Daily rate limit
     /// @return balance Current daily usage
-    /// @return lastSettlement Last settlement timestamp
+    /// @return lastSettlementTime Last settlement timestamp
     function getRestaurantStatus(
         address restaurant
-    ) external view override returns (
+    ) external view returns (
         NileLinkTypes.RestaurantStatus status,
         uint256 limit,
         uint256 balance,
@@ -302,7 +304,7 @@ contract RestaurantRegistry is IRestaurantRegistry, Ownable, Pausable, Reentranc
     function setOracle(bytes3 currency, address oracle) external onlyGovernance {
         NileLinkLibs.validateAddress(oracle);
         currencyOracles[currency] = oracle;
-        emit ICurrencyExchange.OracleUpdated(currency, oracle, uint64(block.timestamp));
+        emit OracleUpdated(currency, oracle, uint64(block.timestamp));
     }
     
     /// @notice Add or remove governance address
