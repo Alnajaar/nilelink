@@ -1,0 +1,33 @@
+{
+  "name": "nilelink-protocol-contracts",
+  "version": "1.0.0",
+  "description": "NileLink Protocol - Smart Contracts for Blockchain Settlement on Polygon",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:coverage": "hardhat coverage",
+    "lint": "solhint 'contracts/**/*.sol'",
+    "lint:fix": "solhint 'contracts/**/*.sol' --fix",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:mumbai": "hardhat run scripts/deploy-mumbai.js --network mumbai",
+    "deploy:polygon": "hardhat run scripts/deploy-polygon.js --network polygon",
+    "verify:mumbai": "hardhat verify --network mumbai",
+    "verify:polygon": "hardhat verify --network polygon"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@openzeppelin/contracts": "^4.9.3",
+    "@openzeppelin/contracts-upgradeable": "^4.9.3",
+    "hardhat": "^2.19.1",
+    "@chainlink/contracts": "^0.6.1",
+    "solhint": "^4.1.1",
+    "solidity-coverage": "^0.8.5",
+    "ethers": "^6.8.1"
+  },
+  "dependencies": {
+    "@typechain/ethers-v6": "^0.5.1",
+    "@typechain/hardhat": "^9.1.0",
+    "typechain": "^8.3.2"
+  }
+}
