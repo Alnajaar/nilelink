@@ -93,7 +93,7 @@ contract DisputeResolution is IDisputeResolution, Ownable, Pausable, ReentrancyG
     constructor(
         address _orderSettlement,
         address _usdc
-    ) Ownable(msg.sender) {
+    ) {
         orderSettlement = OrderSettlement(_orderSettlement);
         usdc = IERC20(_usdc);
     }
@@ -188,7 +188,7 @@ contract DisputeResolution is IDisputeResolution, Ownable, Pausable, ReentrancyG
         emit DisputeAutoResolved(
             orderId,
             dispute.claimant,
-            keccak256("AUTO_RESOLVED"),
+            keccak256(bytes("AUTO_RESOLVED")),
             uint64(block.timestamp)
         );
     }

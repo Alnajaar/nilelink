@@ -76,7 +76,7 @@ contract NileLinkProtocol is Ownable, Pausable, ReentrancyGuard {
     constructor(
         address _usdc,
         address _feeRecipient
-    ) Ownable(msg.sender) {
+    ) {
         usdc = IERC20(_usdc);
         feeRecipient = _feeRecipient;
         
@@ -162,9 +162,9 @@ contract NileLinkProtocol is Ownable, Pausable, ReentrancyGuard {
                 // Log failure but continue batch processing
                 emit IFraudDetection.AnomalyFlagged(
                     bytes32(uint256(uint160(restaurants[i]))),
-                    keccak256("BATCH_ORDER_FAILED"),
+                    keccak256(bytes("BATCH_ORDER_FAILED")),
                     5,
-                    keccak256("Individual order in batch failed"),
+                    keccak256(bytes("Individual order in batch failed")),
                     uint64(block.timestamp)
                 );
             }

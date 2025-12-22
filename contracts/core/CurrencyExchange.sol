@@ -81,7 +81,7 @@ contract CurrencyExchange is ICurrencyExchange, Ownable, Pausable, ReentrancyGua
         _;
     }
     
-    constructor() Ownable(msg.sender) {}
+    constructor() {}
     
     /// @notice Set Chainlink oracle for a currency
     /// @param currency ISO-4217 currency code
@@ -138,9 +138,9 @@ contract CurrencyExchange is ICurrencyExchange, Ownable, Pausable, ReentrancyGua
             // Flag as anomaly but continue
             emit IFraudDetection.AnomalyFlagged(
                 bytes32(uint256(uint160(oracle))),
-                keccak256("RATE_ANOMALY"),
+                keccak256(bytes("RATE_ANOMALY")),
                 7,
-                keccak256("Exchange rate outside expected bounds"),
+                keccak256(bytes("Exchange rate outside expected bounds")),
                 uint64(block.timestamp)
             );
         }
@@ -181,7 +181,7 @@ contract CurrencyExchange is ICurrencyExchange, Ownable, Pausable, ReentrancyGua
         
         // Create snapshot for this specific restaurant
         snapshot = NileLinkTypes.RateSnapshot({
-            country: "", // Will be populated by caller if needed
+            country: bytes2(0), // Will be populated by caller if needed
             localCurrency: localCurrency,
             rate: currentRate.rate,
             timestamp: currentRate.timestamp,

@@ -356,15 +356,15 @@ contract SupplierCredit is ISupplierCredit, Ownable, Pausable, ReentrancyGuard {
     function _getTermsExpirationDays(bytes32 termsHash) internal pure returns (uint64 expirationDays) {
         // Map common terms to expiration periods
         // In production, this would decode the actual terms from the hash
-        if (termsHash == keccak256("COD") || termsHash == keccak256("Cash on Delivery")) {
+        if (termsHash == keccak256(bytes("COD")) || termsHash == keccak256(bytes("Cash on Delivery"))) {
             return 0; // Due immediately
-        } else if (termsHash == keccak256("Net-15") || termsHash == keccak256("Net15")) {
+        } else if (termsHash == keccak256(bytes("Net-15")) || termsHash == keccak256(bytes("Net15"))) {
             return 15;
-        } else if (termsHash == keccak256("Net-30") || termsHash == keccak256("Net30")) {
+        } else if (termsHash == keccak256(bytes("Net-30")) || termsHash == keccak256(bytes("Net30"))) {
             return 30;
-        } else if (termsHash == keccak256("Net-60") || termsHash == keccak256("Net60")) {
+        } else if (termsHash == keccak256(bytes("Net-60")) || termsHash == keccak256(bytes("Net60"))) {
             return 60;
-        } else if (termsHash == keccak256("Net-90") || termsHash == keccak256("Net90")) {
+        } else if (termsHash == keccak256(bytes("Net-90")) || termsHash == keccak256(bytes("Net90"))) {
             return 90;
         }
         

@@ -122,6 +122,16 @@ interface IDisputeResolution {
 
 /// @notice Anomaly detection logic.
 interface IFraudDetection {
+    event AnomalyFlagged(
+        bytes32 indexed subject,
+        bytes32 indexed anomalyType,
+        uint8 severity,
+        bytes32 detailsHash,
+        uint64 timestamp
+    );
+
+    event TransactionBlocked(bytes32 indexed txRef, bytes32 reasonHash, uint64 timestamp);
+
     function flagAnomaly(bytes32 subject, bytes32 anomalyType, uint8 severity, bytes32 detailsHash) external;
     function blockTransaction(bytes32 txRef, bytes32 reasonHash) external;
     function isBlocked(bytes32 txRef) external view returns (bool);
