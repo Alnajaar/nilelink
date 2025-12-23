@@ -84,6 +84,14 @@ contract OrderSettlement is IOrderSettlement, Ownable, Pausable, ReentrancyGuard
     );
     
     event ProtocolFeeUpdated(uint16 oldFeeBps, uint16 newFeeBps, uint64 timestamp);
+
+    event AnomalyFlagged(
+        bytes32 indexed subject,
+        bytes32 indexed anomalyType,
+        uint8 severity,
+        bytes32 detailsHash,
+        uint64 timestamp
+    );
     
     modifier onlyValidOrder(bytes16 orderId) {
         if (orders[orderId].restaurant == address(0)) {
@@ -103,7 +111,7 @@ contract OrderSettlement is IOrderSettlement, Ownable, Pausable, ReentrancyGuard
         address _restaurantRegistry,
         address _usdc,
         address _feeRecipient
-    ) {
+    ) Ownable() {
         restaurantRegistry = RestaurantRegistry(_restaurantRegistry);
         usdc = IERC20(_usdc);
         feeRecipient = _feeRecipient;
@@ -193,7 +201,7 @@ contract OrderSettlement is IOrderSettlement, Ownable, Pausable, ReentrancyGuard
         
         // Check order hasn't expired (7 days)
         if (uint64(block.timestamp) > order.createdAt + 7 days) {
-            emit IFraudDetection.AnomalyFlagged(
+            emit AnomalyFlagged(
                 bytes32(orderId),
                 keccak256(bytes("ORDER_EXPIRED")),
                 5,
