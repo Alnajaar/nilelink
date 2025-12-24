@@ -20,6 +20,7 @@ export const createTablesSql = [
     category TEXT NOT NULL,
     isAvailable INTEGER NOT NULL DEFAULT 1,
     modifiers_json TEXT,
+    recipe_json TEXT,
     FOREIGN KEY(restaurantId) REFERENCES restaurants(restaurantId)
   );`,
 

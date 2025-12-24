@@ -1,33 +1,34 @@
 import React, { useState } from 'react';
 import {
   View, Text, Pressable, ScrollView, StyleSheet, SafeAreaView,
-  StatusBar, TextInput, Modal, Dimensions
+  StatusBar, TextInput, Modal, Dimensions, ActivityIndicator
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
+import { customerActions, CustomerState, CartItem } from '../store/customerSlice';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
 
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
-
 export function CheckoutScreen() {
   const navigation = useNavigation();
-  const route = useRoute();
-  const { restaurantId, items, total } = route.params;
-  
+  const dispatch = useDispatch();
+
+  // Get data from Redux
+  const user = useSelector<{ customer: CustomerState }, any>(state => state.customer.user);
+  const cart = useSelector<{ customer: CustomerState }, { items: CartItem[] }>(state => state.customer.cart);
+
+  const items = cart.items;
+
   const [deliveryOption, setDeliveryOption] = useState('delivery');
   const [paymentMethod, setPaymentMethod] = useState('card');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState(user?.phone || '');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
 
+  // Recalculate totals from Redux cart
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const deliveryFee = deliveryOption === 'pickup' ? 0 : 2.99;
   const tax = subtotal * 0.1; // 10% tax
@@ -50,11 +51,25 @@ export function CheckoutScreen() {
   const handleConfirmOrder = () => {
     setShowConfirmModal(false);
     setOrderPlaced(true);
-    
-    // Simulate order processing
+
+    const orderId = 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+
+    // Create order object
+    const newOrder = {
+      id: orderId,
+      restaurantId: 'demo-restaurant', // Should come from cart.restaurantId
+      items: items,
+      total: totalAmount,
+      status: 'confirmed' as const,
+      date: new Date().toISOString()
+    };
+
+    // Dispatch to Redux (Saga will handle backend sync)
+    dispatch(customerActions.createOrder(newOrder));
+
+    // Simulate order processing and navigation
     setTimeout(() => {
-      const mockOrderId = 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-      navigation.navigate('OrderTracking', { orderId: mockOrderId });
+      navigation.navigate('OrderTracking' as never, { orderId });
     }, 2000);
   };
 
@@ -74,7 +89,7 @@ export function CheckoutScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -88,7 +103,7 @@ export function CheckoutScreen() {
         {/* Order Summary */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Order Summary</Text>
-          
+
           {items.map((item) => (
             <View key={item.id} style={styles.orderItem}>
               <View style={styles.itemInfo}>
@@ -103,17 +118,17 @@ export function CheckoutScreen() {
             <Text style={styles.totalLabel}>Subtotal</Text>
             <Text style={styles.totalValue}>{formatCurrency(subtotal)}</Text>
           </View>
-          
+
           <View style={styles.orderTotal}>
             <Text style={styles.totalLabel}>Delivery Fee</Text>
             <Text style={styles.totalValue}>{formatCurrency(deliveryFee)}</Text>
           </View>
-          
+
           <View style={styles.orderTotal}>
             <Text style={styles.totalLabel}>Tax (10%)</Text>
             <Text style={styles.totalValue}>{formatCurrency(tax)}</Text>
           </View>
-          
+
           <View style={[styles.orderTotal, styles.grandTotal]}>
             <Text style={styles.grandTotalLabel}>Total</Text>
             <Text style={styles.grandTotalValue}>{formatCurrency(totalAmount)}</Text>
@@ -123,14 +138,14 @@ export function CheckoutScreen() {
         {/* Delivery Options */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Delivery Options</Text>
-          
+
           <Pressable
             style={[styles.optionButton, deliveryOption === 'delivery' && styles.optionButtonSelected]}
             onPress={() => setDeliveryOption('delivery')}
           >
-            <Ionicons 
-              name={deliveryOption === 'delivery' ? 'radio-button-on' : 'radio-button-off'} 
-              size={24} 
+            <Ionicons
+              name={deliveryOption === 'delivery' ? 'radio-button-on' : 'radio-button-off'}
+              size={24}
               color={deliveryOption === 'delivery' ? '#0d6efd' : '#6c757d'}
             />
             <View style={styles.optionText}>
@@ -144,9 +159,9 @@ export function CheckoutScreen() {
             style={[styles.optionButton, deliveryOption === 'pickup' && styles.optionButtonSelected]}
             onPress={() => setDeliveryOption('pickup')}
           >
-            <Ionicons 
-              name={deliveryOption === 'pickup' ? 'radio-button-on' : 'radio-button-off'} 
-              size={24} 
+            <Ionicons
+              name={deliveryOption === 'pickup' ? 'radio-button-on' : 'radio-button-off'}
+              size={24}
               color={deliveryOption === 'pickup' ? '#0d6efd' : '#6c757d'}
             />
             <View style={styles.optionText}>
@@ -160,7 +175,7 @@ export function CheckoutScreen() {
         {/* Contact Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Contact Information</Text>
-          
+
           <TextInput
             style={styles.input}
             placeholder="Phone Number"
@@ -168,7 +183,7 @@ export function CheckoutScreen() {
             onChangeText={setPhoneNumber}
             keyboardType="phone-pad"
           />
-          
+
           {deliveryOption === 'delivery' && (
             <TextInput
               style={styles.input}
@@ -179,7 +194,7 @@ export function CheckoutScreen() {
               numberOfLines={3}
             />
           )}
-          
+
           <TextInput
             style={styles.input}
             placeholder="Special Instructions (Optional)"
@@ -193,14 +208,14 @@ export function CheckoutScreen() {
         {/* Payment Method */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Method</Text>
-          
+
           <Pressable
             style={[styles.optionButton, paymentMethod === 'card' && styles.optionButtonSelected]}
             onPress={() => setPaymentMethod('card')}
           >
-            <Ionicons 
-              name={paymentMethod === 'card' ? 'radio-button-on' : 'radio-button-off'} 
-              size={24} 
+            <Ionicons
+              name={paymentMethod === 'card' ? 'radio-button-on' : 'radio-button-off'}
+              size={24}
               color={paymentMethod === 'card' ? '#0d6efd' : '#6c757d'}
             />
             <View style={styles.optionText}>
@@ -214,9 +229,9 @@ export function CheckoutScreen() {
             style={[styles.optionButton, paymentMethod === 'cash' && styles.optionButtonSelected]}
             onPress={() => setPaymentMethod('cash')}
           >
-            <Ionicons 
-              name={paymentMethod === 'cash' ? 'radio-button-on' : 'radio-button-off'} 
-              size={24} 
+            <Ionicons
+              name={paymentMethod === 'cash' ? 'radio-button-on' : 'radio-button-off'}
+              size={24}
               color={paymentMethod === 'cash' ? '#0d6efd' : '#6c757d'}
             />
             <View style={styles.optionText}>
@@ -264,21 +279,21 @@ export function CheckoutScreen() {
               <Text style={styles.modalMessage}>
                 Please confirm your order details before placing:
               </Text>
-              
+
               <View style={styles.confirmationItem}>
                 <Ionicons name="time-outline" size={20} color="#6c757d" />
                 <Text style={styles.confirmationText}>
                   {deliveryOption === 'delivery' ? '25-35 min delivery' : '15-20 min for pickup'}
                 </Text>
               </View>
-              
+
               <View style={styles.confirmationItem}>
                 <Ionicons name="location-outline" size={20} color="#6c757d" />
                 <Text style={styles.confirmationText}>
                   {deliveryOption === 'delivery' ? deliveryAddress : 'Pickup from restaurant'}
                 </Text>
               </View>
-              
+
               <View style={styles.confirmationItem}>
                 <Ionicons name="call-outline" size={20} color="#6c757d" />
                 <Text style={styles.confirmationText}>{phoneNumber}</Text>
@@ -312,7 +327,7 @@ export function CheckoutScreen() {
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </Pressable>
-              
+
               <Pressable
                 style={[styles.modalButton, styles.confirmButton]}
                 onPress={handleConfirmOrder}

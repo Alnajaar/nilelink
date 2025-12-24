@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
+import { customerActions, CustomerState, CartItem } from '../store/customerSlice';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
@@ -22,27 +23,18 @@ interface MenuItem {
   preparationTime?: string;
 }
 
-interface CartItem extends MenuItem {
-  quantity: number;
-  modifiers?: Array<{
-    id: string;
-    name: string;
-    price: number;
-    selected: boolean;
-  }>;
-}
-
 export function MenuScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const dispatch = useDispatch();
-  
-  const { restaurantId, restaurantName } = route.params;
+
+  const { restaurantId, restaurantName } = route.params as { restaurantId: string; restaurantName: string };
+  const cart = useSelector<{ customer: CustomerState }, { restaurantId: string | null; items: CartItem[] }>(state => state.customer.cart);
+  const currentCartItems = cart.restaurantId === restaurantId ? cart.items : [];
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedSort, setSelectedSort] = useState('popular');
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [showItemModal, setShowItemModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
@@ -114,48 +106,35 @@ export function MenuScreen() {
 
   const filteredItems = mockMenuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchQuery.toLowerCase());
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartTotal = currentCartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartCount = currentCartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleAddToCart = (item: MenuItem) => {
-    const existingItem = cart.find(cartItem => cartItem.id === item.id);
-    
-    if (existingItem) {
-      setCart(cart.map(cartItem => 
-        cartItem.id === item.id 
-          ? { ...cartItem, quantity: cartItem.quantity + 1 }
-          : cartItem
-      ));
-    } else {
-      setCart([...cart, { ...item, quantity: 1 }]);
-    }
+    const cartItem: CartItem = {
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: 1
+    };
+
+    dispatch(customerActions.addToCart({ restaurantId, item: cartItem }));
   };
 
   const handleRemoveFromCart = (itemId: string) => {
-    setCart(cart.filter(item => item.id !== itemId));
+    dispatch(customerActions.removeFromCart(itemId));
   };
 
   const handleUpdateQuantity = (itemId: string, quantity: number) => {
-    if (quantity <= 0) {
-      handleRemoveFromCart(itemId);
-    } else {
-      setCart(cart.map(item => 
-        item.id === itemId ? { ...item, quantity } : item
-      ));
-    }
+    dispatch(customerActions.updateCartQuantity({ itemId, quantity }));
   };
 
   const handleCheckout = () => {
-    navigation.navigate('Checkout' as never, {
-      restaurantId,
-      items: cart,
-      total: cartTotal
-    } as any);
+    navigation.navigate('Checkout' as never);
   };
 
   const handleItemPress = (item: MenuItem) => {
@@ -168,7 +147,7 @@ export function MenuScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -200,8 +179,8 @@ export function MenuScreen() {
       </View>
 
       {/* Category Tabs */}
-      <ScrollView 
-        horizontal 
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.categoryTabs}
         contentContainerStyle={styles.categoryContent}
@@ -229,8 +208,8 @@ export function MenuScreen() {
       {selectedCategory === 'All' && searchQuery === '' && (
         <View style={styles.popularSection}>
           <Text style={styles.sectionTitle}>Popular Items</Text>
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.popularItems}
             contentContainerStyle={styles.popularContent}
@@ -257,7 +236,7 @@ export function MenuScreen() {
         <Text style={styles.sectionTitle}>
           {selectedCategory === 'All' ? 'All Items' : selectedCategory}
         </Text>
-        
+
         {filteredItems.map((item) => (
           <Pressable
             key={item.id}
@@ -267,7 +246,7 @@ export function MenuScreen() {
             <View style={styles.itemImagePlaceholder}>
               <Ionicons name="restaurant-outline" size={32} color="#0d6efd" />
             </View>
-            
+
             <View style={styles.itemDetails}>
               <View style={styles.itemHeader}>
                 <Text style={styles.itemName}>{item.name}</Text>
@@ -277,11 +256,11 @@ export function MenuScreen() {
                   </View>
                 )}
               </View>
-              
+
               <Text style={styles.itemDescription} numberOfLines={2}>
                 {item.description}
               </Text>
-              
+
               <View style={styles.itemFooter}>
                 <Text style={styles.itemPrice}>{formatCurrency(item.price)}</Text>
                 {item.preparationTime && (

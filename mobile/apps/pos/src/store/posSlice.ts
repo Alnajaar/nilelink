@@ -1,6 +1,24 @@
 import type { AnyAction } from 'redux';
 import type { Order, OrderItem, MenuItem, InventoryItem } from '@nilelink/mobile-sqlite';
 
+export type CashTransaction = {
+  timestamp: string;
+  amount: number;
+  reason: string;
+  type: 'IN' | 'OUT';
+};
+
+export type Shift = {
+  shiftId: string;
+  startTime: string;
+  endTime?: string;
+  startingCash: number;
+  expectedCash: number;
+  actualCash?: number;
+  status: 'OPEN' | 'CLOSED';
+  cashTransactions: CashTransaction[];
+};
+
 export type PosState = {
   pendingSyncCount: number;
   lastSyncStatus: 'IDLE' | 'SYNCING' | 'SYNCED' | 'FAILED';
@@ -26,6 +44,7 @@ export type PosState = {
     remoteData: any;
     type: string;
   }>;
+  shift?: Shift;
 };
 
 const initialState: PosState = {
@@ -86,6 +105,11 @@ export const POS_TAB_SELECTED = 'pos/TAB_SELECTED';
 // Restaurant Actions
 export const POS_RESTAURANT_SELECTED = 'pos/RESTAURANT_SELECTED';
 
+// Shift Actions
+export const POS_SHIFT_OPENED = 'pos/SHIFT_OPENED';
+export const POS_SHIFT_CLOSED = 'pos/SHIFT_CLOSED';
+export const POS_CASH_TRANSACTION_ADDED = 'pos/CASH_TRANSACTION_ADDED';
+
 export const posActions = {
   // Sync
   syncRequested: () => ({ type: POS_SYNC_REQUESTED } as const),
@@ -95,11 +119,11 @@ export const posActions = {
   syncProgress: (stage: string) => ({ type: POS_SYNC_PROGRESS, payload: { stage } } as const),
   pendingSyncUpdated: (count: number) =>
     ({ type: POS_PENDING_SYNC_UPDATED, payload: { count } } as const),
-  networkStatusChanged: (isConnected: boolean) => 
+  networkStatusChanged: (isConnected: boolean) =>
     ({ type: POS_NETWORK_STATUS_CHANGED, payload: { isConnected } } as const),
-  conflictDetected: (conflicts: any[]) => 
+  conflictDetected: (conflicts: any[]) =>
     ({ type: POS_CONFLICT_DETECTED, payload: { conflicts } } as const),
-  conflictResolved: (eventIds: string[]) => 
+  conflictResolved: (eventIds: string[]) =>
     ({ type: POS_CONFLICT_RESOLVED, payload: { eventIds } } as const),
 
   // Orders
@@ -148,7 +172,15 @@ export const posActions = {
 
   // Restaurant
   restaurantSelected: (restaurantId: string, restaurantName: string) =>
-    ({ type: POS_RESTAURANT_SELECTED, payload: { restaurantId, restaurantName } } as const)
+    ({ type: POS_RESTAURANT_SELECTED, payload: { restaurantId, restaurantName } } as const),
+
+  // Shift
+  shiftOpened: (startingCash: number) =>
+    ({ type: POS_SHIFT_OPENED, payload: { startingCash } } as const),
+  shiftClosed: (actualCash: number, notes?: string) =>
+    ({ type: POS_SHIFT_CLOSED, payload: { actualCash, notes } } as const),
+  cashTransactionAdded: (transaction: CashTransaction) =>
+    ({ type: POS_CASH_TRANSACTION_ADDED, payload: { transaction } } as const)
 };
 
 export function posReducer(state: PosState = initialState, action: AnyAction): PosState {
@@ -172,12 +204,34 @@ export function posReducer(state: PosState = initialState, action: AnyAction): P
       return { ...state, showConflictModal: false, conflicts: [] };
 
     // Orders
-    case POS_ORDER_CREATED:
+    case POS_ORDER_CREATED: {
+      const order = action.payload.order as Order;
+      let newInventory = [...state.inventory];
+
+      // Automatically deduct inventory based on recipes
+      order.items_json && JSON.parse(order.items_json).forEach((item: any) => {
+        const menuItem = state.menuItems.find(m => m.itemId === item.itemId);
+        if (menuItem && menuItem.recipe_json) {
+          const recipe = JSON.parse(menuItem.recipe_json);
+          recipe.forEach((ingredient: { inventoryItemId: string, quantity: number }) => {
+            const invItemIndex = newInventory.findIndex(i => i.itemId === ingredient.inventoryItemId);
+            if (invItemIndex > -1) {
+              newInventory[invItemIndex] = {
+                ...newInventory[invItemIndex],
+                quantity: newInventory[invItemIndex].quantity - (ingredient.quantity * item.quantity)
+              };
+            }
+          });
+        }
+      });
+
       return {
         ...state,
-        orders: [action.payload.order as Order, ...state.orders],
-        currentOrder: { items: [], orderType: 'DINE_IN' }
+        orders: [order, ...state.orders],
+        currentOrder: { items: [], orderType: 'DINE_IN' },
+        inventory: newInventory
       };
+    }
     case POS_ORDERS_FETCHED:
       return { ...state, orders: action.payload.orders };
     case POS_ORDER_STATUS_UPDATED:
@@ -190,7 +244,7 @@ export function posReducer(state: PosState = initialState, action: AnyAction): P
     case POS_ORDER_ITEM_ADDED: {
       const item = action.payload.item as MenuItem;
       const existingItem = state.currentOrder.items.find(i => i.itemId === item.itemId);
-      
+
       if (existingItem) {
         return {
           ...state,
@@ -293,9 +347,57 @@ export function posReducer(state: PosState = initialState, action: AnyAction): P
     case POS_RESTAURANT_SELECTED:
       return {
         ...state,
-        restaurantId: action.payload.restaurantId,
         restaurantName: action.payload.restaurantName
       };
+
+    // Shift
+    case POS_SHIFT_OPENED:
+      return {
+        ...state,
+        shift: {
+          shiftId: `shift_${Date.now()}`,
+          startTime: new Date().toISOString(),
+          startingCash: action.payload.startingCash,
+          expectedCash: action.payload.startingCash,
+          status: 'OPEN',
+          cashTransactions: []
+        }
+      };
+    case POS_SHIFT_CLOSED:
+      if (!state.shift) return state;
+      return {
+        ...state,
+        shift: {
+          ...state.shift,
+          endTime: new Date().toISOString(),
+          actualCash: action.payload.actualCash,
+          status: 'CLOSED'
+        }
+      };
+    case POS_CASH_TRANSACTION_ADDED:
+      if (!state.shift) return state;
+      const amountChange = action.payload.transaction.type === 'IN' ? action.payload.transaction.amount : -action.payload.transaction.amount;
+      return {
+        ...state,
+        shift: {
+          ...state.shift,
+          expectedCash: state.shift.expectedCash + amountChange,
+          cashTransactions: [...state.shift.cashTransactions, action.payload.transaction]
+        }
+      };
+
+    // Handle Cash Sales
+    case POS_PAYMENT_PROCESSED: // Update shift if cash payment
+      if (state.shift && action.payload.paymentMethod === 'CASH') {
+        return {
+          ...state,
+          shift: {
+            ...state.shift,
+            expectedCash: state.shift.expectedCash + action.payload.amount_usd
+          }
+        };
+      }
+      return state;
 
     default:
       return state;

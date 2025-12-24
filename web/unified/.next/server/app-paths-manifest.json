@@ -1,0 +1,9 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/admin/restaurants/route": "app/api/admin/restaurants/route.js",
+  "/api/admin/staff/route": "app/api/admin/staff/route.js",
+  "/api/investor/dividends/route": "app/api/investor/dividends/route.js",
+  "/api/investor/portfolio/route": "app/api/investor/portfolio/route.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/page": "app/page.js"
+}

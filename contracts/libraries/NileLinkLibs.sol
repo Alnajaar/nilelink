@@ -37,7 +37,7 @@ library NileLinkLibs {
     }
 
     function validateRate(uint256 rate) internal pure {
-        if (rate == 0 || rate > 10**12) { // Reasonable bounds for currency rates
+        if (rate == 0 || rate > 10**15) { // Support high-inflation currencies like LBP
             revert InvalidRate();
         }
     }

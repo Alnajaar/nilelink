@@ -10,11 +10,15 @@ import { DashboardScreen } from '../screens/DashboardScreen';
 import { NewOrderScreen } from '../screens/NewOrderScreen';
 import { KitchenDisplayScreen } from '../screens/KitchenDisplayScreen';
 import { InventoryScreen } from '../screens/InventoryScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
+import { ShiftManagementScreen } from '../screens/ShiftManagementScreen';
 
 export type RootStackParamList = {
   Login: undefined;
   RestaurantSelection: undefined;
   MainTabs: undefined;
+  Settings: undefined;
+  ShiftManagement: undefined;
 };
 
 export type TabParamList = {
@@ -64,7 +68,7 @@ function MainTabs() {
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
-        options={{ 
+        options={{
           tabBarLabel: 'Home',
           tabBarBadge: undefined
         }}
@@ -72,7 +76,7 @@ function MainTabs() {
       <Tab.Screen
         name="NewOrder"
         component={NewOrderScreen}
-        options={{ 
+        options={{
           tabBarLabel: 'New Order',
           tabBarBadge: undefined
         }}
@@ -80,7 +84,7 @@ function MainTabs() {
       <Tab.Screen
         name="Kitchen"
         component={KitchenDisplayScreen}
-        options={{ 
+        options={{
           tabBarLabel: 'Kitchen',
           tabBarBadge: 3 // Show number of pending orders
         }}
@@ -88,7 +92,7 @@ function MainTabs() {
       <Tab.Screen
         name="Inventory"
         component={InventoryScreen}
-        options={{ 
+        options={{
           tabBarLabel: 'Inventory',
           tabBarBadge: undefined
         }}
@@ -110,6 +114,8 @@ export function AppNavigator() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="RestaurantSelection" component={RestaurantSelectionScreen} />
         <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="ShiftManagement" component={ShiftManagementScreen} options={{ headerShown: true, title: 'Shift Management' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

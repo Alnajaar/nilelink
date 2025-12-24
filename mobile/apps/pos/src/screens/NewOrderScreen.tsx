@@ -6,7 +6,8 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { posActions } from '../store/posSlice';
-import type { PosState, MenuItem } from '../store/posSlice';
+import type { PosState } from '../store/posSlice';
+import type { MenuItem } from '@nilelink/mobile-sqlite';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
@@ -23,7 +24,7 @@ export function NewOrderScreen() {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const state = useSelector<{ pos: PosState }, PosState>(s => s.pos);
-  
+
   const { currentOrder, menuItems, selectedCategory, searchQuery } = state;
   const [showItemModal, setShowItemModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
@@ -35,25 +36,25 @@ export function NewOrderScreen() {
 
   const filteredMenuItems = useMemo(() => {
     let items = menuItems;
-    
+
     // Filter by category
     if (selectedCategory && selectedCategory !== 'All') {
       items = items.filter(item => item.category === selectedCategory);
     }
-    
+
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      items = items.filter(item => 
+      items = items.filter(item =>
         item.name.toLowerCase().includes(query) ||
         (item.name_ar && item.name_ar.toLowerCase().includes(query))
       );
     }
-    
+
     return items;
   }, [menuItems, selectedCategory, searchQuery]);
 
-  const subtotal = currentOrder.items.reduce((sum, item) => 
+  const subtotal = currentOrder.items.reduce((sum, item) =>
     sum + (item.price_usd * item.quantity), 0
   );
 
@@ -74,12 +75,12 @@ export function NewOrderScreen() {
 
   const handleAddToCart = () => {
     if (!selectedItem) return;
-    
+
     dispatch(posActions.orderItemAdded({
       ...selectedItem,
       modifiers: itemModifiers.filter(m => m.selected)
     }));
-    
+
     setShowItemModal(false);
     setSelectedItem(null);
     setItemQuantity(1);
@@ -105,30 +106,43 @@ export function NewOrderScreen() {
     dispatch(posActions.orderNotesUpdated(notes));
   };
 
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'BLOCKCHAIN'>('CASH');
+
   const handleSubmitOrder = () => {
     if (currentOrder.items.length === 0) {
       alert('Please add items to the order');
       return;
     }
 
+    // Generate Order ID locally to ensure consistency
+    const orderId = `ord_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     const orderData = {
+      orderId, // Added explicit ID
       restaurantId: state.restaurantId || 'demo-restaurant',
       customerPhone: currentOrder.customerPhone,
       items: currentOrder.items,
       subtotal_usd: subtotal,
       total_usd: total,
       orderType: currentOrder.orderType,
-      paymentMethod: 'BLOCKCHAIN' as const,
-      status: state.isConnected ? 'PAID' : 'CREATED',
-      notes: currentOrder.notes
+      paymentMethod: paymentMethod,
+      status: 'PAID' as const,
+      notes: currentOrder.notes,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
+    // 1. Create Order
     dispatch(posActions.orderCreated(orderData));
+
+    // 2. Process Payment (updates Shift if Cash)
+    dispatch(posActions.paymentProcessed(orderId, total, paymentMethod));
+
     navigation.navigate('Dashboard' as never);
   };
 
   const toggleModifier = (modifierId: string) => {
-    setItemModifiers(prev => 
+    setItemModifiers(prev =>
       prev.map(m => m.id === modifierId ? { ...m, selected: !m.selected } : m)
     );
   };
@@ -136,7 +150,7 @@ export function NewOrderScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back-outline" size={24} color="#212529" />
@@ -159,7 +173,7 @@ export function NewOrderScreen() {
             />
             {/* Clear search button */}
             {searchQuery ? (
-              <Pressable 
+              <Pressable
                 onPress={() => dispatch(posActions.menuSearchQueryUpdated(''))}
                 style={styles.clearSearch}
               >
@@ -169,8 +183,8 @@ export function NewOrderScreen() {
           </View>
 
           {/* Category Tabs */}
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.categoryTabs}
             contentContainerStyle={styles.categoryContent}
@@ -247,7 +261,7 @@ export function NewOrderScreen() {
                     </Text>
                     <Text style={styles.cartItemPrice}>${item.price_usd.toFixed(2)}</Text>
                   </View>
-                  
+
                   <View style={styles.quantityControls}>
                     <Pressable
                       onPress={() => handleUpdateQuantity(item.itemId, item.quantity - 1)}
@@ -255,9 +269,9 @@ export function NewOrderScreen() {
                     >
                       <Ionicons name="remove" size={16} color="#fff" />
                     </Pressable>
-                    
+
                     <Text style={styles.quantityText}>{item.quantity}</Text>
-                    
+
                     <Pressable
                       onPress={() => handleUpdateQuantity(item.itemId, item.quantity + 1)}
                       style={styles.quantityButton}
@@ -265,7 +279,7 @@ export function NewOrderScreen() {
                       <Ionicons name="add" size={16} color="#fff" />
                     </Pressable>
                   </View>
-                  
+
                   <Pressable
                     onPress={() => handleRemoveItem(item.itemId)}
                     style={styles.removeButton}
@@ -299,6 +313,27 @@ export function NewOrderScreen() {
                     </Text>
                   </Pressable>
                 ))}
+              </View>
+            </View>
+
+            {/* Payment Method Toggle */}
+            <View style={styles.paymentMethodContainer}>
+              <Text style={styles.sectionLabel}>Payment Method</Text>
+              <View style={styles.paymentButtons}>
+                <Pressable
+                  style={[styles.paymentButton, paymentMethod === 'CASH' && styles.paymentButtonActive]}
+                  onPress={() => setPaymentMethod('CASH')}
+                >
+                  <Ionicons name="cash-outline" size={20} color={paymentMethod === 'CASH' ? '#fff' : '#212529'} />
+                  <Text style={[styles.paymentButtonText, paymentMethod === 'CASH' && styles.paymentButtonTextActive]}>Cash</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.paymentButton, paymentMethod === 'BLOCKCHAIN' && styles.paymentButtonActive]}
+                  onPress={() => setPaymentMethod('BLOCKCHAIN')}
+                >
+                  <Ionicons name="wallet-outline" size={20} color={paymentMethod === 'BLOCKCHAIN' ? '#fff' : '#212529'} />
+                  <Text style={[styles.paymentButtonText, paymentMethod === 'BLOCKCHAIN' && styles.paymentButtonTextActive]}>Blockchain</Text>
+                </Pressable>
               </View>
             </View>
 
@@ -427,9 +462,9 @@ export function NewOrderScreen() {
                   >
                     <Ionicons name="remove" size={24} color="#fff" />
                   </Pressable>
-                  
+
                   <Text style={styles.quantityDisplay}>{itemQuantity}</Text>
-                  
+
                   <Pressable
                     onPress={() => setItemQuantity(itemQuantity + 1)}
                     style={styles.quantityButtonLarge}
@@ -927,6 +962,36 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 16,
     fontWeight: '700',
+    color: '#fff'
+  },
+  paymentMethodContainer: {
+    marginBottom: 16
+  },
+  paymentButtons: {
+    flexDirection: 'row',
+    gap: 8
+  },
+  paymentButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#e9ecef',
+    borderWidth: 1,
+    borderColor: '#ced4da'
+  },
+  paymentButtonActive: {
+    backgroundColor: '#0d6efd',
+    borderColor: '#0d6efd'
+  },
+  paymentButtonText: {
+    marginLeft: 8,
+    fontWeight: '600',
+    color: '#212529'
+  },
+  paymentButtonTextActive: {
     color: '#fff'
   }
 });

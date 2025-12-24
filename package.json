@@ -16,14 +16,15 @@
     "verify:polygon": "hardhat verify --network polygon"
   },
   "devDependencies": {
+    "@chainlink/contracts": "^0.6.1",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@openzeppelin/contracts": "^4.9.3",
     "@openzeppelin/contracts-upgradeable": "^4.9.3",
+    "ethers": "^6.8.1",
     "hardhat": "^2.19.1",
-    "@chainlink/contracts": "^0.6.1",
     "solhint": "^4.1.1",
-    "solidity-coverage": "^0.8.5",
-    "ethers": "^6.8.1"
+    "solidity-coverage": "^0.8.5"
   },
   "dependencies": {
     "@typechain/ethers-v6": "^0.5.1",

@@ -5,21 +5,13 @@ import {
   Dimensions, ActivityIndicator
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
+import { customerActions, CustomerState, Restaurant } from '../store/customerSlice';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
 
-interface Restaurant {
-  id: string;
-  name: string;
-  cuisine: string;
-  rating: number;
-  deliveryTime: string;
-  deliveryFee: number;
-  image?: string;
-  isOpen: boolean;
-  distance: string;
-}
+
 
 const mockRestaurants: Restaurant[] = [
   {
@@ -66,17 +58,31 @@ const mockRestaurants: Restaurant[] = [
 
 export function RestaurantListScreen() {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const restaurants = useSelector<{ customer: CustomerState }, Restaurant[]>(state => state.customer.restaurants);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCuisine, setSelectedCuisine] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    // Simulate fetching restaurants
+    setIsLoading(true);
+    // In a real app, this would be a dispatch key for a saga
+    // For now, we'll just populate the store directly to simulate the results
+    setTimeout(() => {
+      dispatch(customerActions.setRestaurants(mockRestaurants));
+      setIsLoading(false);
+    }, 1000);
+  }, [dispatch]);
+
   const cuisines = ['all', 'Egyptian', 'Mediterranean', 'Grill', 'Fast Food', 'Italian', 'Pizza', 'Indian', 'Asian'];
 
-  const filteredRestaurants = mockRestaurants.filter(restaurant => {
+  const filteredRestaurants = restaurants.filter(restaurant => {
     const matchesSearch = restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         restaurant.cuisine.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCuisine = selectedCuisine === 'all' || 
-                          restaurant.cuisine.toLowerCase().includes(selectedCuisine.toLowerCase());
+      restaurant.cuisine.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCuisine = selectedCuisine === 'all' ||
+      restaurant.cuisine.toLowerCase().includes(selectedCuisine.toLowerCase());
     return matchesSearch && matchesCuisine;
   });
 
@@ -84,7 +90,10 @@ export function RestaurantListScreen() {
     if (!restaurant.isOpen) {
       return;
     }
-    
+
+    // Set current restaurant in Redux
+    dispatch(customerActions.setRestaurant(restaurant));
+
     navigation.navigate('Menu' as never, {
       restaurantId: restaurant.id,
       restaurantName: restaurant.name
@@ -96,7 +105,7 @@ export function RestaurantListScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Restaurants</Text>
@@ -126,8 +135,8 @@ export function RestaurantListScreen() {
       </View>
 
       {/* Cuisine Filters */}
-      <ScrollView 
-        horizontal 
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.cuisineTabs}
         contentContainerStyle={styles.cuisineContent}
@@ -175,10 +184,10 @@ export function RestaurantListScreen() {
             >
               {/* Restaurant Image */}
               <View style={styles.restaurantImagePlaceholder}>
-                <Ionicons 
-                  name={restaurant.isOpen ? 'restaurant-outline' : 'close-circle-outline'} 
-                  size={48} 
-                  color={restaurant.isOpen ? '#0d6efd' : '#dc3545'} 
+                <Ionicons
+                  name={restaurant.isOpen ? 'restaurant-outline' : 'close-circle-outline'}
+                  size={48}
+                  color={restaurant.isOpen ? '#0d6efd' : '#dc3545'}
                 />
               </View>
 

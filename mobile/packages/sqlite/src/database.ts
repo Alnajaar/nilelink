@@ -21,6 +21,7 @@ export type MenuItem = {
   category: string;
   description?: string;
   available: boolean;
+  recipe_json?: string;
 };
 
 export type Order = {
@@ -29,6 +30,7 @@ export type Order = {
   customerId?: string;
   customerPhone?: string;
   items: OrderItem[];
+  items_json?: string; // Stored representation
   subtotal_usd: number;
   subtotal_local?: number;
   tax_usd?: number;
@@ -94,7 +96,7 @@ export type InventoryItem = {
 };
 
 export class Database implements SqliteExecutor {
-  constructor(private db: SQLiteDatabase) {}
+  constructor(private db: SQLiteDatabase) { }
 
   async exec(sql: string): Promise<void> {
     await this.db.execAsync([{ sql, args: [] }]);
@@ -139,12 +141,12 @@ export class Database implements SqliteExecutor {
     let sql = `SELECT itemId, restaurantId, name, name_ar, price_usd, price_local, category, description, 
                isAvailable as available FROM menu_items WHERE restaurantId = ? AND isAvailable = 1`;
     const params = [restaurantId];
-    
+
     if (category) {
       sql += ' AND category = ?';
       params.push(category);
     }
-    
+
     const items = await this.all<MenuItem>(sql, params);
     return items.map(item => ({
       ...item,
@@ -163,7 +165,7 @@ export class Database implements SqliteExecutor {
   async createOrder(order: Omit<Order, 'orderId' | 'createdAt' | 'updatedAt'>): Promise<string> {
     const orderId = `ord_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const now = new Date().toISOString();
-    
+
     await this.run(
       `INSERT INTO orders (orderId, restaurantId, customerId, customerPhone, items_json, total_usd, 
        total_local, orderType, status, paymentMethod, notes, blockchainTxHash, createdAt) 
@@ -184,7 +186,7 @@ export class Database implements SqliteExecutor {
         now
       ]
     );
-    
+
     return orderId;
   }
 
@@ -194,9 +196,9 @@ export class Database implements SqliteExecutor {
        orderType, status, paymentMethod, notes, blockchainTxHash, createdAt FROM orders WHERE orderId = ?`,
       [orderId]
     );
-    
+
     if (!row) return undefined;
-    
+
     return {
       ...row,
       items: JSON.parse(row.items_json),
@@ -210,14 +212,14 @@ export class Database implements SqliteExecutor {
     let sql = `SELECT orderId, restaurantId, customerId, customerPhone, items_json, total_usd, total_local, 
                orderType, status, paymentMethod, notes, blockchainTxHash, createdAt FROM orders WHERE restaurantId = ?`;
     const params = [restaurantId];
-    
+
     if (status) {
       sql += ' AND status = ?';
       params.push(status);
     }
-    
+
     sql += ' ORDER BY createdAt DESC';
-    
+
     const rows = await this.all<any>(sql, params);
     return rows.map(row => ({
       ...row,
@@ -238,13 +240,13 @@ export class Database implements SqliteExecutor {
   async addToPaymentQueue(orderId: string, amount_usd: number): Promise<string> {
     const paymentId = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const now = new Date().toISOString();
-    
+
     await this.run(
       `INSERT INTO payment_queue (paymentId, orderId, status, amount_usd, createdAt, lastUpdated) 
        VALUES (?, ?, 'PENDING', ?, ?, ?)`,
       [paymentId, orderId, amount_usd, now, now]
     );
-    
+
     return paymentId;
   }
 
@@ -252,14 +254,14 @@ export class Database implements SqliteExecutor {
     let sql = `SELECT paymentId, orderId, status, amount_usd, txHash, retries, createdAt, lastUpdated 
                FROM payment_queue`;
     const params: string[] = [];
-    
+
     if (status) {
       sql += ' WHERE status = ?';
       params.push(status);
     }
-    
+
     sql += ' ORDER BY createdAt ASC';
-    
+
     return this.all<PaymentQueueItem>(sql, params);
   }
 
@@ -276,9 +278,9 @@ export class Database implements SqliteExecutor {
     await this.run(
       `INSERT INTO event_log (eventId, type, data, timestamp, streamId, producerId, streamSeq, lamport, hash, synced) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [eventId, event.type, JSON.stringify(event.data), event.timestamp, 
-       event.streamId || null, event.producerId || null, event.streamSeq || null, 
-       event.lamport || null, event.hash || null, event.synced ? 1 : 0]
+      [eventId, event.type, JSON.stringify(event.data), event.timestamp,
+        event.streamId || null, event.producerId || null, event.streamSeq || null,
+        event.lamport || null, event.hash || null, event.synced ? 1 : 0]
     );
     return eventId;
   }
@@ -288,7 +290,7 @@ export class Database implements SqliteExecutor {
       `SELECT eventId, type, data, timestamp, streamId, producerId, streamSeq, lamport, hash, synced 
        FROM event_log WHERE synced = 0 ORDER BY timestamp ASC`
     );
-    
+
     return rows.map(row => ({
       ...row,
       data: JSON.parse(row.data),
@@ -357,7 +359,7 @@ export class Database implements SqliteExecutor {
        FROM event_log WHERE streamId = ? ORDER BY timestamp ASC`,
       [streamId]
     );
-    
+
     return rows.map(row => ({
       ...row,
       data: JSON.parse(row.data),
@@ -367,14 +369,14 @@ export class Database implements SqliteExecutor {
 
   async replaceEvents(streamId: string, events: EventLog[]): Promise<void> {
     await this.run('DELETE FROM event_log WHERE streamId = ?', [streamId]);
-    
+
     for (const event of events) {
       await this.run(
         `INSERT INTO event_log (eventId, type, data, timestamp, streamId, producerId, streamSeq, lamport, hash, synced) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [event.eventId, event.type, JSON.stringify(event.data), event.timestamp, 
-         event.streamId || null, event.producerId || null, event.streamSeq || null, 
-         event.lamport || null, event.hash || null, event.synced ? 1 : 0]
+        [event.eventId, event.type, JSON.stringify(event.data), event.timestamp,
+        event.streamId || null, event.producerId || null, event.streamSeq || null,
+        event.lamport || null, event.hash || null, event.synced ? 1 : 0]
       );
     }
   }

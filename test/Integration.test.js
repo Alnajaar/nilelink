@@ -38,7 +38,7 @@ describe("NileLink Protocol Integration", function () {
         await mockUSDC.mint(customer.address, INITIAL_USDC_BALANCE);
         await mockUSDC.mint(investor.address, INITIAL_USDC_BALANCE);
         await mockUSDC.mint(supplier.address, INITIAL_USDC_BALANCE);
-        await mockUSDC.mint(restaurant.address, INITIAL_USDC_BALANCE); 
+        await mockUSDC.mint(restaurant.address, INITIAL_USDC_BALANCE);
 
         // 2. Deploy NileLink Protocol
         const NileLinkProtocol = await ethers.getContractFactory("NileLinkProtocol");
@@ -47,7 +47,7 @@ describe("NileLink Protocol Integration", function () {
 
         // 3. Get Core Contract Instances
         const addresses = await nileLinkProtocol.getContractAddresses();
-        
+
         restaurantRegistry = await ethers.getContractAt("RestaurantRegistry", addresses.restaurantRegistry);
         orderSettlement = await ethers.getContractAt("OrderSettlement", addresses.orderSettlement);
         supplierCredit = await ethers.getContractAt("SupplierCredit", addresses.supplierCredit);
@@ -77,7 +77,7 @@ describe("NileLink Protocol Integration", function () {
         };
 
         await restaurantRegistry.connect(governance).registerRestaurant(restaurant.address, restaurantConfig);
-        
+
         const restRecord = await restaurantRegistry.getRestaurant(restaurant.address);
         expect(restRecord.restaurant).to.equal(restaurant.address);
 
@@ -105,20 +105,20 @@ describe("NileLink Protocol Integration", function () {
 
         const invoice = await supplierCredit.getInvoice(invoiceId);
         expect(invoice.amountUsd6).to.equal(invoiceAmount);
-        expect(invoice.status).to.equal(0); // PENDING
+        expect(invoice.status).to.equal(0n); // PENDING
 
         // Repay Invoice
         await mockUSDC.connect(restaurant).approve(await supplierCredit.getAddress(), invoiceAmount);
         await supplierCredit.connect(restaurant).repay(invoiceId, invoiceAmount, ethers.randomBytes(32));
 
         const paidInvoice = await supplierCredit.getInvoice(invoiceId);
-        expect(paidInvoice.status).to.equal(2); // PAID
+        expect(paidInvoice.status).to.equal(2n); // PAID
 
         // --- STEP 3: DELIVERY SYSTEM ---
         // Customer orders delivery
         const orderId = ethers.randomBytes(16);
         const orderAmount = ethers.parseUnits("50", 6); // $50 (includes delivery fees etc)
-        
+
         // Create Payment Intent
         await orderSettlement.connect(governance).createPaymentIntent( // governance acts as "backend" or "authorized"
             orderId,
@@ -129,17 +129,17 @@ describe("NileLink Protocol Integration", function () {
         );
         // Note: In real app, createPaymentIntent might be called by an authorized backend key
         // We used governance here, but we should probably use setAuthorizedCaller.
-        
+
         // Check order status
         let order = await orderSettlement.getOrder(orderId);
-        expect(order.status).to.equal(0); // PENDING
+        expect(order.status).to.equal(0n); // PENDING
 
         // Customer Pays
         await mockUSDC.connect(customer).approve(await orderSettlement.getAddress(), orderAmount);
         await orderSettlement.connect(customer).pay(orderId, orderAmount);
 
         order = await orderSettlement.getOrder(orderId);
-        expect(order.status).to.equal(2); // SETTLED (Instant Settlement)
+        expect(order.status).to.equal(2n); // SETTLED (Instant Settlement)
 
         // Verify Restaurant Balance Increase
         // Restaurant started with INITIAL_USDC_BALANCE - 100 (repaid invoice)
@@ -147,7 +147,7 @@ describe("NileLink Protocol Integration", function () {
         // Protocol fee is 0.5%
         const fee = orderAmount * 50n / 10000n;
         const net = orderAmount - fee;
-        
+
         // We don't check exact balance because of complexity, but we check events or state if possible.
         // Or just rely on order status.
 
@@ -164,22 +164,22 @@ describe("NileLink Protocol Integration", function () {
         // In real world, profit comes from revenue (orderSettlement) - expenses.
         // InvestorVault tracks "netProfit" which is updated via `updateRestaurantValuation`.
         // Let's say valuation increased by $50 (the order revenue).
-        await investorVault.connect(governance).updateRestaurantValuation(restaurant.address, investAmount + 50n * 10n**6n); // +$50
+        await investorVault.connect(governance).updateRestaurantValuation(restaurant.address, investAmount + 50n * 10n ** 6n); // +$50
 
         // Claim Dividend
         // Dividends are calculated based on ownership % of profit.
         // Here investor owns 100% of the restaurant investment pool (only investor).
         // Profit = Valuation - TotalInvested = 50.
         // Dividend = 50.
-        
+
         // Wait, calculateAccruedDividends logic:
         // investorShare = (restInvestment.netProfit * investorInvestment.ownershipBps) / 10000;
         // netProfit = 50. ownershipBps = 10000 (100%).
         // Share = 50.
-        
+
         const claimable = await investorVault.calculateAccruedDividends(investor.address, restaurant.address);
         // Depending on rounding/logic, should be close to 50 * 10^6
-        
+
         // To claim, the Vault needs USDC.
         // The Vault only has invested capital unless we send profit to it.
         // In this architecture, `updateRestaurantValuation` just updates the number.
@@ -190,7 +190,7 @@ describe("NileLink Protocol Integration", function () {
         await mockUSDC.connect(restaurant).transfer(await investorVault.getAddress(), profitAmount);
 
         await investorVault.connect(investor).claimDividend(restaurant.address);
-        
+
         // Verify investor got dividend
         const history = await investorVault.getDividendHistory(investor.address);
         expect(history.length).to.equal(1);

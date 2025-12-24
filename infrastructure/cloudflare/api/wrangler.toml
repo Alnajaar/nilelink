@@ -1,0 +1,16 @@
+name = "nilelink-api"
+main = "src/index.ts"
+compatibility_date = "2024-04-03"
+account_id = "79b17f6d66b3dcfd8aca5f94a1f702d3"
+
+[[routes]]
+pattern = "api.nilelink.app"
+custom_domain = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nilelink-production-db"
+database_id = "c528c493-54ef-4609-8ef0-0491a1974cdb"
+
+[vars]
+ENVIRONMENT = "production"

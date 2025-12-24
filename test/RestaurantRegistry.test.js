@@ -143,21 +143,26 @@ describe('RestaurantRegistry', function () {
     it('Should allow transactions within rate limit', async function () {
       const amount = ethers.parseUnits('5000', 6); // $5,000
 
-      const allowed = await restaurantRegistry.checkAndUpdateRateLimit(restaurant.address, amount);
-      expect(allowed).to.be.true;
+      // Call transaction
+      await restaurantRegistry.checkAndUpdateRateLimit(restaurant.address, amount);
+      // Can't check return value directly from tx. Check side effect.
 
       expect(await restaurantRegistry.dailyUsdUsage(restaurant.address)).to.equal(amount);
     });
 
     it('Should reject transactions exceeding rate limit', async function () {
       const amount1 = ethers.parseUnits('7000', 6); // $7,000
-      const amount2 = ethers.parseUnits('4000', 6); // $4,000 - would exceed limit
+      const amount2 = ethers.parseUnits('4000', 6); // $4,000 - would exceed limit (assuming limit 10000)
 
-      const allowed1 = await restaurantRegistry.checkAndUpdateRateLimit(restaurant.address, amount1);
-      expect(allowed1).to.be.true;
+      // First call (valid)
+      await restaurantRegistry.checkAndUpdateRateLimit(restaurant.address, amount1);
 
-      const allowed2 = await restaurantRegistry.checkAndUpdateRateLimit(restaurant.address, amount2);
-      expect(allowed2).to.be.false;
+      // Second call (should be rejected/false)
+      // Since it returns false (not revert), we check logic: usage should NOT increase.
+      await restaurantRegistry.checkAndUpdateRateLimit(restaurant.address, amount2);
+
+      // Usage should still be 7000, not 11000
+      expect(await restaurantRegistry.dailyUsdUsage(restaurant.address)).to.equal(amount1);
     });
   });
 

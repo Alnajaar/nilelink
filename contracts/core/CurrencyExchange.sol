@@ -315,10 +315,10 @@ contract CurrencyExchange is ICurrencyExchange, Ownable, Pausable, ReentrancyGua
     /// @param rate Exchange rate to validate
     /// @return isValid Whether the rate is reasonable
     function _isRateReasonable(bytes3 currency, uint256 rate) internal pure returns (bool isValid) {
-        // Define reasonable bounds for common currencies
-        // Lebanon LBP: 1,000 - 200,000
+        // Define reasonable bounds for common currencies (scaled by 1e8)
+        // Lebanon LBP: 1,000 to 200,000 (Account for historic and current instability)
         if (currency == "LBP") {
-            return rate >= 10_000_000 && rate <= 20_000_000_000; // 1,000 to 200,000 scaled
+            return rate >= 100_000_000_000 && rate <= 20_000_000_000_000;
         }
         
         // USD pairs should be close to 1e8 (1 USD = 1 local)
@@ -327,7 +327,7 @@ contract CurrencyExchange is ICurrencyExchange, Ownable, Pausable, ReentrancyGua
         }
         
         // Default bounds: 0.1 to 1000
-        return rate >= 10_000_000 && rate <= 100_000_000_000; // 0.1 to 1000 scaled
+        return rate >= 10_000_000 && rate <= 100_000_000_000; 
     }
     
     /// @notice Get expected range description for a currency
@@ -340,7 +340,7 @@ contract CurrencyExchange is ICurrencyExchange, Ownable, Pausable, ReentrancyGua
         if (currency == "USD") {
             return "0.9-1.1 USD/USD";
         }
-        return "0.1-1000 currency/USD";
+        return "0.1-1,000 currency/USD";
     }
     
     /// @notice Prune old rate history (keep last 30 days)

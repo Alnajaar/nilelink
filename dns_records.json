@@ -1,0 +1,98 @@
+{
+    "result": [
+        {
+            "id": "b7117fb36419c09853198c6dc9209d98",
+            "name": "*.nilelink.app",
+            "type": "A",
+            "content": "203.0.113.1",
+            "proxiable": true,
+            "proxied": true,
+            "ttl": 1,
+            "settings": {},
+            "meta": {},
+            "comment": null,
+            "tags": [],
+            "created_on": "2025-12-20T12:57:19.941405Z",
+            "modified_on": "2025-12-20T12:57:19.941405Z"
+        },
+        {
+            "id": "40173dd863236b9daba2fc1d255bbac6",
+            "name": "admin.nilelink.app",
+            "type": "CNAME",
+            "content": "nilelink-dashboard.pages.dev",
+            "proxiable": true,
+            "proxied": true,
+            "ttl": 1,
+            "settings": {
+                "flatten_cname": false
+            },
+            "meta": {},
+            "comment": null,
+            "tags": [],
+            "created_on": "2025-12-23T12:00:43.826698Z",
+            "modified_on": "2025-12-23T12:00:43.826698Z"
+        },
+        {
+            "id": "pos-dns-fix-id",
+            "name": "pos.nilelink.app",
+            "type": "CNAME",
+            "content": "nilelink-pos.pages.dev",
+            "proxiable": true,
+            "proxied": true,
+            "ttl": 1,
+            "settings": {
+                "flatten_cname": false
+            },
+            "meta": {},
+            "comment": "Subdomain recovery",
+            "tags": [],
+            "created_on": "2025-12-24T17:15:00Z",
+            "modified_on": "2025-12-24T17:15:00Z"
+        },
+        {
+            "id": "76e89a68be69605a8691e37ac6fa48cc",
+            "name": "nilelink.app",
+            "type": "CNAME",
+            "content": "nilelink-dashboard.pages.dev",
+            "proxiable": true,
+            "proxied": true,
+            "ttl": 1,
+            "settings": {
+                "flatten_cname": false
+            },
+            "meta": {},
+            "comment": null,
+            "tags": [],
+            "created_on": "2025-12-23T12:02:33.745025Z",
+            "modified_on": "2025-12-23T12:02:33.745025Z"
+        },
+        {
+            "id": "940106a4b8e46ca583db4ff586109d08",
+            "name": "api.nilelink.app",
+            "type": "AAAA",
+            "content": "100::",
+            "proxiable": true,
+            "proxied": true,
+            "ttl": 1,
+            "settings": {},
+            "meta": {
+                "origin_worker_id": "c15102438190565a946c064e10bde6449c148b49",
+                "read_only": true
+            },
+            "comment": null,
+            "tags": [],
+            "created_on": "2025-12-23T11:09:27.066058Z",
+            "modified_on": "2025-12-23T11:09:27.066058Z"
+        }
+    ],
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result_info": {
+        "page": 1,
+        "per_page": 100,
+        "count": 5,
+        "total_count": 5,
+        "total_pages": 1
+    }
+}

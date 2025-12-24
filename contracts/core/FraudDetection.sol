@@ -63,15 +63,9 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
     mapping(address => bool) public governance;
     
     // Events
-    event AnomalyFlagged(
-        bytes32 indexed subject,
-        bytes32 indexed anomalyType,
-        uint8 severity,
-        bytes32 detailsHash,
-        uint64 timestamp
-    );
-    
-    event TransactionBlocked(bytes32 indexed txRef, bytes32 reasonHash, uint64 timestamp);
+    // Events
+    // AnomalyFlagged, TransactionBlocked inherited from IFraudDetection
+
     
     event RuleSetUpdated(
         address indexed restaurant,
