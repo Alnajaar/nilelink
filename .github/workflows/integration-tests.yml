@@ -1,0 +1,282 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [ main, staging ]
+  pull_request:
+    branches: [ main, staging ]
+  schedule:
+    # Run integration tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  contract-backend-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install contract dependencies
+        run: npm ci
+
+      - name: Start local blockchain
+        run: npx hardhat node &
+        env:
+          PORT: 8545
+
+      - name: Wait for blockchain
+        run: sleep 5
+
+      - name: Deploy contracts locally
+        run: npx hardhat run scripts/deploy.js --network localhost
+
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+
+      - name: Setup backend database
+        run: cd backend && npm run db:migrate:test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+
+      - name: Run backend integration tests
+        run: cd backend && npm run test:integration
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379
+          CONTRACT_ADDRESS: "0x..." # Would be set from deployment
+
+  web-backend-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+
+      - name: Setup backend database
+        run: cd backend && npm run db:migrate:test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+
+      - name: Start backend server
+        run: cd backend && npm run dev &
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379
+          PORT: 3001
+
+      - name: Wait for backend
+        run: sleep 10
+
+      - name: Test web app API integration
+        run: |
+          for app in portal pos delivery supplier dashboard customer unified; do
+            cd web/$app
+            npm ci
+            npm run build
+            cd ../..
+          done
+
+      - name: Run API integration tests
+        run: npm run test:api-integration
+        env:
+          API_BASE_URL: http://localhost:3001
+
+  mobile-backend-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+
+      - name: Setup backend database
+        run: cd backend && npm run db:migrate:test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+
+      - name: Start backend server
+        run: cd backend && npm run dev &
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379
+          PORT: 3001
+
+      - name: Wait for backend
+        run: sleep 10
+
+      - name: Test mobile sync integration
+        run: |
+          cd mobile/packages/sync-engine
+          npm ci
+          npm run test:integration
+          cd ../../..
+
+      - name: Run mobile API integration tests
+        run: |
+          for app in pos customer; do
+            cd mobile/apps/$app
+            npm ci
+            npm run test:integration
+            cd ../../..
+          done
+        env:
+          API_BASE_URL: http://localhost:3001
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+
+      - name: Setup backend database
+        run: cd backend && npm run db:migrate:test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+
+      - name: Start backend server
+        run: cd backend && npm run dev &
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379
+          PORT: 3001
+
+      - name: Wait for backend
+        run: sleep 10
+
+      - name: Install Playwright
+        run: npx playwright install
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          BASE_URL: http://localhost:3001
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: e2e-test-results
+          path: test-results/
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
+    needs: [contract-backend-integration, web-backend-integration, mobile-backend-integration, e2e-tests]
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        run: |
+          echo "Deploy backend to staging"
+          echo "Deploy web apps to staging"
+          echo "Deploy contracts to testnet"
+          # Add actual deployment commands here
+
+      - name: Run smoke tests on staging
+        run: |
+          echo "Run smoke tests against staging environment"
+          # Add smoke test commands here
+
+      - name: Notify deployment status
+        run: |
+          echo "Staging deployment completed successfully"

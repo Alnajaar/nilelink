@@ -194,6 +194,6 @@ describe("NileLink Protocol Integration", function () {
         // Verify investor got dividend
         const history = await investorVault.getDividendHistory(investor.address);
         expect(history.length).to.equal(1);
-        expect(history[0].amountUsd6).to.be.closeTo(profitAmount, 100); // Allow small diff
+        expect(Number(history[0].amountUsd6)).to.be.closeTo(Number(profitAmount), 100); // Allow small diff
     });
 });

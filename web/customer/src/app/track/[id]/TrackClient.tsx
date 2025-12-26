@@ -1,115 +1,147 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { joinRoom, SocketEvents } from '@/shared/utils/socket';
+import { useSocketEvent } from '@/shared/hooks/useSocket';
 import { motion } from 'framer-motion';
-import {
-    ArrowLeft,
-    Zap,
-    Package,
-    Star,
-    MapPin,
-    ShieldCheck,
-    Clock,
-    Clipboard,
-    CheckCircle2
-} from 'lucide-react';
+import { MapPin, Navigation, Clock, Phone, Package } from 'lucide-react';
 
-const STEPS = [
-    { label: 'Received', icon: CheckCircle2, desc: 'Merchant confirmed' },
-    { label: 'Cooking', icon: Zap, desc: 'Preparing your items' },
-    { label: 'Heading Out', icon: MapPin, desc: 'Order at your door soon' },
-    { label: 'Delivered', icon: Star, desc: 'Enjoy your meal!' }
-];
-
-export default function TrackClient({ id }: { id: string }) {
-    const [activeStep, setActiveStep] = useState(1);
+// Simulate GPS coordinates changing
+function useSimulatedGPS(orderId: string) {
+    const [location, setLocation] = useState({ lat: 30.0444, lng: 31.2357 }); // Cairo
 
     useEffect(() => {
-        // Mock progress
-        const timer = setTimeout(() => setActiveStep(2), 5000);
-        return () => clearTimeout(timer);
-    }, []);
+        const interval = setInterval(() => {
+            setLocation(prev => ({
+                lat: prev.lat + (Math.random() - 0.5) * 0.001,
+                lng: prev.lng + (Math.random() - 0.5) * 0.001,
+            }));
+        }, 3000); // Update every 3 seconds
+
+        return () => clearInterval(interval);
+    }, [orderId]);
+
+    return location;
+}
+
+export default function TrackClient({ id }: { id: string }) {
+    const orderId = id;
+    const [orderStatus, setOrderStatus] = useState('IN_DELIVERY');
+    const [estimatedTime, setEstimatedTime] = useState('12 mins');
+    const driverLocation = useSimulatedGPS(orderId);
+
+    // Join order-specific room for real-time updates
+    useEffect(() => {
+        joinRoom(`order_${orderId}`);
+    }, [orderId]);
+
+    // Listen for status updates
+    useSocketEvent(SocketEvents.ORDER_UPDATED, (order: any) => {
+        if (order.id === orderId) {
+            setOrderStatus(order.status);
+        }
+    }, [orderId]);
+
+    // Listen for driver location updates
+    useSocketEvent(SocketEvents.DRIVER_LOCATION, (data: any) => {
+        if (data.orderId === orderId) {
+            // In a real app, update map marker position
+            console.log('Driver location:', data.location);
+        }
+    }, [orderId]);
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white flex flex-col font-sans">
-
-            {/* Header / ETA */}
-            <div className="p-8 bg-indigo-600 rounded-b-[4rem] mb-10 shadow-2xl shadow-indigo-600/20 relative overflow-hidden">
-                <div className="flex justify-between items-start relative z-10">
-                    <Link href="/" className="p-3 rounded-2xl bg-black/20 text-white backdrop-blur-md">
-                        <ArrowLeft size={20} />
-                    </Link>
-                    <div className="text-right">
-                        <div className="text-4xl font-black italic tracking-tighter">15 MIN</div>
-                        <div className="text-[10px] font-black uppercase tracking-widest opacity-60">Estimated Arrival</div>
+        <div className="min-h-screen bg-background-light">
+            {/* Map Placeholder */}
+            <div className="relative h-96 bg-gradient-to-br from-primary-dark to-secondary-soft">
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center text-white">
+                        <MapPin size={64} className="mx-auto mb-4 animate-bounce" />
+                        <p className="text-2xl font-bold">Tracking Your Delivery</p>
+                        <p className="text-sm opacity-75">Driver Location: {driverLocation.lat.toFixed(4)}, {driverLocation.lng.toFixed(4)}</p>
                     </div>
-                </div>
-
-                <div className="mt-12 relative z-10">
-                    <h1 className="text-2xl font-black italic uppercase tracking-tight mb-2">Grand Cairo Grill</h1>
-                    <p className="text-sm font-bold opacity-60">Order #{id}</p>
-                </div>
-
-                <div className="absolute -right-16 -bottom-16 opacity-10 rotate-[-15deg]">
-                    <Clock size={240} />
                 </div>
             </div>
 
-            <main className="flex-1 px-8 space-y-12 pb-32">
-
-                {/* Status Chain */}
-                <section className="space-y-10 relative">
-                    <div className="absolute left-6 top-6 bottom-6 w-0.5 bg-white/5 -z-10" />
-
-                    {STEPS.map((step, i) => {
-                        const isDone = i <= activeStep;
-                        const isCurrent = i === activeStep;
-
-                        return (
-                            <div key={i} className="flex gap-8 items-start group">
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-4 border-[#050505] transition-all duration-700 ${isDone ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20' : 'bg-[#111] text-nile-silver/20'}`}>
-                                    <step.icon size={20} className={isCurrent ? 'animate-pulse' : ''} />
-                                </div>
-                                <div>
-                                    <h3 className={`font-black italic uppercase tracking-tight text-lg ${isDone ? 'text-white' : 'text-nile-silver/20'}`}>{step.label}</h3>
-                                    <p className={`text-xs font-medium ${isDone ? 'text-nile-silver/60' : 'text-nile-silver/10'}`}>{step.desc}</p>
-                                </div>
-                            </div>
-                        )
-                    })}
-                </section>
-
-                {/* Trust Verification (Immutable Link) */}
-                <section className="p-8 rounded-[2.5rem] bg-white/5 border border-white/10 space-y-6">
-                    <div className="flex items-center gap-4 text-emerald-500">
-                        <ShieldCheck size={24} />
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em]">Verified Protocol Receipt</h4>
+            {/* Order Details */}
+            <div className="p-6 space-y-6">
+                {/* Status Card */}
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="bg-white border-l-4 border-success p-6 rounded-2xl shadow-md"
+                >
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 className="text-2xl font-bold text-primary-dark">Order #{orderId}</h2>
+                            <p className="text-text-secondary flex items-center gap-2 mt-1">
+                                <Clock size={16} />
+                                Estimated arrival: {estimatedTime}
+                            </p>
+                        </div>
+                        <span className="px-4 py-2 bg-success text-white rounded-full text-sm font-bold">
+                            {orderStatus}
+                        </span>
                     </div>
 
+                    {/* Progress Bar */}
                     <div className="space-y-3">
-                        <div className="flex justify-between text-xs font-bold text-nile-silver/40">
-                            <span>Order Hash</span>
-                            <span className="font-mono text-[9px]">A82...F92</span>
+                        <div className="flex justify-between text-xs text-text-secondary mb-2">
+                            <span>Order Placed</span>
+                            <span>Preparing</span>
+                            <span>On the Way</span>
+                            <span>Delivered</span>
                         </div>
-                        <div className="flex justify-between text-xs font-bold text-nile-silver/40">
-                            <span>Sequence</span>
-                            <span>#12,204</span>
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <motion.div
+                                className="h-full bg-success"
+                                initial={{ width: '0%' }}
+                                animate={{ width: orderStatus === 'DELIVERED' ? '100%' : '66%' }}
+                                transition={{ duration: 1 }}
+                            />
                         </div>
-                        <div className="h-px bg-white/5 my-4" />
-                        <button className="w-full h-14 rounded-xl bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all">
-                            View Detailed Receipt <Clipboard size={14} />
+                    </div>
+                </motion.div>
+
+                {/* Driver Info */}
+                <div className="bg-white p-6 rounded-2xl shadow-md">
+                    <h3 className="font-bold text-lg mb-4">Your Driver</h3>
+                    <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 bg-primary-dark rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                            K
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-bold text-primary-dark">Karim Driver</p>
+                            <p className="text-sm text-text-secondary">4.9 ★ • 245 deliveries</p>
+                        </div>
+                        <button className="w-12 h-12 bg-success text-white rounded-full flex items-center justify-center">
+                            <Phone size={20} />
                         </button>
                     </div>
-                </section>
+                </div>
 
-                {/* Support/Issue Button */}
-                <button className="w-full py-6 text-xs font-black uppercase tracking-widest text-nile-silver/20 hover:text-red-500 transition-colors">
-                    Report Issue With Order
-                </button>
-
-            </main>
-
+                {/* Order Items */}
+                <div className="bg-white p-6 rounded-2xl shadow-md">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <Package size={20} />
+                        Your Order
+                    </h3>
+                    <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                            <span>2x Lamb Kofta</span>
+                            <span className="text-text-secondary">$36.00</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span>1x Mint Lemonade</span>
+                            <span className="text-text-secondary">$3.50</span>
+                        </div>
+                        <div className="border-t pt-2 mt-2 flex justify-between font-bold">
+                            <span>Total</span>
+                            <span>$39.50</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

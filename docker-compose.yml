@@ -1,0 +1,230 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: nilelink-postgres
+    environment:
+      POSTGRES_DB: nilelink_dev
+      POSTGRES_USER: nilelink
+      POSTGRES_PASSWORD: nilelink123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - nilelink-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nilelink -d nilelink_dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Redis Cache & Session Store
+  redis:
+    image: redis:7-alpine
+    container_name: nilelink-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - nilelink-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Backend API Server
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nilelink-backend
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://nilelink:nilelink123@postgres:5432/nilelink_dev
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: nilelink-dev-jwt-secret-key-change-in-production
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - nilelink-network
+    command: npm run dev
+
+  # Hardhat Local Blockchain (for smart contract development)
+  hardhat:
+    build:
+      context: .
+      dockerfile: Dockerfile.hardhat
+    container_name: nilelink-hardhat
+    ports:
+      - "8545:8545"  # Hardhat Network
+    volumes:
+      - ./contracts:/app/contracts
+      - ./scripts:/app/scripts
+      - ./test:/app/test
+    working_dir: /app
+    networks:
+      - nilelink-network
+    command: npx hardhat node
+
+  # Customer Web App (Development)
+  web-customer:
+    build:
+      context: ./web/customer
+      dockerfile: Dockerfile.dev
+    container_name: nilelink-web-customer
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./web/customer:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - nilelink-network
+    depends_on:
+      - backend
+
+  # POS Web App (Development)
+  web-pos:
+    build:
+      context: ./web/pos
+      dockerfile: Dockerfile.dev
+    container_name: nilelink-web-pos
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+    ports:
+      - "3003:3000"
+    volumes:
+      - ./web/pos:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - nilelink-network
+    depends_on:
+      - backend
+
+  # Delivery Web App (Development)
+  web-delivery:
+    build:
+      context: ./web/delivery
+      dockerfile: Dockerfile.dev
+    container_name: nilelink-web-delivery
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+    ports:
+      - "3004:3000"
+    volumes:
+      - ./web/delivery:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - nilelink-network
+    depends_on:
+      - backend
+
+  # Supplier Web App (Development)
+  web-supplier:
+    build:
+      context: ./web/supplier
+      dockerfile: Dockerfile.dev
+    container_name: nilelink-web-supplier
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+    ports:
+      - "3005:3000"
+    volumes:
+      - ./web/supplier:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - nilelink-network
+    depends_on:
+      - backend
+
+  # Portal Web App (Development)
+  web-portal:
+    build:
+      context: ./web/portal
+      dockerfile: Dockerfile.dev
+    container_name: nilelink-web-portal
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+    ports:
+      - "3006:3000"
+    volumes:
+      - ./web/portal:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - nilelink-network
+    depends_on:
+      - backend
+
+  # Dashboard Web App (Development)
+  web-dashboard:
+    build:
+      context: ./web/dashboard
+      dockerfile: Dockerfile.dev
+    container_name: nilelink-web-dashboard
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+    ports:
+      - "3007:3000"
+    volumes:
+      - ./web/dashboard:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - nilelink-network
+    depends_on:
+      - backend
+
+  # Unified Admin Portal (Development)
+  web-unified:
+    build:
+      context: ./web/unified
+      dockerfile: Dockerfile.dev
+    container_name: nilelink-web-unified
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+    ports:
+      - "3008:3000"
+    volumes:
+      - ./web/unified:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - nilelink-network
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  nilelink-network:
+    driver: bridge

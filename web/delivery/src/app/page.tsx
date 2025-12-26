@@ -1,36 +1,70 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Truck, MapPin, Loader2 } from 'lucide-react';
+import { UniversalHeader } from '@/shared/components/UniversalHeader';
+import { Card } from '@/shared/components/Card';
+import { Button } from '@/shared/components/Button';
 
 export default function RootPage() {
     const router = useRouter();
+    const [isRedirecting, setIsRedirecting] = useState(false);
 
     useEffect(() => {
-        // Simple redirect to the driver portal
-        // In a real prod env, we might check for an existing session here
+        // Simulate checking for active session
         const timer = setTimeout(() => {
-            router.push('/driver/login');
-        }, 1500);
+            setIsRedirecting(true);
+            setTimeout(() => {
+                router.push('/driver/login');
+            }, 800);
+        }, 2000);
         return () => clearTimeout(timer);
     }, [router]);
 
     return (
-        <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 text-center">
-            <div className="w-20 h-20 rounded-3xl bg-emerald-500 flex items-center justify-center text-nile-dark mb-8 animate-bounce shadow-2xl shadow-emerald-500/20">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>
-            </div>
+        <div className="min-h-screen bg-background flex flex-col">
+            <UniversalHeader appName="Delivery Fleet" />
 
-            <h1 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-2">NileLink Delivery</h1>
-            <p className="text-[10px] font-black text-nile-silver/20 uppercase tracking-[0.5em] mb-12">Protocol Node v0.1.0</p>
+            <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                <Card className="max-w-md w-full p-8 flex flex-col items-center shadow-xl border-border-strong">
+                    <div className="h-16 w-16 bg-primary rounded-xl flex items-center justify-center text-white mb-6 shadow-lg shadow-primary/20">
+                        <Truck size={32} />
+                    </div>
 
-            <div className="flex flex-col items-center gap-4">
-                <Loader2 className="animate-spin text-emerald-500" size={24} />
-                <span className="text-[10px] font-black text-emerald-500/50 uppercase tracking-widest">Waking Up Local Ledger...</span>
-            </div>
+                    <h1 className="text-2xl font-bold text-text-main mb-2">NileLink Logistics</h1>
+                    <p className="text-text-muted mb-8 text-sm">Decentralized fleet management & route optimization.</p>
+
+                    <div className="w-full bg-background-subtle rounded-lg p-4 mb-6 border border-border-subtle">
+                        <div className="flex items-center justify-between text-xs font-mono text-text-subtle mb-2">
+                            <span>System Status</span>
+                            <span className="text-success font-bold">ONLINE</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs font-mono text-text-main">
+                            <MapPin size={12} className="text-primary" />
+                            <span>Locating nearest ledger node...</span>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-3">
+                        {isRedirecting ? (
+                            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                                <Loader2 className="animate-spin" size={18} />
+                                <span>Redirecting to secure login...</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 text-sm font-medium text-text-muted">
+                                <Loader2 className="animate-spin text-primary" size={18} />
+                                <span>Verifying device integrity...</span>
+                            </div>
+                        )}
+                    </div>
+                </Card>
+
+                <p className="mt-8 text-xs text-text-subtle font-mono uppercase tracking-widest">
+                    v1.0.4 • Driver Protocol Active
+                </p>
+            </main>
         </div>
     );
 }

@@ -1,0 +1,30 @@
+# Development Dockerfile for NileLink Web Applications (Next.js)
+FROM node:18-alpine AS base
+
+# Install system dependencies
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci && npm cache clean --force
+
+# Copy source code
+COPY . .
+
+# Expose port 3000 (Next.js default)
+EXPOSE 3000
+
+# Health check for Next.js dev server
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:3000/api/health || exit 1
+
+# Default command for development
+CMD ["npm", "run", "dev"]

@@ -2,6 +2,7 @@
 // test/InvestorVault.test.js
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+require('@nomicfoundation/hardhat-chai-matchers');
 const { anyValue } = require('@nomicfoundation/hardhat-chai-matchers/withArgs');
 
 describe('InvestorVault', function () {

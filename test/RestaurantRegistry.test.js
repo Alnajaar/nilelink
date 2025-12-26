@@ -2,6 +2,7 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { anyValue } = require('@nomicfoundation/hardhat-chai-matchers/withArgs');
+require('@nomicfoundation/hardhat-chai-matchers');
 
 const asFixedBytes = (s) => ethers.hexlify(ethers.toUtf8Bytes(s));
 
@@ -180,7 +181,7 @@ describe('RestaurantRegistry', function () {
       expect(status).to.equal(0n); // ACTIVE
       expect(limit).to.equal(DAILY_RATE_LIMIT);
       expect(balance).to.equal(0n);
-      expect(lastSettlement).to.be.gt(0n);
+      expect(Number(lastSettlement)).to.be.gt(0);
     });
 
     it('Should return true for active restaurant', async function () {

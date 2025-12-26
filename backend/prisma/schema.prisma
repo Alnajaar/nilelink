@@ -1,0 +1,829 @@
+// Prisma schema for NileLink Backend
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// EVENT SOURCING - Core Event Store
+// ============================================================================
+
+model DomainEvent {
+  id            String   @id @default(cuid())
+  eventType     String
+  aggregateId   String
+  aggregateType String
+  eventData     Json
+  metadata      Json?
+  timestamp     DateTime @default(now())
+  version       Int      @default(1)
+  correlationId String?
+  causationId   String?
+
+  // Indexes for performance
+  @@index([aggregateId, aggregateType])
+  @@index([eventType])
+  @@index([timestamp])
+  @@index([correlationId])
+  @@index([causationId])
+}
+
+model EventSnapshot {
+  id            String   @id @default(cuid())
+  aggregateId   String
+  aggregateType String
+  snapshotData  Json
+  version       Int
+  timestamp     DateTime @default(now())
+
+  @@unique([aggregateId, aggregateType, version])
+  @@index([aggregateId, aggregateType])
+}
+
+// ============================================================================
+// MULTI-TENANCY & SUBSCRIPTIONS
+// ============================================================================
+
+model Tenant {
+  id               String   @id @default(cuid())
+  name             String // "Acme Restaurants Inc."
+  subdomain        String   @unique // "acme" -> acme.nilelink.app
+  plan             Plan     @default(TRIAL)
+  trialEndsAt      DateTime
+  subscriptionId   String?  @unique
+  stripeCustomerId String?  @unique
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  users       User[]
+  restaurants Restaurant[]
+  settings    TenantSettings?
+  roles       Role[]
+
+  @@index([subdomain])
+  @@index([plan])
+  @@index([isActive])
+}
+
+enum Plan {
+  TRIAL
+  BASIC
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+model TenantSettings {
+  id       String @id @default(cuid())
+  tenantId String @unique
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  baseCurrency String  @default("USD")
+  timezone     String  @default("UTC")
+  dateFormat   String  @default("MM/DD/YYYY")
+  taxRate      Decimal @default(0)
+
+  // Feature flags
+  enableInventory     Boolean @default(true)
+  enableDelivery      Boolean @default(true)
+  enableReservations  Boolean @default(false)
+  enableMultiLocation Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================================
+// USERS & AUTHENTICATION
+// ============================================================================
+
+model User {
+  id            String   @id @default(cuid())
+  tenantId      String // MULTI-TENANT: User belongs to a tenant
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email         String
+  password      String?
+  firstName     String?
+  lastName      String?
+  phone         String?
+  isActive      Boolean  @default(true)
+  isVerified    Boolean  @default(false)
+  magicUserId   String?  @unique
+  walletAddress String?  @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // RBAC: User can have multiple roles
+  roles Role[]
+
+  // Relations
+  customerProfile   CustomerProfile?
+  restaurantProfile RestaurantProfile?
+  staffProfile      StaffProfile?
+  investorProfile   InvestorProfile?
+  Order             Order[]
+  shifts            Shift[]
+
+  // Indexes
+  @@unique([tenantId, email]) // Email unique per tenant
+  @@index([tenantId])
+  @@index([isActive])
+  @@index([walletAddress])
+}
+
+enum UserRole {
+  CUSTOMER
+  RESTAURANT_STAFF
+  RESTAURANT_OWNER
+  DELIVERY_DRIVER
+  INVESTOR
+  ADMIN
+}
+
+model CustomerProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferences   Json?
+  loyaltyPoints Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model RestaurantProfile {
+  id           String     @id @default(cuid())
+  userId       String     @unique
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurantId String     @unique
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  role         StaffRole
+  permissions  Json
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model StaffProfile {
+  id           String      @id @default(cuid())
+  userId       String      @unique
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  role         StaffRole
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model InvestorProfile {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletAddress  String    @unique
+  totalInvested  Decimal   @default(0)
+  currentBalance Decimal   @default(0)
+  kycStatus      KycStatus @default(PENDING)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+enum StaffRole {
+  OWNER
+  MANAGER
+  CHEF
+  SERVER
+  CASHIER
+}
+
+enum KycStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  UNDER_REVIEW
+}
+
+// ============================================================================
+// RESTAURANTS & MENUS
+// ============================================================================
+
+model Restaurant {
+  id          String   @id @default(cuid())
+  tenantId    String // MULTI-TENANT
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  address     String
+  phone       String?
+  email       String?
+  latitude    Float?
+  longitude   Float?
+  isActive    Boolean  @default(true)
+  settings    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  menuItems    MenuItem[]
+  orders       Order[]
+  inventory    Inventory[]
+  staff        RestaurantProfile[]
+  staffMembers StaffProfile[]
+  Settlement   Settlement[]
+  shifts       Shift[]
+
+  // Indexes
+  @@index([tenantId])
+  @@index([isActive])
+  @@index([latitude, longitude])
+}
+
+model MenuItem {
+  id              String     @id @default(cuid())
+  restaurantId    String
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  price           Decimal
+  category        String
+  image           String?
+  isAvailable     Boolean    @default(true)
+  preparationTime Int? // in minutes
+  customizations  Json? // modifiers, add-ons, etc.
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relations
+  orderItems OrderItem[]
+
+  // Indexes
+  @@index([restaurantId])
+  @@index([category])
+  @@index([isAvailable])
+}
+
+// ============================================================================
+// ORDERS & PAYMENTS
+// ============================================================================
+
+model Order {
+  id                    String         @id @default(cuid())
+  orderNumber           String         @unique
+  customerId            String?
+  customer              User?          @relation(fields: [customerId], references: [id])
+  restaurantId          String
+  restaurant            Restaurant     @relation(fields: [restaurantId], references: [id])
+  status                OrderStatus    @default(PENDING)
+  totalAmount           Decimal
+  taxAmount             Decimal        @default(0)
+  tipAmount             Decimal        @default(0)
+  deliveryFee           Decimal        @default(0)
+  paymentMethod         PaymentMethod?
+  paymentStatus         PaymentStatus  @default(PENDING)
+  deliveryAddress       String?
+  specialInstructions   String?
+  estimatedDeliveryTime DateTime?
+  actualDeliveryTime    DateTime?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  // Relations
+  items    OrderItem[]
+  payments Payment[]
+
+  // Indexes
+  @@index([customerId])
+  @@index([restaurantId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id                  String   @id @default(cuid())
+  orderId             String
+  order               Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId          String
+  menuItem            MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity            Int
+  unitPrice           Decimal
+  totalPrice          Decimal
+  customizations      Json? // selected modifiers
+  specialInstructions String?
+  createdAt           DateTime @default(now())
+
+  // Indexes
+  @@index([orderId])
+  @@index([menuItemId])
+}
+
+model Payment {
+  id               String        @id @default(cuid())
+  orderId          String?
+  order            Order?        @relation(fields: [orderId], references: [id])
+  amount           Decimal
+  currency         String        @default("USD")
+  method           PaymentMethod
+  status           PaymentStatus
+  transactionId    String?       @unique
+  blockchainTxHash String?
+  feeAmount        Decimal       @default(0)
+  processedAt      DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Indexes
+  @@index([orderId])
+  @@index([status])
+  @@index([transactionId])
+  @@index([blockchainTxHash])
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  IN_DELIVERY
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  CRYPTO
+  WALLET
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+// ============================================================================
+// INVENTORY & SUPPLIERS
+// ============================================================================
+
+model Inventory {
+  id            String     @id @default(cuid())
+  restaurantId  String
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  itemId        String // SKU or item identifier
+  itemName      String
+  category      String
+  unit          String // kg, liters, pieces, etc.
+  currentStock  Decimal
+  minimumStock  Decimal    @default(0)
+  maximumStock  Decimal?
+  unitCost      Decimal    @default(0)
+  supplierId    String?
+  supplier      Supplier?  @relation(fields: [supplierId], references: [id])
+  isActive      Boolean    @default(true)
+  lastRestocked DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  movements InventoryMovement[]
+
+  // Indexes
+  @@unique([restaurantId, itemId])
+  @@index([restaurantId])
+  @@index([category])
+  @@index([supplierId])
+  @@index([isActive])
+}
+
+model InventoryMovement {
+  id           String                @id @default(cuid())
+  inventoryId  String
+  inventory    Inventory             @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  movementType InventoryMovementType
+  quantity     Decimal
+  reason       String?
+  referenceId  String? // order ID, supplier delivery ID, etc.
+  unitCost     Decimal               @default(0)
+  createdBy    String? // user ID who made the change
+  createdAt    DateTime              @default(now())
+
+  // Indexes
+  @@index([inventoryId])
+  @@index([movementType])
+  @@index([createdAt])
+}
+
+model Supplier {
+  id           String   @id @default(cuid())
+  name         String
+  contactName  String?
+  email        String?
+  phone        String?
+  address      String?
+  paymentTerms String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  inventory Inventory[]
+
+  // Indexes
+  @@index([name])
+  @@index([isActive])
+}
+
+enum InventoryMovementType {
+  RESTOCK
+  SALE
+  ADJUSTMENT
+  WASTE
+  RETURN
+  TRANSFER
+}
+
+// ============================================================================
+// SETTLEMENTS & INVESTORS
+// ============================================================================
+
+model Settlement {
+  id               String           @id @default(cuid())
+  restaurantId     String
+  restaurant       Restaurant       @relation(fields: [restaurantId], references: [id])
+  periodStart      DateTime
+  periodEnd        DateTime
+  grossRevenue     Decimal
+  platformFee      Decimal
+  netSettlement    Decimal
+  currency         String           @default("USD")
+  status           SettlementStatus @default(PENDING)
+  blockchainTxHash String?          @unique
+  processedAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relations
+  distributions InvestorDistribution[]
+
+  // Indexes
+  @@index([restaurantId])
+  @@index([status])
+  @@index([periodStart, periodEnd])
+  @@index([blockchainTxHash])
+}
+
+model InvestorDistribution {
+  id               String             @id @default(cuid())
+  settlementId     String
+  settlement       Settlement         @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+  investorId       String
+  amount           Decimal
+  percentage       Decimal // ownership percentage
+  status           DistributionStatus @default(PENDING)
+  blockchainTxHash String?
+  processedAt      DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  // Indexes
+  @@index([settlementId])
+  @@index([investorId])
+  @@index([status])
+  @@index([blockchainTxHash])
+}
+
+enum SettlementStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum DistributionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// ============================================================================
+// DOUBLE-ENTRY ACCOUNTING
+// ============================================================================
+
+model Account {
+  id        String          @id @default(cuid())
+  code      String          @unique
+  name      String
+  type      AccountType
+  category  AccountCategory
+  currency  String          @default("USD")
+  balance   Decimal         @default(0)
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  // Relations
+  journalLines JournalLine[]
+
+  // Indexes
+  @@index([type])
+  @@index([category])
+  @@index([isActive])
+}
+
+model JournalEntry {
+  id          String   @id @default(cuid())
+  date        DateTime
+  description String
+  reference   String? // order ID, payment ID, etc.
+  createdAt   DateTime @default(now())
+
+  // Relations
+  lines JournalLine[]
+
+  // Indexes
+  @@index([date])
+  @@index([reference])
+}
+
+model JournalLine {
+  id             String       @id @default(cuid())
+  journalEntryId String
+  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  accountId      String
+  account        Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  debit          Decimal      @default(0)
+  credit         Decimal      @default(0)
+  description    String?
+
+  // Indexes
+  @@index([journalEntryId])
+  @@index([accountId])
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+enum AccountCategory {
+  CURRENT_ASSET
+  FIXED_ASSET
+  CURRENT_LIABILITY
+  LONG_TERM_LIABILITY
+  OWNER_EQUITY
+  RETAINED_EARNINGS
+  OPERATING_INCOME
+  OTHER_INCOME
+  OPERATING_EXPENSE
+  OTHER_EXPENSE
+}
+
+// ============================================================================
+// CONFIGURATION & METADATA
+// ============================================================================
+
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+
+  @@index([key])
+}
+
+// Append to the end of schema.prisma
+
+// ============================================================================
+// ADVANCED RBAC (Role-Based Access Control)
+// ============================================================================
+
+model Permission {
+  id          String   @id @default(cuid())
+  resource    Resource
+  action      Action
+  description String?
+
+  roles Role[]
+
+  @@unique([resource, action])
+  @@index([resource])
+  @@index([action])
+}
+
+enum Resource {
+  ORDER
+  MENU
+  INVENTORY
+  CUSTOMER
+  EMPLOYEE
+  REPORT
+  FINANCIAL
+  SETTINGS
+  SHIFT
+  DELIVERY
+}
+
+enum Action {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  EXPORT
+  APPROVE
+  MANAGE
+}
+
+model Role {
+  id          String  @id @default(cuid())
+  tenantId    String
+  tenant      Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  isSystem    Boolean @default(false)
+
+  permissions Permission[]
+  users       User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+// ============================================================================
+// SHIFT MANAGEMENT (Cash Accountability)
+// ============================================================================
+
+model Shift {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  openedAt DateTime  @default(now())
+  closedAt DateTime?
+
+  openingCash  Decimal  @default(0)
+  closingCash  Decimal?
+  expectedCash Decimal?
+  variance     Decimal?
+
+  totalSales Decimal @default(0)
+  cashSales  Decimal @default(0)
+  cardSales  Decimal @default(0)
+
+  notes      String?
+  approvedBy String?
+  approvedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([restaurantId])
+  @@index([openedAt])
+}
+
+// ============================================================================
+// MULTI-CURRENCY SYSTEM
+// ============================================================================
+
+model Currency {
+  id     String @id @default(cuid())
+  code   String @unique
+  symbol String
+  name   String
+
+  exchangeRatesFrom ExchangeRate[] @relation("FromCurrency")
+  exchangeRatesTo   ExchangeRate[] @relation("ToCurrency")
+
+  createdAt DateTime @default(now())
+
+  @@index([code])
+}
+
+model ExchangeRate {
+  id               String   @id @default(cuid())
+  fromCurrencyCode String
+  fromCurrency     Currency @relation("FromCurrency", fields: [fromCurrencyCode], references: [code])
+  toCurrencyCode   String
+  toCurrency       Currency @relation("ToCurrency", fields: [toCurrencyCode], references: [code])
+
+  rate   Decimal
+  date   DateTime @default(now())
+  source String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([fromCurrencyCode, toCurrencyCode, date])
+  @@index([fromCurrencyCode, toCurrencyCode])
+  @@index([date])
+}
+
+// ============================================================================
+// DATA IMPORT JOBS
+// ============================================================================
+
+model ImportJob {
+  id       String @id @default(cuid())
+  tenantId String
+  userId   String
+
+  type   ImportType
+  status ImportStatus @default(PENDING)
+
+  fileUrl  String
+  fileName String
+
+  totalRows     Int @default(0)
+  processedRows Int @default(0)
+  successCount  Int @default(0)
+  errorCount    Int @default(0)
+
+  mappings Json?
+  errors   Json?
+
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum ImportType {
+  MENU_ITEMS
+  INVENTORY
+  SALES_HISTORY
+  CUSTOMERS
+  EMPLOYEES
+}
+
+enum ImportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ============================================================================
+// AUDIT LOGGING
+// ============================================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String
+  userId     String?
+  action     String // "USER_CREATED", "ORDER_DELETED", "ROLE_UPDATED"
+  resource   String // "User", "Order", "Role"
+  resourceId String?
+  changes    Json? // Before/after values
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// API KEYS (For external integrations)
+// ============================================================================
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  tenantId    String
+  name        String
+  key         String    @unique
+  secret      String
+  permissions Json? // Array of allowed endpoints/actions
+  isActive    Boolean   @default(true)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([tenantId])
+  @@index([key])
+}

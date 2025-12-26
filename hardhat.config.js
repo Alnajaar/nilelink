@@ -2,6 +2,7 @@ require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-chai-matchers");
 require("solidity-coverage");
 require("@typechain/hardhat");
+require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -27,11 +28,12 @@ module.exports = {
       chainId: 1337
     },
     mumbai: {
-      url: process.env.MUMBAI_RPC_URL || "https://rpc-mumbai.maticvigil.com",
+      url: process.env.MUMBAI_RPC_URL || "https://polygon-amoy.g.alchemy.com/v2/cpZnu19BVqFOEeVPFwV8r",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 80001,
+      chainId: 80002, // Polygon Amoy testnet
       gasPrice: 20000000000, // 20 gwei
-      gas: "auto"
+      gas: "auto",
+      allowUnlimitedContractSize: true // Enable for large contracts
     },
     polygon: {
       url: process.env.POLYGON_RPC_URL || "https://polygon-rpc.com",

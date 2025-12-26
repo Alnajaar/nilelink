@@ -2,6 +2,7 @@
 // test/FraudDetection.test.js
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+require('@nomicfoundation/hardhat-chai-matchers');
 const { anyValue } = require('@nomicfoundation/hardhat-chai-matchers/withArgs');
 
 const asFixedBytes = (s) => ethers.hexlify(ethers.toUtf8Bytes(s));

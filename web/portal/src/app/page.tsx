@@ -3,173 +3,240 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
-    Zap,
-    ShoppingBag,
-    Truck,
-    Store,
-    ArrowRight,
-    ChevronRight,
-    ShieldCheck,
+    Activity,
+    Shield,
     Globe,
-    Database,
+    ArrowRight,
+    Store,
+    Truck,
+    TrendingUp,
     Layers,
-    Sparkles
+    CheckCircle2,
+    Server,
+    Clock
 } from 'lucide-react';
-import Link from 'next/link';
-import { UniversalNavbar } from '@/components/UniversalNavbar';
-import { UniversalFooter } from '@/components/UniversalFooter';
+import { Button } from '@/shared/components/Button';
+import { Card } from '@/shared/components/Card';
+import { UniversalHeader } from '@/shared/components/UniversalHeader';
+import { UniversalFooter } from '@/shared/components/UniversalFooter';
 
-const FeatureCard = ({ title, sub, desc, icon: Icon, color, url }: any) => (
-    <motion.a
-        href={url}
-        whileHover={{ y: -10 }}
-        className="group relative h-full flex flex-col p-10 rounded-5xl glass-card overflow-hidden"
-    >
-        <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${color} opacity-0 group-hover:opacity-20 blur-3xl transition-opacity duration-700`} />
+// Animation variants
+const fadeInUp = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+};
 
-        <div className={`w-16 h-16 rounded-3xl bg-nile-dark border border-white/5 flex items-center justify-center text-nile-silver mb-8 group-hover:scale-110 group-hover:bg-nile-silver group-hover:text-nile-dark transition-all duration-500`}>
-            <Icon size={32} />
-        </div>
-
-        <span className="text-[10px] font-black tracking-[0.4em] text-nile-silver/30 uppercase mb-4">{sub}</span>
-        <h3 className="text-3xl font-black text-white mb-6 tracking-tighter">{title}</h3>
-        <p className="text-nile-silver/50 font-bold leading-relaxed mb-12 flex-grow">
-            {desc}
-        </p>
-
-        <div className="flex items-center gap-3 text-nile-silver font-black text-xs uppercase tracking-widest group-hover:gap-5 transition-all">
-            <span>Enter System</span>
-            <ArrowRight size={18} />
-        </div>
-    </motion.a>
-);
+const staggerContainer = {
+    animate: { transition: { staggerChildren: 0.1 } }
+};
 
 export default function Home() {
     return (
-        <div className="min-h-screen flex flex-col selection:bg-emerald-500/30">
-            <div className="mesh-bg" />
-            <UniversalNavbar />
+        <div className="min-h-screen flex flex-col bg-background">
+            <UniversalHeader appName="Portal" />
 
-            <main className="flex-1 relative">
+            <main className="flex-1 w-full relative overflow-hidden">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 z-0 opacity-[0.03]"
+                    style={{ backgroundImage: 'radial-gradient(#0e372b 1px, transparent 1px)', backgroundSize: '32px 32px' }}>
+                </div>
+
                 {/* Hero Section */}
-                <section className="relative z-10 pt-48 pb-32 px-8 max-w-7xl mx-auto text-center">
+                <section className="relative z-10 pt-32 pb-24 px-6 md:px-12 max-w-7xl mx-auto">
                     <motion.div
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1, ease: [0.23, 1, 0.32, 1] }}
+                        initial="initial"
+                        animate="animate"
+                        variants={staggerContainer}
+                        className="max-w-4xl"
                     >
-                        <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full glass-v2 mb-12 border-white/10 mx-auto">
-                            <Sparkles size={14} className="text-emerald-400 animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60 italic">NileLink Protocol • v1.0 Production</span>
-                        </div>
+                        <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-8">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+                            </span>
+                            Waitlist Active (v1.0)
+                        </motion.div>
 
-                        <h1 className="text-8xl md:text-[10rem] font-black tracking-tighter nile-text-gradient leading-[0.8] mb-12 uppercase italic">
-                            Operating the <br />
-                            <span className="text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">Daily Economy.</span>
-                        </h1>
+                        <motion.h1 variants={fadeInUp} className="text-5xl md:text-7xl font-bold text-primary-dark tracking-tight leading-[1.1] mb-8">
+                            The Economic <br />
+                            <span className="text-primary-light">Operating System.</span>
+                        </motion.h1>
 
-                        <p className="max-w-xl mx-auto text-lg font-medium text-white/40 leading-relaxed mb-20 italic">
-                            The decentralized operating system for local commerce.
-                            <span className="block mt-2 text-emerald-500/50 sub-glow uppercase tracking-tighter">Offline-first • Edge-sharded • Auditable</span>
-                        </p>
+                        <motion.p variants={fadeInUp} className="text-xl text-text-muted max-w-2xl leading-relaxed mb-10">
+                            NileLink provides the digital infrastructure for real-world commerce.
+                            From point-of-sale to last-mile delivery, unified by a decentralized ledger.
+                        </motion.p>
 
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-                            <Link href="#network" className="btn-premium w-64 h-20 text-[11px]">
-                                Launch Network
-                                <Zap size={20} fill="currentColor" />
-                            </Link>
-                            <Link href="https://invest.nilelink.app" className="glass-v2 hover:bg-white/5 w-64 h-20 rounded-full flex items-center justify-center gap-4 text-[11px] font-black uppercase tracking-widest text-white/50 border-white/10 group transition-all">
-                                Protocol Health
-                                <Globe size={20} className="group-hover:rotate-12 transition-transform" />
-                            </Link>
-                        </div>
+                        <motion.div variants={fadeInUp} className="flex flex-wrap gap-4">
+                            <Button size="lg" rightIcon={<ArrowRight size={18} />}>
+                                Start Dashboard
+                            </Button>
+                            <Button variant="outline" size="lg">
+                                Documentation
+                            </Button>
+                        </motion.div>
                     </motion.div>
                 </section>
+
+                {/* Status Bar */}
+                <div className="w-full border-y border-border-subtle bg-background-subtle/50 backdrop-blur-sm">
+                    <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap gap-8 items-center justify-start text-xs font-mono text-text-subtle uppercase tracking-wide">
+                        <div className="flex items-center gap-2">
+                            <Globe size={14} className="text-primary" />
+                            <span>Global Status: <span className="text-success font-bold">Online</span></span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Activity size={14} className="text-primary" />
+                            <span>Latency: <span className="text-text-main font-bold">14ms</span></span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Shield size={14} className="text-primary" />
+                            <span>Security: <span className="text-text-main font-bold">Audited</span></span>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Ecosystem Grid */}
-                <section id="network" className="relative z-10 px-8 py-32 max-w-7xl mx-auto">
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 1 }}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                    >
-                        <FeatureCard
-                            title="POS Terminal"
-                            sub="Node: Merchant"
-                            desc="High-performance sales terminal with cryptographically-secure local ledgers. Works 100% offline."
-                            icon={Store}
-                            color="from-emerald-500 to-transparent"
-                            url="https://pos.nilelink.app"
-                        />
-                        <FeatureCard
-                            title="Logistics HUD"
-                            sub="Node: Delivery"
-                            desc="Real-time route sharding and cash-in-hand accounting with immutable proof of delivery."
-                            icon={Truck}
-                            color="from-blue-500 to-transparent"
-                            url="https://delivery.nilelink.app"
-                        />
-                        <FeatureCard
-                            title="Customer App"
-                            sub="Node: Discovery"
-                            desc="Zero-clutter interface for decentralized commerce. Real-time tracking and verified receipts."
-                            icon={ShoppingBag}
-                            color="from-purple-500 to-transparent"
-                            url="https://customer.nilelink.app"
-                        />
-                        <FeatureCard
-                            title="Supplier Hub"
-                            sub="Node: Supply Chain"
-                            desc="Automated restock intelligence and debt-aging protocols anchored to POS inventory cycles."
-                            icon={Layers}
-                            color="from-amber-500 to-transparent"
-                            url="https://supplier.nilelink.app"
-                        />
-                        <FeatureCard
-                            title="Investor Core"
-                            sub="Node: Transparency"
-                            desc="Verifiable revenue streams and network-wide yield audits for protocol stakeholders."
-                            icon={ShieldCheck}
-                            color="from-white to-transparent"
-                            url="https://invest.nilelink.app"
-                        />
-                        <FeatureCard
-                            title="Edge Gateway"
-                            sub="Node: API"
-                            desc="Global consensus layer using sharded D1 collections for ecosystem anchoring."
-                            icon={Zap}
-                            color="from-indigo-500 to-transparent"
-                            url="https://api.nilelink.app"
-                        />
-                    </motion.div>
+                <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto">
+                    <div className="mb-16">
+                        <h2 className="text-3xl font-bold text-primary-dark mb-4">Core Infrastructure</h2>
+                        <p className="text-text-muted max-w-xl">
+                            A suite of interconnected applications designed for trustless, automated commerce.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* POS System */}
+                        <a href="https://pos.nilelink.app" className="group">
+                            <Card variant="default" className="h-full hover:border-primary/20 hover:shadow-lg transition-all duration-300 group-hover:-translate-y-1">
+                                <div className="h-12 w-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary mb-6 group-hover:bg-primary group-hover:text-white transition-colors">
+                                    <Store size={24} />
+                                </div>
+                                <h3 className="text-xl font-bold text-text-main mb-2">Point of Sale</h3>
+                                <p className="text-text-muted text-sm leading-relaxed mb-6">
+                                    Offline-first retail terminals for high-volume transactions.
+                                    Syncs automatically when connectivity restores.
+                                </p>
+                                <div className="flex items-center text-primary font-medium text-sm group-hover:underline">
+                                    Launch Interface <ArrowRight size={16} className="ml-2" />
+                                </div>
+                            </Card>
+                        </a>
+
+                        {/* Delivery Network */}
+                        <a href="https://delivery.nilelink.app" className="group">
+                            <Card variant="default" className="h-full hover:border-primary/20 hover:shadow-lg transition-all duration-300 group-hover:-translate-y-1">
+                                <div className="h-12 w-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary mb-6 group-hover:bg-primary group-hover:text-white transition-colors">
+                                    <Truck size={24} />
+                                </div>
+                                <h3 className="text-xl font-bold text-text-main mb-2">Logistics Fleet</h3>
+                                <p className="text-text-muted text-sm leading-relaxed mb-6">
+                                    Decentralized driver dispatch with cryptographic proof of delivery
+                                    and real-time route optimization.
+                                </p>
+                                <div className="flex items-center text-primary font-medium text-sm group-hover:underline">
+                                    View Fleet <ArrowRight size={16} className="ml-2" />
+                                </div>
+                            </Card>
+                        </a>
+
+                        {/* Investor Dashboard */}
+                        <a href="https://invest.nilelink.app" className="group">
+                            <Card variant="default" className="h-full hover:border-primary/20 hover:shadow-lg transition-all duration-300 group-hover:-translate-y-1">
+                                <div className="h-12 w-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary mb-6 group-hover:bg-primary group-hover:text-white transition-colors">
+                                    <TrendingUp size={24} />
+                                </div>
+                                <h3 className="text-xl font-bold text-text-main mb-2">Treasury Check</h3>
+                                <p className="text-text-muted text-sm leading-relaxed mb-6">
+                                    Real-time access to protocol revenue, smart contract auditing,
+                                    and governance voting.
+                                </p>
+                                <div className="flex items-center text-primary font-medium text-sm group-hover:underline">
+                                    View Analytics <ArrowRight size={16} className="ml-2" />
+                                </div>
+                            </Card>
+                        </a>
+
+                        {/* Supplier Hub */}
+                        <a href="https://supplier.nilelink.app" className="group">
+                            <Card variant="default" className="h-full hover:border-primary/20 hover:shadow-lg transition-all duration-300 group-hover:-translate-y-1">
+                                <div className="h-12 w-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary mb-6 group-hover:bg-primary group-hover:text-white transition-colors">
+                                    <Layers size={24} />
+                                </div>
+                                <h3 className="text-xl font-bold text-text-main mb-2">Supply Chain</h3>
+                                <p className="text-text-muted text-sm leading-relaxed mb-6">
+                                    Automated inventory restocking and supplier relationship management
+                                    powered by smart contracts.
+                                </p>
+                                <div className="flex items-center text-primary font-medium text-sm group-hover:underline">
+                                    Manage Inventory <ArrowRight size={16} className="ml-2" />
+                                </div>
+                            </Card>
+                        </a>
+                    </div>
                 </section>
 
-                {/* Performance Stats */}
-                <section className="relative z-10 px-8 py-40 border-t border-white/5">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-12">
-                            {[
-                                { label: 'Edge Latency', value: '<14ms', icon: Zap },
-                                { label: 'Protocol State', value: 'Live', icon: Globe },
-                                { label: 'Audit Trail', value: '100%', icon: ShieldCheck },
-                                { label: 'Throughput', value: 'High', icon: Database }
-                            ].map((stat, i) => (
-                                <div key={i} className="text-center group">
-                                    <div className="w-12 h-12 rounded-2xl glass-v2 flex items-center justify-center text-white/20 mx-auto mb-6 group-hover:text-emerald-400 group-hover:scale-110 transition-all duration-500">
-                                        <stat.icon size={24} />
+                {/* Features Split */}
+                <section className="py-24 bg-primary-dark text-white">
+                    <div className="max-w-7xl mx-auto px-6 md:px-12">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                            <div>
+                                <h2 className="text-4xl font-bold mb-6">Built for Stability.<br />Designed for Speed.</h2>
+                                <p className="text-primary-surface/80 text-lg leading-relaxed mb-8">
+                                    NileLink replaces fragile legacy systems with a robust, decentralized backbone.
+                                    Every transaction is verified, every update is immutable, and uptime is guaranteed by the network.
+                                </p>
+
+                                <ul className="space-y-4">
+                                    {[
+                                        'Zero downtime architecture',
+                                        'Cryptographic data integrity',
+                                        'Instant global settlement',
+                                        'Permissionless innovation'
+                                    ].map((item, i) => (
+                                        <li key={i} className="flex items-center gap-3">
+                                            <CheckCircle2 size={20} className="text-secondary" />
+                                            <span className="font-medium">{item}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div className="relative">
+                                {/* Abstract UI Representation */}
+                                <div className="absolute inset-0 bg-primary-light blur-3xl opacity-20 rounded-full"></div>
+                                <div className="relative bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-md">
+                                    <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/10">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                        </div>
+                                        <div className="text-xs font-mono text-white/50">api.nilelink.app/v1/ledger</div>
                                     </div>
-                                    <div className="text-3xl font-black nile-text-gradient italic tracking-tighter mb-2">{stat.value}</div>
-                                    <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">{stat.label}</div>
+
+                                    <div className="space-y-4 font-mono text-sm">
+                                        <div className="flex justify-between items-center text-secondary">
+                                            <span>Block #19,204,382</span>
+                                            <span className="text-success">Confirmed</span>
+                                        </div>
+                                        <div className="p-3 bg-black/20 rounded border border-white/5 text-xs text-white/80">
+                                            {`{ "tx": "0x8f...2a", "amount": 450.00, "merchant": "Cairo_Bistro" }`}
+                                        </div>
+                                        <div className="p-3 bg-black/20 rounded border border-white/5 text-xs text-white/80">
+                                            {`{ "tx": "0x7a...9b", "amount": 12.50, "merchant": "Nile_Coffee" }`}
+                                        </div>
+                                        <div className="flex justify-between items-center pt-2">
+                                            <span className="text-white/40 text-xs">Processing...</span>
+                                            <Server size={14} className="text-white/40 animate-pulse" />
+                                        </div>
+                                    </div>
                                 </div>
-                            ))}
+                            </div>
                         </div>
                     </div>
                 </section>
             </main>
-
-            <UniversalFooter />
         </div>
     );
 }

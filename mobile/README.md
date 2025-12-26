@@ -1,36 +1,44 @@
-# NileLink Mobile (POS + Customer) — v0.1 scaffold
+# NileLink Mobile Apps
 
-This repo currently contains the **smart contracts** at the root, and a new **mobile workspace** under `./mobile`.
+This directory contains the React Native (Expo) mobile applications for the NileLink ecosystem.
 
-## Structure
+## Apps
 
-- `mobile/apps/pos` — POS (cashier / restaurant staff) React Native app scaffold
-- `mobile/apps/customer` — Customer ordering React Native app scaffold
-- `mobile/packages/shared` — shared domain types + i18n primitives
-- `mobile/packages/sqlite` — SQLite schema + migrations (offline-first)
-- `mobile/packages/sync-engine` — event-sourced offline sync engine (merge + canonical ordering + redux-saga orchestrator)
-- `mobile/packages/blockchain` — wallet abstraction (Magic + ethers integration placeholder)
+- **Customer App**: Browse restaurants, place orders, track deliveries
+- **Driver App**: Accept delivery jobs, navigate routes, manage earnings
+- **Merchant App**: POS terminal mobile companion (future)
 
-## Offline-first model (summary)
+## Tech Stack
 
-- All writes are represented as **immutable events** appended to `event_log`.
-- Materialized tables (`orders`, `inventory`, etc.) are rebuilt from the ordered event stream.
-- Sync runs as:
-  1) load local events
-  2) pull remote events after local vector clock
-  3) `mergeEventSets()` + `sortCanonical()`
-  4) validate, persist
-  5) push pending local events
+- **Framework**: React Native (Expo)
+- **Language**: TypeScript
+- **State**: Shared contexts from web ecosystem
+- **Styling**: NativeWind (Tailwind for React Native)
 
-See root `Sync_Algorithm.md` for the full protocol spec.
-
-## Development (mobile)
-
-From the repository root:
+## Setup
 
 ```bash
+# Install dependencies
 cd mobile
 npm install
+
+# Run on iOS
+npm run ios
+
+# Run on Android
+npm run android
+
+# Web preview
+npm run web
 ```
 
-Then run the app using your preferred RN workflow (React Native CLI / Xcode / Android Studio). This ticket adds **code + structure**; native project files (ios/android) can be generated with `npx react-native init` or integrated into an existing mobile build pipeline.
+## Shared Code Strategy
+
+The mobile apps reuse:
+- API utilities (`web/shared/utils/api.ts`)
+- Type definitions (future `@nilelink/types` package)
+- Socket.IO client (`web/shared/utils/socket.ts`)
+
+## Development
+
+Mobile-first UI components are in `/components` with touch-optimized interfaces.

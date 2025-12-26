@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import './globals.css';
 import { POSProvider } from '@/contexts/POSContext';
+import { UniversalFooter } from '@/components/shared/UniversalFooter';
+import { POSHeaderWrapper } from '@/components/POSHeaderWrapper';
+import { AuthProvider } from '@/shared/contexts/AuthContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -17,11 +19,16 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-            <body className={inter.className}>
-                <div className="mesh-bg" />
-                <POSProvider>
-                    {children}
-                </POSProvider>
+            <body className={`${inter.className} bg-background-light text-text-primary min-h-screen flex flex-col`}>
+                <AuthProvider>
+                    <POSProvider>
+                        <POSHeaderWrapper />
+                        <main className="flex-1">
+                            {children}
+                        </main>
+                        <UniversalFooter />
+                    </POSProvider>
+                </AuthProvider>
             </body>
         </html>
     );

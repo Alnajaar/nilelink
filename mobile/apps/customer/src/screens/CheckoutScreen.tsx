@@ -1,649 +1,789 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View, Text, Pressable, ScrollView, StyleSheet, SafeAreaView,
-  StatusBar, TextInput, Modal, Dimensions, ActivityIndicator
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { customerActions, CustomerState, CartItem } from '../store/customerSlice';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const { width, height } = Dimensions.get('window');
+// Import Types
+import { RootState, AppDispatch } from '../store';
 
-export function CheckoutScreen() {
-  const navigation = useNavigation();
-  const dispatch = useDispatch();
+// Import Actions
+import {
+  applyPromoCode,
+  removePromoCode,
+  updateDeliveryAddress,
+  selectPaymentMethod,
+  placeOrder,
+  clearCart,
+} from '../store/slices/checkoutSlice';
 
-  // Get data from Redux
-  const user = useSelector<{ customer: CustomerState }, any>(state => state.customer.user);
-  const cart = useSelector<{ customer: CustomerState }, { items: CartItem[] }>(state => state.customer.cart);
-
-  const items = cart.items;
-
-  const [deliveryOption, setDeliveryOption] = useState('delivery');
-  const [paymentMethod, setPaymentMethod] = useState('card');
-  const [phoneNumber, setPhoneNumber] = useState(user?.phone || '');
-  const [deliveryAddress, setDeliveryAddress] = useState('');
-  const [specialInstructions, setSpecialInstructions] = useState('');
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [orderPlaced, setOrderPlaced] = useState(false);
-
-  // Recalculate totals from Redux cart
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const deliveryFee = deliveryOption === 'pickup' ? 0 : 2.99;
-  const tax = subtotal * 0.1; // 10% tax
-  const totalAmount = subtotal + deliveryFee + tax;
-
-  const handlePlaceOrder = () => {
-    if (!phoneNumber.trim()) {
-      alert('Please enter your phone number');
-      return;
-    }
-
-    if (deliveryOption === 'delivery' && !deliveryAddress.trim()) {
-      alert('Please enter delivery address');
-      return;
-    }
-
-    setShowConfirmModal(true);
+interface CartItem {
+  id: string;
+  menuItem: {
+    id: string;
+    name: string;
+    image: string;
+    category: string;
   };
-
-  const handleConfirmOrder = () => {
-    setShowConfirmModal(false);
-    setOrderPlaced(true);
-
-    const orderId = 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-
-    // Create order object
-    const newOrder = {
-      id: orderId,
-      restaurantId: 'demo-restaurant', // Should come from cart.restaurantId
-      items: items,
-      total: totalAmount,
-      status: 'confirmed' as const,
-      date: new Date().toISOString()
-    };
-
-    // Dispatch to Redux (Saga will handle backend sync)
-    dispatch(customerActions.createOrder(newOrder));
-
-    // Simulate order processing and navigation
-    setTimeout(() => {
-      navigation.navigate('OrderTracking' as never, { orderId });
-    }, 2000);
-  };
-
-  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
-
-  if (orderPlaced) {
-    return (
-      <View style={styles.successContainer}>
-        <Ionicons name="checkmark-circle" size={80} color="#28a745" />
-        <Text style={styles.successTitle}>Order Placed!</Text>
-        <Text style={styles.successMessage}>Preparing your delicious meal</Text>
-        <ActivityIndicator size="large" color="#0d6efd" style={{ marginTop: 20 }} />
-      </View>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back-outline" size={24} color="#212529" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Checkout</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      <ScrollView style={styles.content}>
-        {/* Order Summary */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Order Summary</Text>
-
-          {items.map((item) => (
-            <View key={item.id} style={styles.orderItem}>
-              <View style={styles.itemInfo}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemQuantity}>Qty: {item.quantity}</Text>
-              </View>
-              <Text style={styles.itemPrice}>{formatCurrency(item.price * item.quantity)}</Text>
-            </View>
-          ))}
-
-          <View style={styles.orderTotal}>
-            <Text style={styles.totalLabel}>Subtotal</Text>
-            <Text style={styles.totalValue}>{formatCurrency(subtotal)}</Text>
-          </View>
-
-          <View style={styles.orderTotal}>
-            <Text style={styles.totalLabel}>Delivery Fee</Text>
-            <Text style={styles.totalValue}>{formatCurrency(deliveryFee)}</Text>
-          </View>
-
-          <View style={styles.orderTotal}>
-            <Text style={styles.totalLabel}>Tax (10%)</Text>
-            <Text style={styles.totalValue}>{formatCurrency(tax)}</Text>
-          </View>
-
-          <View style={[styles.orderTotal, styles.grandTotal]}>
-            <Text style={styles.grandTotalLabel}>Total</Text>
-            <Text style={styles.grandTotalValue}>{formatCurrency(totalAmount)}</Text>
-          </View>
-        </View>
-
-        {/* Delivery Options */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Delivery Options</Text>
-
-          <Pressable
-            style={[styles.optionButton, deliveryOption === 'delivery' && styles.optionButtonSelected]}
-            onPress={() => setDeliveryOption('delivery')}
-          >
-            <Ionicons
-              name={deliveryOption === 'delivery' ? 'radio-button-on' : 'radio-button-off'}
-              size={24}
-              color={deliveryOption === 'delivery' ? '#0d6efd' : '#6c757d'}
-            />
-            <View style={styles.optionText}>
-              <Text style={styles.optionTitle}>Delivery</Text>
-              <Text style={styles.optionSubtitle}>Deliver to your address</Text>
-            </View>
-            <Text style={styles.optionPrice}>{formatCurrency(2.99)}</Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.optionButton, deliveryOption === 'pickup' && styles.optionButtonSelected]}
-            onPress={() => setDeliveryOption('pickup')}
-          >
-            <Ionicons
-              name={deliveryOption === 'pickup' ? 'radio-button-on' : 'radio-button-off'}
-              size={24}
-              color={deliveryOption === 'pickup' ? '#0d6efd' : '#6c757d'}
-            />
-            <View style={styles.optionText}>
-              <Text style={styles.optionTitle}>Pickup</Text>
-              <Text style={styles.optionSubtitle}>Pick up from restaurant</Text>
-            </View>
-            <Text style={styles.optionPrice}>Free</Text>
-          </Pressable>
-        </View>
-
-        {/* Contact Information */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact Information</Text>
-
-          <TextInput
-            style={styles.input}
-            placeholder="Phone Number"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            keyboardType="phone-pad"
-          />
-
-          {deliveryOption === 'delivery' && (
-            <TextInput
-              style={styles.input}
-              placeholder="Delivery Address"
-              value={deliveryAddress}
-              onChangeText={setDeliveryAddress}
-              multiline
-              numberOfLines={3}
-            />
-          )}
-
-          <TextInput
-            style={styles.input}
-            placeholder="Special Instructions (Optional)"
-            value={specialInstructions}
-            onChangeText={setSpecialInstructions}
-            multiline
-            numberOfLines={2}
-          />
-        </View>
-
-        {/* Payment Method */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment Method</Text>
-
-          <Pressable
-            style={[styles.optionButton, paymentMethod === 'card' && styles.optionButtonSelected]}
-            onPress={() => setPaymentMethod('card')}
-          >
-            <Ionicons
-              name={paymentMethod === 'card' ? 'radio-button-on' : 'radio-button-off'}
-              size={24}
-              color={paymentMethod === 'card' ? '#0d6efd' : '#6c757d'}
-            />
-            <View style={styles.optionText}>
-              <Text style={styles.optionTitle}>Credit/Debit Card</Text>
-              <Text style={styles.optionSubtitle}>Pay securely with your card</Text>
-            </View>
-            <Ionicons name="card-outline" size={24} color="#6c757d" />
-          </Pressable>
-
-          <Pressable
-            style={[styles.optionButton, paymentMethod === 'cash' && styles.optionButtonSelected]}
-            onPress={() => setPaymentMethod('cash')}
-          >
-            <Ionicons
-              name={paymentMethod === 'cash' ? 'radio-button-on' : 'radio-button-off'}
-              size={24}
-              color={paymentMethod === 'cash' ? '#0d6efd' : '#6c757d'}
-            />
-            <View style={styles.optionText}>
-              <Text style={styles.optionTitle}>Cash on Delivery</Text>
-              <Text style={styles.optionSubtitle}>Pay with cash when you receive your order</Text>
-            </View>
-            <Ionicons name="cash-outline" size={24} color="#6c757d" />
-          </Pressable>
-        </View>
-
-        {/* Order Button */}
-        <Pressable
-          style={styles.orderButton}
-          onPress={handlePlaceOrder}
-        >
-          <View style={styles.orderButtonContent}>
-            <View>
-              <Text style={styles.orderButtonText}>Place Order</Text>
-              <Text style={styles.orderButtonMethod}>
-                {paymentMethod === 'card' ? 'Pay with Card' : 'Cash on Delivery'}
-              </Text>
-            </View>
-            <Text style={styles.orderButtonTotal}>{formatCurrency(totalAmount)}</Text>
-          </View>
-        </Pressable>
-      </ScrollView>
-
-      {/* Order Confirmation Modal */}
-      <Modal
-        visible={showConfirmModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowConfirmModal(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Confirm Order</Text>
-              <Pressable onPress={() => setShowConfirmModal(false)}>
-                <Ionicons name="close-circle" size={28} color="#6c757d" />
-              </Pressable>
-            </View>
-
-            <ScrollView style={styles.modalBody}>
-              <Text style={styles.modalMessage}>
-                Please confirm your order details before placing:
-              </Text>
-
-              <View style={styles.confirmationItem}>
-                <Ionicons name="time-outline" size={20} color="#6c757d" />
-                <Text style={styles.confirmationText}>
-                  {deliveryOption === 'delivery' ? '25-35 min delivery' : '15-20 min for pickup'}
-                </Text>
-              </View>
-
-              <View style={styles.confirmationItem}>
-                <Ionicons name="location-outline" size={20} color="#6c757d" />
-                <Text style={styles.confirmationText}>
-                  {deliveryOption === 'delivery' ? deliveryAddress : 'Pickup from restaurant'}
-                </Text>
-              </View>
-
-              <View style={styles.confirmationItem}>
-                <Ionicons name="call-outline" size={20} color="#6c757d" />
-                <Text style={styles.confirmationText}>{phoneNumber}</Text>
-              </View>
-
-              <View style={styles.orderSummary}>
-                <Text style={styles.summaryTitle}>Order Summary</Text>
-                {items.map((item) => (
-                  <View key={item.id} style={styles.summaryItem}>
-                    <Text style={styles.summaryItemText}>
-                      {item.quantity}x {item.name}
-                    </Text>
-                    <Text style={styles.summaryItemPrice}>
-                      {formatCurrency(item.price * item.quantity)}
-                    </Text>
-                  </View>
-                ))}
-                <View style={styles.summaryTotal}>
-                  <Text style={styles.summaryTotalText}>Total</Text>
-                  <Text style={styles.summaryTotalPrice}>
-                    {formatCurrency(totalAmount)}
-                  </Text>
-                </View>
-              </View>
-            </ScrollView>
-
-            <View style={styles.modalFooter}>
-              <Pressable
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowConfirmModal(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </Pressable>
-
-              <Pressable
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={handleConfirmOrder}
-              >
-                <Text style={styles.confirmButtonText}>Confirm & Order</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
-  );
+  quantity: number;
+  customizations: { [key: string]: string[] };
+  specialInstructions?: string;
+  totalPrice: number;
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#212529',
-    textAlign: 'center',
-  },
-  content: {
-    flex: 1,
-  },
-  section: {
-    backgroundColor: '#fff',
-    marginVertical: 8,
-    padding: 16,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderTopColor: '#e9ecef',
-    borderBottomColor: '#e9ecef',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#212529',
-    marginBottom: 16,
-  },
-  orderItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f3f4',
-  },
-  itemInfo: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 14,
-    color: '#212529',
-  },
-  itemQuantity: {
-    fontSize: 13,
-    color: '#6c757d',
-    marginTop: 2,
-  },
-  itemPrice: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#212529',
-  },
-  orderTotal: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  totalLabel: {
-    fontSize: 14,
-    color: '#6c757d',
-  },
-  totalValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#212529',
-  },
-  grandTotal: {
-    borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
-    marginTop: 8,
-    paddingTop: 12,
-  },
-  grandTotalLabel: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#212529',
-  },
-  grandTotalValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0d6efd',
-  },
-  optionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    marginBottom: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-    backgroundColor: '#f8f9fa',
-  },
-  optionButtonSelected: {
-    borderColor: '#0d6efd',
-    backgroundColor: '#e7f5ff',
-  },
-  optionText: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#212529',
-  },
-  optionSubtitle: {
-    fontSize: 13,
-    color: '#6c757d',
-    marginTop: 2,
-  },
-  optionPrice: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#212529',
-  },
-  input: {
-    fontSize: 16,
-    padding: 12,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ced4da',
-    marginBottom: 12,
-  },
-  orderButton: {
-    backgroundColor: '#0d6efd',
-    margin: 16,
-    marginBottom: 32,
-    borderRadius: 12,
-    padding: 16,
-  },
-  orderButtonContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  orderButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  orderButtonMethod: {
-    color: '#e7f5ff',
-    fontSize: 13,
-    marginTop: 2,
-  },
-  orderButtonTotal: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: height * 0.8,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#212529',
-  },
-  modalBody: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  modalMessage: {
-    fontSize: 14,
-    color: '#6c757d',
-    lineHeight: 20,
-    marginBottom: 20,
-  },
-  confirmationItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  confirmationText: {
-    marginLeft: 12,
-    fontSize: 14,
-    color: '#212529',
-    flex: 1,
-  },
-  orderSummary: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 20,
-  },
-  summaryTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#212529',
-    marginBottom: 12,
-  },
-  summaryItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-  summaryItemText: {
-    fontSize: 14,
-    color: '#6c757d',
-  },
-  summaryItemPrice: {
-    fontSize: 14,
-    color: '#212529',
-    fontWeight: '600',
-  },
-  summaryTotal: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 12,
-    marginTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
-  },
-  summaryTotalText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#212529',
-  },
-  summaryTotalPrice: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#0d6efd',
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#e9ecef',
-  },
-  confirmButton: {
-    backgroundColor: '#0d6efd',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6c757d',
-  },
-  confirmButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  successContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  successTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#28a745',
-    marginTop: 16,
-  },
-  successMessage: {
-    fontSize: 16,
-    color: '#6c757d',
-    marginTop: 8,
-  },
-});
+interface PromoCode {
+  id: string;
+  code: string;
+  type: 'percentage' | 'fixed' | 'free_delivery';
+  value: number;
+  description: string;
+  minimumOrder?: number;
+  expiresAt?: string;
+}
+
+interface PaymentMethod {
+  id: string;
+  type: 'wallet' | 'card' | 'cash';
+  name: string;
+  lastFour?: string;
+  balance?: number;
+  isDefault: boolean;
+}
+
+const CheckoutScreen: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const cart = useSelector((state: RootState) => state.cart.items);
+  const checkout = useSelector((state: RootState) => state.checkout);
+  const user = useSelector((state: RootState) => state.auth.user);
+
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [specialInstructions, setSpecialInstructions] = useState('');
+  const [selectedTip, setSelectedTip] = useState(0);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+
+  // Mock data for demonstration
+  const mockCartItems: CartItem[] = [
+    {
+      id: '1',
+      menuItem: {
+        id: '1',
+        name: 'Margherita Pizza (Large)',
+        image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=100',
+        category: 'Pizza',
+      },
+      quantity: 1,
+      customizations: { crust: ['thick'], extra_toppings: ['pepperoni', 'mushrooms'] },
+      specialInstructions: 'Extra cheese please',
+      totalPrice: 22.99,
+    },
+    {
+      id: '2',
+      menuItem: {
+        id: '2',
+        name: 'Truffle Risotto',
+        image: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=100',
+        category: 'Pasta & Risotto',
+      },
+      quantity: 2,
+      customizations: {},
+      totalPrice: 49.98,
+    },
+  ];
+
+  const mockRestaurant = {
+    id: '1',
+    name: 'Bella Italia',
+    deliveryFee: 2.99,
+    minimumOrder: 15.00,
+    estimatedDelivery: '25-35 min',
+  };
+
+  const mockPromoCodes: PromoCode[] = [
+    {
+      id: '1',
+      code: 'WELCOME20',
+      type: 'percentage',
+      value: 20,
+      description: '20% off your first order',
+      minimumOrder: 25,
+    },
+    {
+      id: '2',
+      code: 'FREESHIP',
+      type: 'free_delivery',
+      value: 0,
+      description: 'Free delivery on orders over $30',
+      minimumOrder: 30,
+    },
+  ];
+
+  const mockPaymentMethods: PaymentMethod[] = [
+    {
+      id: '1',
+      type: 'wallet',
+      name: 'NileLink Wallet',
+      balance: 45.67,
+      isDefault: true,
+    },
+    {
+      id: '2',
+      type: 'card',
+      name: '•••• •••• •••• 4242',
+      lastFour: '4242',
+      isDefault: false,
+    },
+    {
+      id: '3',
+      type: 'cash',
+      name: 'Cash on Delivery',
+      isDefault: false,
+    },
+  ];
+
+  const appliedPromoCode = checkout.appliedPromoCode;
+  const deliveryAddress = checkout.deliveryAddress || {
+    street: '123 Main Street',
+    city: 'New York',
+    zipCode: '10001',
+  };
+  const selectedPaymentMethod = checkout.selectedPaymentMethod || mockPaymentMethods[0];
+
+  const calculateSubtotal = () => {
+    return mockCartItems.reduce((sum, item) => sum + item.totalPrice, 0);
+  };
+
+  const calculateDiscount = () => {
+    if (!appliedPromoCode) return 0;
+
+    const subtotal = calculateSubtotal();
+    switch (appliedPromoCode.type) {
+      case 'percentage':
+        return (subtotal * appliedPromoCode.value) / 100;
+      case 'fixed':
+        return Math.min(appliedPromoCode.value, subtotal);
+      case 'free_delivery':
+        return mockRestaurant.deliveryFee;
+      default:
+        return 0;
+    }
+  };
+
+  const calculateTax = () => {
+    return (calculateSubtotal() - calculateDiscount()) * 0.0875; // 8.75% tax
+  };
+
+  const calculateTotal = () => {
+    const subtotal = calculateSubtotal();
+    const discount = calculateDiscount();
+    const tax = calculateTax();
+    const deliveryFee = appliedPromoCode?.type === 'free_delivery' ? 0 : mockRestaurant.deliveryFee;
+    const tip = selectedTip;
+
+    return subtotal - discount + tax + deliveryFee + tip;
+  };
+
+  const handleApplyPromoCode = () => {
+    if (!promoCodeInput.trim()) return;
+
+    const promo = mockPromoCodes.find(p => p.code.toLowerCase() === promoCodeInput.toLowerCase());
+    if (promo) {
+      const subtotal = calculateSubtotal();
+      if (promo.minimumOrder && subtotal < promo.minimumOrder) {
+        Alert.alert('Promo Code', `This code requires a minimum order of $${promo.minimumOrder}`);
+        return;
+      }
+      dispatch(applyPromoCode(promo));
+      setPromoCodeInput('');
+      Alert.alert('Success', 'Promo code applied successfully!');
+    } else {
+      Alert.alert('Invalid Code', 'This promo code is not valid or has expired.');
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    const total = calculateTotal();
+    const subtotal = calculateSubtotal();
+
+    // Validate minimum order
+    if (subtotal < mockRestaurant.minimumOrder) {
+      Alert.alert('Minimum Order', `Minimum order is $${mockRestaurant.minimumOrder}`);
+      return;
+    }
+
+    // Validate wallet balance if using wallet
+    if (selectedPaymentMethod.type === 'wallet' && selectedPaymentMethod.balance! < total) {
+      Alert.alert('Insufficient Balance', 'Your wallet balance is not enough for this order.');
+      return;
+    }
+
+    setIsPlacingOrder(true);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      dispatch(placeOrder({
+        items: mockCartItems,
+        restaurant: mockRestaurant,
+        deliveryAddress,
+        paymentMethod: selectedPaymentMethod,
+        promoCode: appliedPromoCode,
+        tip: selectedTip,
+        specialInstructions,
+        total: calculateTotal(),
+      }));
+
+      dispatch(clearCart());
+      Alert.alert('Order Placed!', 'Your order has been placed successfully. Track it in real-time!');
+      // Navigate to order tracking screen
+    } catch (error) {
+      Alert.alert('Order Failed', 'There was an error placing your order. Please try again.');
+    } finally {
+      setIsPlacingOrder(false);
+    }
+  };
+
+  const tipOptions = [
+    { label: 'No Tip', value: 0 },
+    { label: '10%', value: calculateSubtotal() * 0.1 },
+    { label: '15%', value: calculateSubtotal() * 0.15 },
+    { label: '20%', value: calculateSubtotal() * 0.2 },
+  ];
+
+  const renderCartItem = (item: CartItem) => (
+    <View key={item.id} style={{
+      flexDirection: 'row',
+      backgroundColor: 'white',
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 8,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 2,
+    }}>
+      <View style={{
+        width: 60,
+        height: 60,
+        borderRadius: 8,
+        backgroundColor: '#f3f4f6',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+      }}>
+        <Text style={{ fontSize: 24 }}>🍕</Text>
+      </View>
+
+      <View style={{ flex: 1 }}>
+        <Text style={{
+          fontSize: 16,
+          fontWeight: '600',
+          color: '#1f2937',
+          marginBottom: 4,
+        }}>
+          {item.menuItem.name}
+        </Text>
+
+        {item.customizations && Object.keys(item.customizations).length > 0 && (
+          <Text style={{
+            fontSize: 12,
+            color: '#6b7280',
+            marginBottom: 4,
+          }}>
+            {Object.entries(item.customizations)
+              .filter(([_, values]) => values.length > 0)
+              .map(([key, values]) => `${key}: ${values.join(', ')}`)
+              .join(' • ')}
+          </Text>
+        )}
+
+        {item.specialInstructions && (
+          <Text style={{
+            fontSize: 12,
+            color: '#6b7280',
+            fontStyle: 'italic',
+          }}>
+            "{item.specialInstructions}"
+          </Text>
+        )}
+      </View>
+
+      <View style={{ alignItems: 'flex-end' }}>
+        <Text style={{
+          fontSize: 16,
+          fontWeight: 'bold',
+          color: '#1f2937',
+          marginBottom: 4,
+        }}>
+          ${item.totalPrice.toFixed(2)}
+        </Text>
+        <Text style={{ fontSize: 12, color: '#6b7280' }}>
+          Qty: {item.quantity}
+        </Text>
+      </View>
+    </View>
+  );
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <View style={{ flex: 1, backgroundColor: '#f9f8f4' }}>
+        {/* Header */}
+        <LinearGradient
+          colors={['#0e372b', '#1a5240']}
+          style={{
+            paddingTop: 50,
+            paddingBottom: 20,
+            paddingHorizontal: 20,
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              position: 'absolute',
+              top: 50,
+              left: 16,
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              borderRadius: 20,
+              padding: 8,
+            }}
+            onPress={() => {/* Navigate back */ }}
+          >
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+
+          <Text style={{
+            fontSize: 24,
+            fontWeight: 'bold',
+            color: 'white',
+            textAlign: 'center',
+          }}>
+            Checkout
+          </Text>
+        </LinearGradient>
+
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+          {/* Restaurant Info */}
+          <View style={{
+            backgroundColor: 'white',
+            padding: 16,
+            marginBottom: 8,
+          }}>
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: 'bold',
+                color: '#1f2937',
+              }}>
+                {mockRestaurant.name}
+              </Text>
+              <View style={{
+                backgroundColor: '#f0f9f4',
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 12,
+              }}>
+                <Text style={{ fontSize: 12, color: '#065f46', fontWeight: '500' }}>
+                  {mockRestaurant.estimatedDelivery}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Order Items */}
+          <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+            <Text style={{
+              fontSize: 18,
+              fontWeight: 'bold',
+              color: '#1f2937',
+              marginBottom: 12,
+            }}>
+              Your Order
+            </Text>
+            {mockCartItems.map(renderCartItem)}
+          </View>
+
+          {/* Special Instructions */}
+          <View style={{
+            backgroundColor: 'white',
+            padding: 16,
+            marginBottom: 8,
+          }}>
+            <Text style={{
+              fontSize: 16,
+              fontWeight: '600',
+              color: '#1f2937',
+              marginBottom: 12,
+            }}>
+              Special Instructions
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: '#e5e7eb',
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 16,
+                minHeight: 80,
+                textAlignVertical: 'top',
+              }}
+              placeholder="Any special requests for the kitchen..."
+              multiline
+              value={specialInstructions}
+              onChangeText={setSpecialInstructions}
+              maxLength={200}
+            />
+          </View>
+
+          {/* Promo Code */}
+          <View style={{
+            backgroundColor: 'white',
+            padding: 16,
+            marginBottom: 8,
+          }}>
+            <Text style={{
+              fontSize: 16,
+              fontWeight: '600',
+              color: '#1f2937',
+              marginBottom: 12,
+            }}>
+              Promo Code
+            </Text>
+            <View style={{ flexDirection: 'row', marginBottom: 12 }}>
+              <TextInput
+                style={{
+                  flex: 1,
+                  borderWidth: 1,
+                  borderColor: '#e5e7eb',
+                  borderRadius: 8,
+                  padding: 12,
+                  fontSize: 16,
+                  marginRight: 12,
+                }}
+                placeholder="Enter promo code"
+                value={promoCodeInput}
+                onChangeText={setPromoCodeInput}
+                autoCapitalize="characters"
+              />
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#0e372b',
+                  borderRadius: 8,
+                  paddingHorizontal: 20,
+                  justifyContent: 'center',
+                }}
+                onPress={handleApplyPromoCode}
+              >
+                <Text style={{ color: 'white', fontWeight: '600' }}>
+                  Apply
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {appliedPromoCode && (
+              <View style={{
+                backgroundColor: '#f0f9f4',
+                borderRadius: 8,
+                padding: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+                <View>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#065f46' }}>
+                    {appliedPromoCode.code}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#065f46' }}>
+                    {appliedPromoCode.description}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => dispatch(removePromoCode())}
+                >
+                  <Ionicons name="close" size={20} color="#065f46" />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Tip Selection */}
+          <View style={{
+            backgroundColor: 'white',
+            padding: 16,
+            marginBottom: 8,
+          }}>
+            <Text style={{
+              fontSize: 16,
+              fontWeight: '600',
+              color: '#1f2937',
+              marginBottom: 12,
+            }}>
+              Add a Tip
+            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              {tipOptions.map((tip) => (
+                <TouchableOpacity
+                  key={tip.value}
+                  style={{
+                    flex: 1,
+                    backgroundColor: selectedTip === tip.value ? '#0e372b' : '#f3f4f6',
+                    borderRadius: 8,
+                    padding: 12,
+                    marginHorizontal: 4,
+                    alignItems: 'center',
+                  }}
+                  onPress={() => setSelectedTip(tip.value)}
+                >
+                  <Text style={{
+                    fontSize: 14,
+                    fontWeight: '600',
+                    color: selectedTip === tip.value ? 'white' : '#374151',
+                  }}>
+                    {tip.label}
+                  </Text>
+                  {tip.value > 0 && (
+                    <Text style={{
+                      fontSize: 12,
+                      color: selectedTip === tip.value ? 'rgba(255,255,255,0.8)' : '#6b7280',
+                    }}>
+                      ${tip.value.toFixed(2)}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Delivery Address */}
+          <View style={{
+            backgroundColor: 'white',
+            padding: 16,
+            marginBottom: 8,
+          }}>
+            <Text style={{
+              fontSize: 16,
+              fontWeight: '600',
+              color: '#1f2937',
+              marginBottom: 12,
+            }}>
+              Delivery Address
+            </Text>
+            <TouchableOpacity
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingVertical: 8,
+              }}
+              onPress={() => {/* Navigate to address selection */ }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={{
+                  fontSize: 16,
+                  color: '#1f2937',
+                  marginBottom: 4,
+                }}>
+                  {deliveryAddress.street}
+                </Text>
+                <Text style={{ fontSize: 14, color: '#6b7280' }}>
+                  {deliveryAddress.city}, {deliveryAddress.zipCode}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#6b7280" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Payment Method */}
+          <View style={{
+            backgroundColor: 'white',
+            padding: 16,
+            marginBottom: 8,
+          }}>
+            <Text style={{
+              fontSize: 16,
+              fontWeight: '600',
+              color: '#1f2937',
+              marginBottom: 12,
+            }}>
+              Payment Method
+            </Text>
+            {mockPaymentMethods.map((method) => (
+              <TouchableOpacity
+                key={method.id}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderRadius: 8,
+                  marginBottom: 8,
+                  backgroundColor: selectedPaymentMethod.id === method.id ? '#f0f9f4' : '#f9f9f9',
+                  borderWidth: 1,
+                  borderColor: selectedPaymentMethod.id === method.id ? '#10b981' : '#e5e7eb',
+                }}
+                onPress={() => dispatch(selectPaymentMethod(method))}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {method.type === 'wallet' && (
+                    <MaterialCommunityIcons name="wallet" size={20} color="#0e372b" />
+                  )}
+                  {method.type === 'card' && (
+                    <Ionicons name="card" size={20} color="#0e372b" />
+                  )}
+                  {method.type === 'cash' && (
+                    <FontAwesome5 name="money-bill-wave" size={20} color="#0e372b" />
+                  )}
+                  <Text style={{ fontSize: 16, marginLeft: 12, color: '#1f2937' }}>
+                    {method.name}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {method.balance && (
+                    <Text style={{ fontSize: 14, color: '#6b7280', marginRight: 8 }}>
+                      ${method.balance.toFixed(2)}
+                    </Text>
+                  )}
+                  {selectedPaymentMethod.id === method.id && (
+                    <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Order Summary */}
+          <View style={{
+            backgroundColor: 'white',
+            padding: 16,
+            marginBottom: 100,
+          }}>
+            <Text style={{
+              fontSize: 18,
+              fontWeight: 'bold',
+              color: '#1f2937',
+              marginBottom: 16,
+            }}>
+              Order Summary
+            </Text>
+
+            <View style={{ marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text style={{ fontSize: 16, color: '#6b7280' }}>Subtotal</Text>
+                <Text style={{ fontSize: 16, color: '#1f2937' }}>${calculateSubtotal().toFixed(2)}</Text>
+              </View>
+
+              {calculateDiscount() > 0 && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ fontSize: 16, color: '#10b981' }}>Discount</Text>
+                  <Text style={{ fontSize: 16, color: '#10b981' }}>-${calculateDiscount().toFixed(2)}</Text>
+                </View>
+              )}
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text style={{ fontSize: 16, color: '#6b7280' }}>Tax</Text>
+                <Text style={{ fontSize: 16, color: '#1f2937' }}>${calculateTax().toFixed(2)}</Text>
+              </View>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text style={{ fontSize: 16, color: '#6b7280' }}>Delivery Fee</Text>
+                <Text style={{ fontSize: 16, color: '#1f2937' }}>
+                  ${appliedPromoCode?.type === 'free_delivery' ? '0.00' : mockRestaurant.deliveryFee.toFixed(2)}
+                </Text>
+              </View>
+
+              {selectedTip > 0 && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ fontSize: 16, color: '#6b7280' }}>Tip</Text>
+                  <Text style={{ fontSize: 16, color: '#1f2937' }}>${selectedTip.toFixed(2)}</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={{
+              borderTopWidth: 1,
+              borderTopColor: '#e5e7eb',
+              paddingTop: 16,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: 'bold',
+                color: '#1f2937',
+              }}>
+                Total
+              </Text>
+              <Text style={{
+                fontSize: 20,
+                fontWeight: 'bold',
+                color: '#0e372b',
+              }}>
+                ${calculateTotal().toFixed(2)}
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Place Order Button */}
+        <View style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: 'white',
+          padding: 16,
+          borderTopWidth: 1,
+          borderTopColor: '#e5e7eb',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 10,
+        }}>
+          <TouchableOpacity
+            style={{
+              backgroundColor: isPlacingOrder ? '#6b7280' : '#0e372b',
+              borderRadius: 12,
+              paddingVertical: 16,
+              alignItems: 'center',
+            }}
+            onPress={handlePlaceOrder}
+            disabled={isPlacingOrder}
+          >
+            {isPlacingOrder ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold', marginRight: 8 }}>
+                  Placing Order...
+                </Text>
+                {/* Add loading spinner here */}
+              </View>
+            ) : (
+              <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
+                Place Order • ${calculateTotal().toFixed(2)}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </KeyboardAvoidingView>
+  );
+};
+
+export default CheckoutScreen;

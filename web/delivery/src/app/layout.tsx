@@ -16,8 +16,7 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-            <body className={inter.className}>
-                <div className="mesh-bg" />
+            <body className={`${inter.className} bg-background-light`}>
                 {children}
             </body>
         </html>

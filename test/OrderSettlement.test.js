@@ -3,6 +3,7 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { anyValue } = require('@nomicfoundation/hardhat-chai-matchers/withArgs');
+require('@nomicfoundation/hardhat-chai-matchers');
 
 const asFixedBytes = (s) => ethers.hexlify(ethers.toUtf8Bytes(s));
 

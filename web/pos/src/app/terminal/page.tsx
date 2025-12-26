@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import {
     Plus,
     Minus,
@@ -19,7 +20,14 @@ import {
 } from 'lucide-react';
 
 import { usePOS } from '@/contexts/POSContext';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { restaurantApi, orderApi } from '@/shared/utils/api';
 import { EventType, EconomicEvent } from '@/lib/events/types';
+import { UniversalHeader } from '@/shared/components/UniversalHeader';
+import { Button } from '@/shared/components/Button';
+import { Card } from '@/shared/components/Card';
+import { Badge } from '@/shared/components/Badge';
+import { LedgerBadge } from '@/shared/components/LedgerBadge';
 
 export default function SalesTerminal() {
     const {
@@ -34,19 +42,42 @@ export default function SalesTerminal() {
         branchId
     } = usePOS();
 
+    const router = useRouter();
+    const { user, isLoading: authLoading } = useAuth();
     const [cart, setCart] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState('All');
+    const [menu, setMenu] = useState<any[]>([]);
+    const [restaurant, setRestaurant] = useState<any>(null);
+    const [isLoadingMenu, setIsLoadingMenu] = useState(true);
 
-    const menu = [
-        { id: 1, name: 'Burger Classic', price: 12.0, category: 'Main', icon: '🍔' },
-        { id: 2, name: 'Truffle Fries', price: 6.5, category: 'Sides', icon: '🍟' },
-        { id: 3, name: 'Cairo Special Pizza', price: 18.0, category: 'Main', icon: '🍕' },
-        { id: 4, name: 'Iced Latte', price: 4.5, category: 'Drinks', icon: '☕' },
-        { id: 5, name: 'Lava Cake', price: 9.0, category: 'Dessert', icon: '🍰' },
-        { id: 6, name: 'Falafel Wrap', price: 7.5, category: 'Main', icon: '🌯' },
-    ];
+    // Fetch restaurant menu from backend
+    useEffect(() => {
+        if (authLoading) return;
 
-    const categories = ['All', ...Array.from(new Set(menu.map(m => m.category)))];
+        if (!user) {
+            router.push('/auth/login');
+            return;
+        }
+
+        const fetchMenu = async () => {
+            try {
+                const { restaurants } = (await restaurantApi.list() as any);
+                if (restaurants && restaurants.length > 0) {
+                    const firstRestaurant = restaurants[0];
+                    setRestaurant(firstRestaurant);
+                    setMenu(firstRestaurant.menuItems || []);
+                }
+            } catch (error) {
+                console.error('Failed to fetch menu:', error);
+            } finally {
+                setIsLoadingMenu(false);
+            }
+        };
+
+        fetchMenu();
+    }, [user, authLoading, router]);
+
+    const categories = ['All', ...Array.from(new Set(menu.map((m: any) => m.category)))];
 
     const addToCart = (item: any) => {
         const existing = cart.find(i => i.id === item.id);
@@ -160,62 +191,38 @@ export default function SalesTerminal() {
     };
 
     return (
-        <div className="h-screen flex flex-col relative text-white selection:bg-emerald-500/30 overflow-hidden font-sans">
-            <div className="mesh-bg" />
+        <div className="h-screen flex flex-col bg-background-light">
+            {/* Trust Header */}
+            <UniversalHeader
+                appName="POS"
+                user={{ name: 'Staff Member', role: 'Cashier' }}
+                status={isOnline ? 'online' : 'offline'}
+                onLogout={() => console.log('Logout')}
+            />
 
-            {/* Premium Status Bar */}
-            <header className="h-20 glass-v2 border-b border-white/5 flex items-center justify-between px-10 relative z-20">
-                <div className="flex items-center gap-6">
-                    <div className="flex flex-col">
-                        <h1 className="text-2xl font-black italic tracking-tighter nile-text-gradient uppercase leading-none">Nile Terminal</h1>
-                        <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 mt-1">Node: {deviceId || 'Cairo-ST-01'}</span>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-8">
-                    <div className="hidden lg:flex items-center gap-6 px-6 py-2 rounded-full glass-v2 border-white/5">
-                        <div className="flex items-center gap-2">
-                            {isOnline ? <Wifi size={14} className="text-emerald-400" /> : <WifiOff size={14} className="text-red-400" />}
-                            <span className={`text-[10px] font-black uppercase tracking-widest ${isOnline ? 'text-emerald-400/60' : 'text-red-400/60'}`}>
-                                {isOnline ? 'Network Live' : 'Offline Mode'}
-                            </span>
-                        </div>
-                        <div className="w-px h-4 bg-white/10" />
-                        <div className="flex items-center gap-2 text-white/30">
-                            <Database size={14} />
-                            <span className="text-[10px] font-black uppercase tracking-widest">{unsyncedCount} Queued Events</span>
-                        </div>
-                    </div>
-                    <button className="w-12 h-12 rounded-2xl glass-v2 flex items-center justify-center text-white/40 hover:text-white transition-all">
-                        <History size={20} />
-                    </button>
-                    <button className="w-12 h-12 rounded-2xl glass-v2 flex items-center justify-center text-white/40 hover:text-white transition-all">
-                        <Grid size={20} />
-                    </button>
-                </div>
-            </header>
-
-            <main className="flex-1 flex overflow-hidden relative z-10">
+            <main className="flex-1 flex overflow-hidden">
                 {/* Product Area */}
-                <div className="flex-1 flex flex-col p-10 overflow-hidden">
+                <div className="flex-1 flex flex-col p-6 overflow-hidden">
                     {/* Categories */}
-                    <div className="flex gap-4 mb-10 overflow-x-auto pb-4 no-scrollbar">
+                    <div className="flex gap-3 mb-6 overflow-x-auto pb-2">
                         {categories.map((cat) => (
-                            <button
+                            <Button
                                 key={cat}
                                 onClick={() => setSelectedCategory(cat)}
-                                className={`px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${selectedCategory === cat ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20' : 'glass-v2 text-white/40 hover:bg-white/5'}`}
+                                variant={selectedCategory === cat ? 'primary' : 'outline'}
+                                size="sm"
+                                className="whitespace-nowrap"
                             >
                                 {cat}
-                            </button>
+                            </Button>
                         ))}
                     </div>
 
                     {/* Menu Grid */}
-                    <div className="flex-1 overflow-y-auto no-scrollbar pb-10">
+                    <div className="flex-1 overflow-y-auto">
                         <motion.div
                             layout
-                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
                         >
                             {menu.filter(m => selectedCategory === 'All' || m.category === selectedCategory).map((item, i) => (
                                 <motion.div
@@ -224,21 +231,23 @@ export default function SalesTerminal() {
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ delay: i * 0.05 }}
                                     onClick={() => addToCart(item)}
-                                    className="p-8 rounded-[2.5rem] glass-v2 flex flex-col gap-6 active:scale-95 transition-all cursor-pointer group hover:border-emerald-500/30"
+                                    className="cursor-pointer group transition-all hover:-translate-y-1"
                                 >
-                                    <div className="w-16 h-16 rounded-3xl bg-black border border-white/5 flex items-center justify-center text-4xl shadow-2xl group-hover:scale-110 transition-transform">
-                                        {item.icon}
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-lg text-white group-hover:text-emerald-400 transition-colors uppercase italic tracking-tighter">{item.name}</h3>
-                                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mt-1">{item.category}</p>
-                                    </div>
-                                    <div className="mt-auto flex justify-between items-center">
-                                        <span className="text-2xl font-black italic text-white/80">${item.price.toFixed(2)}</span>
-                                        <div className="w-10 h-10 rounded-xl glass-v2 flex items-center justify-center text-emerald-400 opacity-0 group-hover:opacity-100 transition-all">
-                                            <Plus size={20} />
+                                    <Card className="h-full border-border-light group-hover:border-primary-dark group-hover:shadow-lg transition-all">
+                                        <div className="w-12 h-12 rounded-lg bg-primary-dark bg-opacity-10 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                                            {item.icon}
                                         </div>
-                                    </div>
+                                        <div>
+                                            <h3 className="font-semibold text-primary-dark group-hover:text-primary-light transition-colors">{item.name}</h3>
+                                            <p className="text-xs text-text-secondary uppercase tracking-wide mt-1">{item.category}</p>
+                                        </div>
+                                        <div className="mt-4 flex justify-between items-center">
+                                            <span className="text-lg font-bold text-primary-dark">${item.price.toFixed(2)}</span>
+                                            <div className="w-8 h-8 rounded-lg bg-primary-dark bg-opacity-10 flex items-center justify-center text-primary-dark opacity-0 group-hover:opacity-100 transition-all">
+                                                <Plus size={16} />
+                                            </div>
+                                        </div>
+                                    </Card>
                                 </motion.div>
                             ))}
                         </motion.div>
@@ -246,18 +255,25 @@ export default function SalesTerminal() {
                 </div>
 
                 {/* Cart Area */}
-                <div className="w-[450px] glass-v2 border-l border-white/5 flex flex-col relative overflow-hidden">
-                    <div className="p-10 flex flex-col h-full bg-black/20">
-                        <div className="flex items-center justify-between mb-10">
-                            <h2 className="text-xl font-black italic uppercase tracking-tighter nile-text-gradient">Active Cart</h2>
-                            <button onClick={() => setCart([])} className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 hover:text-red-400 transition-colors">Clear</button>
+                <div className="w-96 bg-background-white border-l border-border-light flex flex-col overflow-hidden">
+                    <div className="p-6 flex flex-col h-full">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold text-primary-dark">Current Order</h2>
+                            <Button
+                                onClick={() => setCart([])}
+                                variant="ghost"
+                                size="sm"
+                                className="text-text-secondary hover:text-error-default h-auto p-0"
+                            >
+                                Clear
+                            </Button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-6">
+                        <div className="flex-1 overflow-y-auto space-y-4">
                             {cart.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-center p-10 opacity-20">
-                                    <Package size={64} className="mb-6" />
-                                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Payload Empty</p>
+                                <div className="h-full flex flex-col items-center justify-center text-center py-12">
+                                    <Package className="text-text-disabled mb-4" size={48} />
+                                    <p className="text-text-secondary">No items in cart</p>
                                 </div>
                             ) : (
                                 cart.map((item, i) => (
@@ -265,64 +281,86 @@ export default function SalesTerminal() {
                                         key={item.id}
                                         initial={{ x: 20, opacity: 0 }}
                                         animate={{ x: 0, opacity: 1 }}
-                                        className="flex items-center gap-6 p-6 rounded-3xl glass-v2 border-white/5 group"
+                                        className="flex items-center gap-4 p-4 bg-background-light rounded-lg border border-border-light"
                                     >
-                                        <div className="w-14 h-14 rounded-2xl bg-black border border-white/5 flex items-center justify-center text-2xl">{item.icon}</div>
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-bold text-white uppercase italic tracking-tighter truncate">{item.name}</h4>
-                                            <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mt-1">${item.price.toFixed(2)}</p>
+                                        <div className="w-10 h-10 rounded-lg bg-primary-dark bg-opacity-10 flex items-center justify-center text-xl">
+                                            {item.icon}
                                         </div>
-                                        <div className="flex items-center gap-4">
-                                            <button onClick={() => removeFromCart(item.id)} className="w-10 h-10 rounded-xl glass-v2 flex items-center justify-center hover:bg-white/5"><Minus size={14} /></button>
-                                            <span className="w-6 text-center text-lg font-black italic">{item.qty}</span>
-                                            <button onClick={() => addToCart(item)} className="w-10 h-10 rounded-xl glass-v2 flex items-center justify-center hover:bg-white/5"><Plus size={14} /></button>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-medium text-primary-dark truncate">{item.name}</h4>
+                                            <p className="text-sm text-text-secondary">${item.price.toFixed(2)}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                onClick={() => removeFromCart(item.id)}
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-8 h-8 p-0 hover:bg-error-default hover:text-background-light hover:border-error-default"
+                                            >
+                                                <Minus size={12} />
+                                            </Button>
+                                            <span className="w-6 text-center font-medium">{item.qty}</span>
+                                            <Button
+                                                onClick={() => addToCart(item)}
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-8 h-8 p-0 hover:bg-success-default hover:text-background-light hover:border-success-default"
+                                            >
+                                                <Plus size={12} />
+                                            </Button>
                                         </div>
                                     </motion.div>
                                 ))
                             )}
                         </div>
 
-                        <div className="mt-10 space-y-8">
-                            <div className="space-y-4 pt-8 border-t border-white/10">
-                                <div className="flex justify-between text-[11px] font-black uppercase tracking-[0.3em] text-white/20">
-                                    <span>Sub-Payload</span>
+                        <div className="mt-6 space-y-4">
+                            <div className="space-y-2 pt-4 border-t border-border-light">
+                                <div className="flex justify-between text-sm text-text-secondary">
+                                    <span>Subtotal</span>
                                     <span>${total.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-[11px] font-black uppercase tracking-[0.3em] text-white/20">
+                                <div className="flex justify-between text-em text-text-secondary items-center">
                                     <span>Protocol Fee</span>
-                                    <span>$0.00</span>
+                                    <div className="flex items-center gap-2">
+                                        <LedgerBadge verified={true} />
+                                        <span>$0.00</span>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between text-5xl font-black italic text-white tracking-tighter uppercase leading-none pt-4">
-                                    <span className="nile-text-gradient">Total</span>
+                                <div className="flex justify-between text-xl font-bold text-primary-dark pt-2">
+                                    <span>Total</span>
                                     <span>${total.toFixed(2)}</span>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <button
+                            <div className="grid grid-cols-2 gap-3">
+                                <Button
                                     onClick={() => handleCheckout('cash')}
-                                    className="h-20 rounded-2xl glass-v2 flex flex-col items-center justify-center gap-2 group hover:border-emerald-500/40 transition-all"
+                                    disabled={cart.length === 0}
+                                    className="h-16 flex-col gap-1"
                                 >
-                                    <Banknote size={24} className="text-emerald-500 group-hover:scale-110 transition-transform" />
-                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500/60">Cash Settle</span>
-                                </button>
-                                <button
+                                    <Banknote size={20} />
+                                    <span className="text-xs">Cash</span>
+                                </Button>
+                                <Button
                                     onClick={() => handleCheckout('card')}
-                                    className="h-20 rounded-2xl glass-v2 flex flex-col items-center justify-center gap-2 group hover:border-indigo-500/40 transition-all"
+                                    disabled={cart.length === 0}
+                                    variant="outline"
+                                    className="h-16 flex-col gap-1 border-2"
                                 >
-                                    <CreditCard size={24} className="text-indigo-400 group-hover:scale-110 transition-transform" />
-                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400/60">Card Anchor</span>
-                                </button>
+                                    <CreditCard size={20} />
+                                    <span className="text-xs">Card</span>
+                                </Button>
                             </div>
 
-                            <button
+                            <Button
                                 onClick={() => handleCheckout('card')}
                                 disabled={cart.length === 0}
-                                className={`w-full h-24 rounded-3xl btn-premium text-sm ${cart.length === 0 ? 'opacity-20 cursor-not-allowed' : ''}`}
+                                className="w-full h-12 bg-success-default hover:bg-success-light"
                             >
-                                <Zap size={24} fill="currentColor" />
-                                COMMIT SESSION
-                            </button>
+                                <Zap size={16} />
+                                Complete Transaction
+                            </Button>
                         </div>
                     </div>
                 </div>

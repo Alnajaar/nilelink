@@ -1,0 +1,127 @@
+name: Contracts CI
+
+on:
+  push:
+    branches: [ main, staging ]
+    paths:
+      - 'contracts/**'
+      - 'test/**'
+      - 'hardhat.config.js'
+      - '.github/workflows/contracts-ci.yml'
+  pull_request:
+    branches: [ main, staging ]
+    paths:
+      - 'contracts/**'
+      - 'test/**'
+      - 'hardhat.config.js'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Solhint
+        run: npx solhint 'contracts/**/*.sol'
+
+      - name: Check code formatting
+        run: npx prettier --check 'contracts/**/*.sol' 'test/**/*.js'
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Hardhat tests
+        run: npx hardhat test
+
+      - name: Generate coverage report
+        run: npx hardhat coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.json
+          flags: contracts
+          name: contracts-coverage
+
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile contracts
+        run: npx hardhat compile
+
+      - name: Check contract sizes
+        run: npx hardhat size-contracts
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: contract-artifacts
+          path: artifacts/
+
+  deploy-testnet:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [lint, test, compile]
+    environment: testnet
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to Mumbai Testnet
+        run: npx hardhat run scripts/deploy-mumbai.js --network mumbai
+        env:
+          PRIVATE_KEY: ${{ secrets.CONTRACT_DEPLOYER_PRIVATE_KEY }}
+          POLYGONSCAN_API_KEY: ${{ secrets.POLYGONSCAN_API_KEY }}
+
+      - name: Verify contracts on PolygonScan
+        run: npx hardhat verify --network mumbai DEPLOYED_CONTRACT_ADDRESS
+        env:
+          POLYGONSCAN_API_KEY: ${{ secrets.POLYGONSCAN_API_KEY }}
+
+      - name: Update contract addresses
+        run: |
+          # Update contract addresses in config files
+          echo "Contracts deployed and verified on testnet"

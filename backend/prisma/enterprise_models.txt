@@ -1,0 +1,221 @@
+// Append to the end of schema.prisma
+
+// ============================================================================
+// ADVANCED RBAC (Role-Based Access Control)
+// ============================================================================
+
+model Permission {
+  id          String     @id @default(cuid())
+  resource    Resource
+  action      Action
+  description String?
+  
+  roles       Role[]
+  
+  @@unique([resource, action])
+  @@index([resource])
+  @@index([action])
+}
+
+enum Resource {
+  ORDER
+  MENU
+  INVENTORY
+  CUSTOMER
+  EMPLOYEE
+  REPORT
+  FINANCIAL
+  SETTINGS
+  SHIFT
+  DELIVERY
+}
+
+enum Action {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  EXPORT
+  APPROVE
+  MANAGE
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  isSystem    Boolean  @default(false)
+  
+  permissions Permission[]
+  users       User[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+// ============================================================================
+// SHIFT MANAGEMENT (Cash Accountability)
+// ============================================================================
+
+model Shift {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  restaurantId  String
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  
+  openedAt      DateTime  @default(now())
+  closedAt      DateTime?
+  
+  openingCash   Decimal   @default(0)
+  closingCash   Decimal?
+  expectedCash  Decimal?
+  variance      Decimal?
+  
+  totalSales    Decimal   @default(0)
+  cashSales     Decimal   @default(0)
+  cardSales     Decimal   @default(0)
+  
+  notes         String?
+  approvedBy    String?
+  approvedAt    DateTime?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([restaurantId])
+  @@index([openedAt])
+}
+
+// ============================================================================
+// MULTI-CURRENCY SYSTEM
+// ============================================================================
+
+model Currency {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  symbol    String
+  name      String
+  
+  exchangeRatesFrom ExchangeRate[] @relation("FromCurrency")
+  exchangeRatesTo   ExchangeRate[] @relation("ToCurrency")
+  
+  createdAt DateTime @default(now())
+  
+  @@index([code])
+}
+
+model ExchangeRate {
+  id            String   @id @default(cuid())
+  fromCurrencyCode String
+  fromCurrency  Currency @relation("FromCurrency", fields: [fromCurrencyCode], references: [code])
+  toCurrencyCode   String
+  toCurrency    Currency @relation("ToCurrency", fields: [toCurrencyCode], references: [code])
+  
+  rate          Decimal
+  date          DateTime @default(now())
+  source        String?
+  
+  createdAt     DateTime @default(now())
+  
+  @@unique([fromCurrencyCode, toCurrencyCode, date])
+  @@index([fromCurrencyCode, toCurrencyCode])
+  @@index([date])
+}
+
+// ============================================================================
+// DATA IMPORT JOBS
+// ============================================================================
+
+model ImportJob {
+  id            String       @id @default(cuid())
+  tenantId      String
+  userId        String
+  
+  type          ImportType
+  status        ImportStatus @default(PENDING)
+  
+  fileUrl       String
+  fileName      String
+  
+  totalRows     Int          @default(0)
+  processedRows Int          @default(0)
+  successCount  Int          @default(0)
+  errorCount    Int          @default(0)
+  
+  mappings      Json?
+  errors        Json?
+  
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum ImportType {
+  MENU_ITEMS
+  INVENTORY
+  SALES_HISTORY
+  CUSTOMERS
+  EMPLOYEES
+}
+
+enum ImportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ============================================================================
+// AUDIT LOGGING
+// ============================================================================
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String?
+  action      String   // "USER_CREATED", "ORDER_DELETED", "ROLE_UPDATED"
+  resource    String   // "User", "Order", "Role"
+  resourceId  String?
+  changes     Json?    // Before/after values
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  
+  @@index([tenantId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// API KEYS (For external integrations)
+// ============================================================================
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  key         String   @unique
+  secret      String
+  permissions Json?    // Array of allowed endpoints/actions
+  isActive    Boolean  @default(true)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  
+  @@index([tenantId])
+  @@index([key])
+}

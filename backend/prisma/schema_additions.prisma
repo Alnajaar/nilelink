@@ -1,0 +1,179 @@
+// Add this after the User model section in schema.prisma
+
+// ============================================================================
+// ADVANCED RBAC (Role-Based Access Control)
+// ============================================================================
+
+model Permission {
+  id          String     @id @default(cuid())
+  resource    Resource   // What entity (ORDER, MENU, etc.)
+  action      Action     // What operation (CREATE, READ, etc.)
+  description String?
+  
+  roles       Role[]
+  
+  @@unique([resource, action])
+  @@index([resource])
+  @@index([action])
+}
+
+enum Resource {
+  ORDER
+  MENU
+  INVENTORY
+  CUSTOMER
+  EMPLOYEE
+  REPORT
+  FINANCIAL
+  SETTINGS
+  SHIFT
+  DELIVERY
+}
+
+enum Action {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  EXPORT
+  APPROVE
+  MANAGE
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String   // "Cashier", "Manager", "Accountant", "Owner"
+  description String?
+  isSystem    Boolean  @default(false) // System roles can't be deleted
+  
+  permissions Permission[]
+  users       User[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+// ============================================================================
+// SHIFT MANAGEMENT (Cash Accountability)
+// ============================================================================
+
+model Shift {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  restaurantId  String
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  
+  openedAt      DateTime  @default(now())
+  closedAt      DateTime?
+  
+  openingCash   Decimal   @default(0)
+  closingCash   Decimal?
+  expectedCash  Decimal?
+  variance      Decimal?  // Difference between expected and actual
+  
+  totalSales    Decimal   @default(0)
+  cashSales     Decimal   @default(0)
+  cardSales     Decimal   @default(0)
+  
+  notes         String?
+  approvedBy    String?   // Manager who approved variance
+  approvedAt    DateTime?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([restaurantId])
+  @@index([openedAt])
+}
+
+// ============================================================================
+// MULTI-CURRENCY SYSTEM
+// ============================================================================
+
+model Currency {
+  id        String   @id @default(cuid())
+  code      String   @unique // "USD", "EUR", "EGP", "GBP"
+  symbol    String   // "$", "€", "£"
+  name      String   // "US Dollar", "Egyptian Pound"
+  
+  exchangeRatesFrom ExchangeRate[] @relation("FromCurrency")
+  exchangeRatesTo   ExchangeRate[] @relation("ToCurrency")
+  
+  createdAt DateTime @default(now())
+  
+  @@index([code])
+}
+
+model ExchangeRate {
+  id            String   @id @default(cuid())
+  fromCurrencyCode String
+  fromCurrency  Currency @relation("FromCurrency", fields: [fromCurrencyCode], references: [code])
+  toCurrencyCode   String
+  toCurrency    Currency @relation("ToCurrency", fields: [toCurrencyCode], references: [code])
+  
+  rate          Decimal  // 1 USD = 30.95 EGP
+  date          DateTime @default(now())
+  source        String?  // "exchangerate-api.com"
+  
+  createdAt     DateTime @default(now())
+  
+  @@unique([fromCurrencyCode, toCurrencyCode, date])
+  @@index([fromCurrencyCode, toCurrencyCode])
+  @@index([date])
+}
+
+// ============================================================================
+// DATA IMPORT JOBS
+// ============================================================================
+
+model ImportJob {
+  id            String       @id @default(cuid())
+  tenantId      String
+  userId        String       // Who initiated the import
+  
+  type          ImportType
+  status        ImportStatus @default(PENDING)
+  
+  fileUrl       String
+  fileName      String
+  
+  totalRows     Int          @default(0)
+  processedRows Int          @default(0)
+  successCount  Int          @default(0)
+  errorCount    Int          @default(0)
+  
+  mappings      Json?        // Column mapping configuration
+  errors        Json?        // Array of validation errors
+  
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum ImportType {
+  MENU_ITEMS
+  INVENTORY
+  SALES_HISTORY
+  CUSTOMERS
+  EMPLOYEES
+}
+
+enum ImportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}

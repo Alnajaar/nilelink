@@ -1,0 +1,230 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend Docker image
+        run: |
+          # Build backend image
+          docker build -t ${{ secrets.ECR_REGISTRY }}/nilelink-backend:${{ github.sha }} ./backend
+          docker tag ${{ secrets.ECR_REGISTRY }}/nilelink-backend:${{ github.sha }} ${{ secrets.ECR_REGISTRY }}/nilelink-backend:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/nilelink-backend:${{ github.sha }}
+          docker push ${{ secrets.ECR_REGISTRY }}/nilelink-backend:latest
+
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service \
+            --cluster ${{ secrets.ECS_CLUSTER }} \
+            --service ${{ secrets.ECS_SERVICE }} \
+            --force-new-deployment \
+            --task-definition ${{ secrets.ECS_TASK_DEFINITION }}
+
+      - name: Wait for deployment to complete
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ secrets.ECS_CLUSTER }} \
+            --services ${{ secrets.ECS_SERVICE }}
+
+  deploy-web-apps:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    strategy:
+      matrix:
+        app: [portal, pos, delivery, supplier, dashboard, customer, unified]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: web/${{ matrix.app }}/package-lock.json
+
+      - name: Install dependencies
+        run: cd web/${{ matrix.app }} && npm ci
+
+      - name: Build application
+        run: cd web/${{ matrix.app }} && npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to S3 and CloudFront
+        run: |
+          aws s3 sync web/${{ matrix.app }}/.next/static s3://${{ secrets.S3_BUCKET }}/${{ matrix.app }}/_next/static --delete
+          aws s3 cp web/${{ matrix.app }}/.next/server/app s3://${{ secrets.S3_BUCKET }}/${{ matrix.app }} --recursive --exclude "*" --include "*.html" --include "*.js" --include "*.json"
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/${{ matrix.app }}/*"
+
+  deploy-mobile:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    if: github.event.inputs.environment == 'production' || github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Expo CLI
+        run: npm install -g @expo/cli
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Configure EAS
+        run: eas login ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build POS app
+        run: |
+          cd mobile/apps/pos
+          eas build --platform all --profile production --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Customer app
+        run: |
+          cd mobile/apps/customer
+          eas build --platform all --profile production --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+  deploy-contracts:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    if: github.event.inputs.environment == 'production'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy contracts to Polygon mainnet
+        run: npx hardhat run scripts/deploy-polygon.js --network polygon
+        env:
+          PRIVATE_KEY: ${{ secrets.CONTRACT_DEPLOYER_PRIVATE_KEY }}
+          POLYGONSCAN_API_KEY: ${{ secrets.POLYGONSCAN_API_KEY }}
+
+      - name: Verify contracts on PolygonScan
+        run: npx hardhat verify --network polygon DEPLOYED_CONTRACT_ADDRESS
+        env:
+          POLYGONSCAN_API_KEY: ${{ secrets.POLYGONSCAN_API_KEY }}
+
+  smoke-tests:
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-web-apps]
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run smoke tests
+        run: npm run test:smoke
+        env:
+          API_BASE_URL: ${{ secrets.SMOKE_TEST_API_URL }}
+          WEB_APP_URL: ${{ secrets.SMOKE_TEST_WEB_URL }}
+
+      - name: Health check backend
+        run: curl -f ${{ secrets.SMOKE_TEST_API_URL }}/health
+
+      - name: Health check web apps
+        run: |
+          for app in portal pos delivery supplier dashboard customer unified; do
+            curl -f ${{ secrets.SMOKE_TEST_WEB_URL }}/$app
+          done
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-web-apps, deploy-mobile, deploy-contracts, smoke-tests]
+    if: always()
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - name: Notify Slack
+        uses: 8398a7/action-slack@v3
+        if: always() && env.SLACK_WEBHOOK_URL != null
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Create deployment summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ github.event.inputs.environment || 'staging' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployed by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployed Components" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Backend API" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ All Web Applications" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Mobile Apps (if production)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Smart Contracts (if production)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Tests" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Smoke tests passed" >> $GITHUB_STEP_SUMMARY

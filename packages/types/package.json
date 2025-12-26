@@ -1,0 +1,13 @@
+{
+    "name": "@nilelink/types",
+    "version": "1.0.0",
+    "description": "Shared TypeScript types for NileLink ecosystem",
+    "main": "index.ts",
+    "types": "index.ts",
+    "scripts": {
+        "build": "tsc"
+    },
+    "devDependencies": {
+        "typescript": "^5.0.0"
+    }
+}

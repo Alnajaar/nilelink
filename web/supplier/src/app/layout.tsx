@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { UniversalHeader } from "@/components/shared/UniversalHeader";
+import { UniversalFooter } from "@/components/shared/UniversalFooter";
+import { AuthProvider } from "@/shared/contexts/AuthContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,9 +19,14 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-            <body className={inter.className}>
-                <div className="mesh-bg" />
-                {children}
+            <body className={`${inter.className} bg-background-light text-text-primary min-h-screen flex flex-col`}>
+                <AuthProvider>
+                    <UniversalHeader appName="Supplier Hub" />
+                    <main className="flex-1">
+                        {children}
+                    </main>
+                    <UniversalFooter />
+                </AuthProvider>
             </body>
         </html>
     );

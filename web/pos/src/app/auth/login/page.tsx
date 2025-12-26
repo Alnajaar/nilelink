@@ -1,138 +1,105 @@
-"use client";
+'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Zap, ArrowRight, Delete, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { authApi } from '@/shared/utils/api';
+import { Card } from '@/shared/components/Card';
+import { Input } from '@/shared/components/Input';
+import { Button } from '@/shared/components/Button';
+import { Store } from 'lucide-react';
 
-export default function LoginPage() {
-    const [isLoading, setIsLoading] = useState(false);
-    const [pin, setPin] = useState('');
-    const [error, setError] = useState(false);
+export default function POSLoginPage() {
     const router = useRouter();
+    const { login } = useAuth();
+    const [email, setEmail] = useState('owner@nilelink.app');
+    const [password, setPassword] = useState('password123');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleNumberClick = (num: string) => {
-        if (pin.length < 4) {
-            setPin(prev => prev + num);
-            setError(false);
-        }
-    };
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setIsLoading(true);
 
-    const handleDelete = () => {
-        setPin(prev => prev.slice(0, -1));
-        setError(false);
-    };
-
-    const handleLogin = async (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
-
-        if (pin.length !== 4) return;
-
-        // Mock PIN check
-        if (pin === '1234' || pin === '0000') {
-            setIsLoading(true);
-            // Simulate auth delay
-            setTimeout(() => {
-                router.push('/terminal');
-            }, 800);
-        } else {
-            setError(true);
-            setPin('');
-            // Shake animation would be triggered ideally
+        try {
+            const response = await authApi.login(email, password) as any;
+            login(response.token, response.user);
+            router.push('/terminal');
+        } catch (err: any) {
+            setError(err.message || 'Login failed. Please check your credentials.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-nile-deep flex items-center justify-center p-6 relative overflow-hidden">
-            {/* Background elements */}
-            <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-nile-dark/30 blur-[120px] rounded-full" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-white/5 blur-[120px] rounded-full" />
+        <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+            {/* Background Decoration */}
+            <div className="absolute inset-0 z-0 opacity-[0.03]"
+                style={{ backgroundImage: 'radial-gradient(#0e372b 1px, transparent 1px)', backgroundSize: '32px 32px' }}>
             </div>
 
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="w-full max-w-md relative z-10"
-            >
-                <div className="text-center mb-12">
-                    <div className="w-16 h-16 rounded-3xl bg-nile-silver flex items-center justify-center shadow-2xl mx-auto mb-8">
-                        <Zap size={32} className="text-nile-dark" fill="currentColor" />
+            <Card className="w-full max-w-md relative z-10 shadow-xl shadow-black/5" padding="lg">
+                <div className="flex flex-col items-center mb-8">
+                    <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white mb-4 shadow-lg shadow-primary/20">
+                        <Store size={24} />
                     </div>
-                    <h1 className="text-3xl font-black text-white tracking-tighter mb-4 italic uppercase">Terminal Login</h1>
-                    <p className="text-nile-silver/40 font-bold uppercase tracking-[0.2em] text-xs">Enter Operator PIN</p>
+                    <h1 className="text-2xl font-bold text-text-main">Merchant Terminal</h1>
+                    <p className="text-text-muted text-sm mt-1">Sign in to access local ledger</p>
                 </div>
 
-                <div className="glass-panel p-8 rounded-5xl border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.5)]">
-                    {/* PIN Display */}
-                    <div className="flex justify-center gap-4 mb-10">
-                        {[0, 1, 2, 3].map((i) => (
-                            <div
-                                key={i}
-                                className={`w-4 h-4 rounded-full transition-all duration-300 ${i < pin.length
-                                        ? 'bg-nile-silver scale-110 shadow-[0_0_15px_rgba(255,255,255,0.5)]'
-                                        : 'bg-white/10'
-                                    } ${error ? 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : ''}`}
-                            />
-                        ))}
-                    </div>
+                <form onSubmit={handleLogin} className="space-y-5">
+                    <Input
+                        label="Store Email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="store@nilelink.app"
+                        required
+                        autoFocus
+                    />
+
+                    <Input
+                        label="Access Key"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                    />
 
                     {error && (
-                        <div className="text-center mb-6 flex items-center justify-center gap-2 text-red-500 text-xs font-bold uppercase tracking-widest animate-pulse">
-                            <AlertCircle size={14} />
-                            Invalid PIN
+                        <div className="bg-danger/5 border border-danger/10 text-danger text-sm px-4 py-3 rounded-lg flex items-center gap-2">
+                            <span className="font-bold">!</span> {error}
                         </div>
                     )}
 
-                    {/* Keypad */}
-                    <div className="grid grid-cols-3 gap-4 mb-8">
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                            <button
-                                key={num}
-                                onClick={() => handleNumberClick(num.toString())}
-                                className="h-20 rounded-3xl bg-white/5 hover:bg-white/10 active:bg-white/20 border border-white/5 flex items-center justify-center text-3xl font-black text-white italic transition-all active:scale-95"
-                            >
-                                {num}
-                            </button>
-                        ))}
-                        <div />
-                        <button
-                            onClick={() => handleNumberClick('0')}
-                            className="h-20 rounded-3xl bg-white/5 hover:bg-white/10 active:bg-white/20 border border-white/5 flex items-center justify-center text-3xl font-black text-white italic transition-all active:scale-95"
-                        >
-                            0
-                        </button>
-                        <button
-                            onClick={handleDelete}
-                            className="h-20 rounded-3xl hover:bg-white/5 active:bg-white/10 flex items-center justify-center text-nile-silver/50 hover:text-red-400 transition-all active:scale-95"
-                        >
-                            <Delete size={24} />
-                        </button>
-                    </div>
-
-                    <button
-                        onClick={() => handleLogin()}
-                        disabled={isLoading || pin.length !== 4}
-                        className="w-full h-20 btn-primary flex items-center justify-center gap-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        fullWidth
+                        size="lg"
+                        isLoading={isLoading}
                     >
-                        {isLoading ? (
-                            <div className="w-6 h-6 border-4 border-nile-dark/20 border-t-nile-dark rounded-full animate-spin" />
-                        ) : (
-                            <>
-                                Access Terminal
-                                <ArrowRight size={20} />
-                            </>
-                        )}
-                    </button>
-                </div>
+                        Initialize Terminal
+                    </Button>
+                </form>
 
-                <div className="mt-12 text-center">
-                    <div className="text-[10px] font-black text-nile-silver/20 uppercase tracking-[0.2em] mb-2">Default PIN: 1234</div>
-                    <div className="text-[10px] font-black text-nile-silver/10 uppercase tracking-[0.5em]">
-                        Protocol Anchored v0.1.0
+                <div className="mt-8 pt-6 border-t border-border-subtle">
+                    <p className="text-xs font-semibold text-text-main mb-3 uppercase tracking-wider">Debug Credentials</p>
+                    <div className="bg-background-subtle rounded-lg p-3 text-xs text-text-muted font-mono space-y-1 border border-border-subtle">
+                        <div className="flex justify-between">
+                            <span>owner@nilelink.app</span>
+                            <span className="opacity-50">password123</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>manager@nilelink.app</span>
+                            <span className="opacity-50">password123</span>
+                        </div>
                     </div>
                 </div>
-            </motion.div>
+            </Card>
         </div>
     );
 }

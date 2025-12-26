@@ -60,3 +60,8 @@ test-results.xml
 *.tgz
 *.tar.gz
 .vercel
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo

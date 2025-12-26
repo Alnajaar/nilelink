@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { UniversalHeader } from "@/components/shared/UniversalHeader";
+import { UniversalFooter } from "@/components/shared/UniversalFooter";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,9 +18,12 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-            <body className={inter.className}>
-                <div className="mesh-bg" />
-                {children}
+            <body className={`${inter.className} bg-background-light text-text-primary min-h-screen flex flex-col`}>
+                <UniversalHeader appName="Investor Dashboard" />
+                <main className="flex-1">
+                    {children}
+                </main>
+                <UniversalFooter />
             </body>
         </html>
     );

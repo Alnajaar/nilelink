@@ -36,68 +36,73 @@ export default function DriverLogin() {
     };
 
     return (
-        <div className="min-h-screen bg-nile-deep flex flex-col p-6">
-            <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
+        <div className="min-h-screen bg-background flex flex-col p-6 items-center justify-center relative overflow-hidden">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 z-0 opacity-[0.03]"
+                style={{ backgroundImage: 'radial-gradient(#0e372b 1px, transparent 1px)', backgroundSize: '32px 32px' }}>
+            </div>
+
+            <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full relative z-10">
 
                 {/* Header */}
-                <div className="mb-12 text-center">
-                    <div className="w-20 h-20 rounded-3xl bg-emerald-500 flex items-center justify-center text-nile-dark mx-auto mb-6 shadow-2xl shadow-emerald-500/20">
-                        <Shield size={40} />
+                <div className="mb-10 text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white mx-auto mb-6 shadow-xl shadow-primary/20">
+                        <Shield size={32} />
                     </div>
-                    <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">NileLink Driver</h1>
-                    <p className="text-xs font-black text-nile-silver/30 uppercase tracking-[0.2em]">Secure Logistics Protocol</p>
+                    <h1 className="text-2xl font-bold text-text-main mb-2">Logistics Protocol</h1>
+                    <p className="text-xs font-semibold text-text-muted uppercase tracking-widest">Driver Authorization</p>
                 </div>
 
                 {step === 'disclaimer' ? (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8">
-                        <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/10">
-                            <div className="flex items-center gap-3 text-amber-500 mb-6">
-                                <Wallet size={24} />
-                                <span className="text-sm font-black uppercase tracking-widest">Responsibility</span>
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="p-8 rounded-3xl bg-background-card border border-border shadow-lg shadow-black/5">
+                            <div className="flex items-center gap-3 text-warning mb-6">
+                                <AlertTriangle size={20} />
+                                <span className="text-xs font-bold uppercase tracking-widest">Liability Warning</span>
                             </div>
-                            <p className="text-sm font-medium text-nile-silver leading-relaxed mb-6">
-                                By opening this shift, you acknowledge that you are acting as a <strong className="text-white">Mobile Cash Custodian</strong>.
+                            <p className="text-sm font-medium text-text-main leading-relaxed mb-6">
+                                By activating this session, you accept full custody of all physical assets and cash collected.
                             </p>
                             <ul className="space-y-4 mb-2">
-                                <li className="flex gap-4 text-xs font-bold text-nile-silver/60">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5" />
-                                    You are personally liable for all cash collected.
+                                <li className="flex gap-4 text-xs font-medium text-text-muted">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
+                                    Cash custody is legally binding.
                                 </li>
-                                <li className="flex gap-4 text-xs font-bold text-nile-silver/60">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5" />
-                                    Every delivery is cryptographically signed.
+                                <li className="flex gap-4 text-xs font-medium text-text-muted">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
+                                    Deliveries are cryptographically signed.
                                 </li>
-                                <li className="flex gap-4 text-xs font-bold text-nile-silver/60">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5" />
-                                    GPS location is logged for every action.
+                                <li className="flex gap-4 text-xs font-medium text-text-muted">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
+                                    Real-time GPS tracking is mandatory.
                                 </li>
                             </ul>
                         </div>
 
                         <button
                             onClick={handleDisclaimerAccept}
-                            className="w-full h-20 bg-emerald-500 active:bg-emerald-600 text-nile-dark rounded-3xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-4 transition-all active:scale-95"
+                            className="w-full h-16 bg-primary text-white rounded-2xl font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all hover:bg-primary-dark active:scale-[0.98] shadow-lg shadow-primary/20"
                         >
-                            I Understand & Accept
-                            <ArrowRight size={20} />
+                            Accept Protocol
+                            <ArrowRight size={18} />
                         </button>
                     </div>
                 ) : (
-                    <div className="animate-in fade-in slide-in-from-bottom-8">
+                    <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
                         {/* PIN Display */}
-                        <div className="flex justify-center gap-6 mb-12">
+                        <div className="flex justify-center gap-4 mb-10">
                             {[0, 1, 2, 3].map(i => (
-                                <div key={i} className={`w-4 h-4 rounded-full transition-all ${i < pin.length ? 'bg-emerald-500 scale-125' : 'bg-white/10'}`} />
+                                <div key={i} className={`w-3 h-3 rounded-full transition-all duration-300 ${i < pin.length ? 'bg-primary scale-125' : 'bg-border'}`} />
                             ))}
                         </div>
 
                         {/* PIN Pad */}
-                        <div className="grid grid-cols-3 gap-4 mb-8">
+                        <div className="grid grid-cols-3 gap-3 mb-8">
                             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
                                 <button
                                     key={n}
                                     onClick={() => handleNum(n.toString())}
-                                    className="h-20 rounded-3xl bg-white/5 active:bg-white/20 text-3xl font-black text-white italic transition-all"
+                                    className="h-16 rounded-2xl bg-white border border-border-subtle hover:bg-background-subtle active:bg-primary/5 text-2xl font-bold text-text-main transition-colors shadow-sm"
                                 >
                                     {n}
                                 </button>
@@ -105,27 +110,27 @@ export default function DriverLogin() {
                             <div />
                             <button
                                 onClick={() => handleNum('0')}
-                                className="h-20 rounded-3xl bg-white/5 active:bg-white/20 text-3xl font-black text-white italic transition-all"
+                                className="h-16 rounded-2xl bg-white border border-border-subtle hover:bg-background-subtle active:bg-primary/5 text-2xl font-bold text-text-main transition-colors shadow-sm"
                             >
                                 0
                             </button>
                             <button
                                 onClick={() => setPin(p => p.slice(0, -1))}
-                                className="h-20 rounded-3xl active:bg-white/10 flex items-center justify-center text-nile-silver transition-all"
+                                className="h-16 rounded-2xl hover:bg-background-subtle active:bg-primary/5 flex items-center justify-center text-text-muted transition-colors"
                             >
-                                <span className="text-xs font-black uppercase tracking-widest">Del</span>
+                                <span className="text-xs font-bold uppercase tracking-widest">Del</span>
                             </button>
                         </div>
 
                         <button
                             onClick={handlePinSubmit}
                             disabled={pin.length !== 4 || isLoading}
-                            className={`w-full h-20 rounded-3xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-4 transition-all ${pin.length === 4
-                                    ? 'bg-white text-black active:scale-95'
-                                    : 'bg-white/5 text-nile-silver/20 cursor-not-allowed'
+                            className={`w-full h-16 rounded-2xl font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${pin.length === 4
+                                ? 'bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary-dark active:scale-[0.98]'
+                                : 'bg-background-subtle text-text-subtle cursor-not-allowed border border-border'
                                 }`}
                         >
-                            {isLoading ? 'Verifying Identity...' : 'Open Shift'}
+                            {isLoading ? 'Verifying Identity...' : 'Start Shift'}
                         </button>
                     </div>
                 )}

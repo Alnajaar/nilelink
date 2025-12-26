@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { orderApi } from '@/shared/utils/api';
 import {
     MapPin,
     Navigation,
@@ -10,48 +12,45 @@ import {
     Filter
 } from 'lucide-react';
 
-const TASKS = [
-    {
-        id: 'DLV-921',
-        restaurant: 'Cairo Grill',
-        address: '12 Tahrir Sq, Downtown',
-        value: 8.50,
-        type: 'pickup',
-        status: 'new',
-        priority: 'high',
-        time: '5 min ago'
-    },
-    {
-        id: 'DLV-925',
-        restaurant: 'Nile Burger Co.',
-        address: 'Block 4, Zamalek Res.',
-        value: 12.00,
-        type: 'delivery',
-        payment: 'cash',
-        status: 'accepted',
-        priority: 'normal',
-        time: '12 min ago'
-    },
-    {
-        id: 'DLV-930',
-        restaurant: 'Koshary El Tahrir',
-        address: '15 El Dokki St.',
-        value: 6.75,
-        type: 'delivery',
-        payment: 'epay',
-        status: 'new',
-        priority: 'rush',
-        time: 'Just now'
-    }
-];
-
 export default function QueuePage() {
+    const router = useRouter();
     const [filter, setFilter] = useState<'all' | 'new' | 'active'>('all');
+    const [orders, setOrders] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Fetch available orders from backend
+    useEffect(() => {
+        const fetchOrders = async () => {
+            try {
+                const response = await (orderApi as any).list({ status: 'READY' });
+                const fetchedOrders = response.orders;
+                setOrders(fetchedOrders || []);
+            } catch (error) {
+                console.error('Failed to fetch orders:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchOrders();
+    }, []);
 
     const getPriorityColor = (p: string) => {
         if (p === 'rush') return 'bg-rose-500 text-white shadow-lg shadow-rose-900/20';
         if (p === 'high') return 'bg-amber-500 text-nile-dark';
         return 'bg-white/10 text-nile-silver';
+    }
+
+    const handleAcceptOrder = async (orderId: string) => {
+        try {
+            await orderApi.updateStatus(orderId, 'IN_DELIVERY');
+            router.push(`/driver/transit/${orderId}`);
+        } catch (error) {
+            console.error('Failed to accept order:', error);
+        }
+    };
+
+    if (isLoading) {
+        return <div className="flex items-center justify-center h-full text-text-secondary">Loading orders...</div>;
     }
 
     return (
@@ -78,59 +77,60 @@ export default function QueuePage() {
             </div>
 
             <div className="space-y-4">
-                {TASKS.map((task) => (
+                {orders.map((order) => (
                     <div
-                        key={task.id}
+                        key={order.id}
                         className="group bg-white/5 border border-white/5 rounded-3xl p-5 active:scale-[0.98] transition-all"
                     >
                         <div className="flex justify-between items-start mb-4">
                             <div className="flex gap-4">
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white ${task.type === 'pickup' ? 'bg-indigo-500' : 'bg-emerald-500'}`}>
-                                    {task.type === 'pickup' ? <Box size={20} /> : <MapPin size={20} />}
+                                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white bg-emerald-500">
+                                    <MapPin size={20} />
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${getPriorityColor(task.priority)}`}>
-                                            {task.priority}
+                                        <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-white/10 text-nile-silver">
+                                            {order.status}
                                         </span>
                                         <span className="text-[10px] font-bold text-nile-silver/40 flex items-center gap-1">
-                                            <Clock size={10} /> {task.time}
+                                            <Clock size={10} /> {new Date(order.createdAt).toLocaleTimeString()}
                                         </span>
                                     </div>
-                                    <h3 className="font-bold text-white text-lg leading-tight">{task.restaurant}</h3>
+                                    <h3 className="font-bold text-white text-lg leading-tight">Order #{order.orderNumber}</h3>
                                 </div>
                             </div>
                             <div className="flex flex-col items-end">
-                                <span className="font-black italic text-white text-xl">${task.value.toFixed(2)}</span>
-                                {task.payment === 'cash' && (
-                                    <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
-                                        <DollarSign size={10} /> Cash
-                                    </div>
-                                )}
+                                <span className="font-black italic text-white text-xl">${Number(order.totalAmount).toFixed(2)}</span>
+                                <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
+                                    <DollarSign size={10} /> Cash
+                                </div>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-3 mb-6 bg-black/20 p-3 rounded-xl border border-white/5">
                             <Navigation size={14} className="text-nile-silver/50" />
-                            <p className="text-xs font-medium text-nile-silver line-clamp-1">{task.address}</p>
+                            <p className="text-xs font-medium text-nile-silver line-clamp-1">{order.deliveryAddress || 'Address not specified'}</p>
                         </div>
 
-                        {task.status === 'new' ? (
-                            <div className="flex gap-3">
-                                <button className="flex-1 h-12 rounded-xl bg-white/5 text-nile-silver/40 font-bold text-xs uppercase tracking-wider hover:bg-white/10 transition-colors">
-                                    Ignore
-                                </button>
-                                <button className="flex-[2] h-12 rounded-xl bg-nile-silver text-nile-dark font-black text-xs uppercase tracking-wider hover:bg-white transition-colors">
-                                    Accept Load
-                                </button>
-                            </div>
-                        ) : (
-                            <button className="w-full h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-500 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2">
-                                In Progress <MapPin size={14} />
+                        <div className="flex gap-3">
+                            <button className="flex-1 h-12 rounded-xl bg-white/5 text-nile-silver/40 font-bold text-xs uppercase tracking-wider hover:bg-white/10 transition-colors">
+                                Ignore
                             </button>
-                        )}
+                            <button
+                                onClick={() => handleAcceptOrder(order.id)}
+                                className="flex-[2] h-12 rounded-xl bg-nile-silver text-nile-dark font-black text-xs uppercase tracking-wider hover:bg-white transition-colors"
+                            >
+                                Accept Load
+                            </button>
+                        </div>
                     </div>
                 ))}
+
+                {orders.length === 0 && (
+                    <div className="text-center py-12 text-text-secondary">
+                        No orders available at the moment
+                    </div>
+                )}
             </div>
         </div>
     );

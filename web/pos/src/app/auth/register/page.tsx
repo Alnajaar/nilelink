@@ -9,32 +9,28 @@ export default function RegisterPage() {
     const [step, setStep] = useState(1);
 
     return (
-        <div className="min-h-screen bg-nile-deep flex items-center justify-center p-6 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-                <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-nile-dark/30 blur-[120px] rounded-full" />
-            </div>
-
+        <div className="min-h-screen bg-background-light flex items-center justify-center p-6">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="w-full max-w-2xl relative z-10"
+                className="w-full max-w-2xl"
             >
                 <div className="text-center mb-12">
-                    <div className="w-16 h-16 rounded-3xl bg-nile-silver flex items-center justify-center shadow-2xl mx-auto mb-8">
-                        <Zap size={32} className="text-nile-dark" fill="currentColor" />
+                    <div className="w-16 h-16 bg-primary-dark rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
+                        <Zap size={32} className="text-background-light" fill="currentColor" />
                     </div>
-                    <h1 className="text-4xl font-black text-white tracking-tighter mb-4 italic">Provision Branch</h1>
-                    <p className="text-nile-silver/40 font-bold uppercase tracking-[0.2em] text-xs">Onboard your business to the NileLink Ledger</p>
+                    <h1 className="text-4xl font-bold text-primary-dark mb-4">Provision Branch</h1>
+                    <p className="text-text-secondary text-sm">Onboard your business to the NileLink Protocol</p>
                 </div>
 
-                <div className="glass-panel p-12 rounded-5xl border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.5)]">
+                <div className="bg-background-white p-12 rounded-2xl border border-border-light shadow-lg">
                     <div className="flex gap-4 mb-12">
                         {[1, 2, 3].map((s) => (
-                            <div key={s} className="flex-1 h-1.5 rounded-full overflow-hidden bg-white/5">
+                            <div key={s} className="flex-1 h-2 rounded-full overflow-hidden bg-background-light">
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: step >= s ? '100%' : '0%' }}
-                                    className="h-full bg-nile-silver transition-all duration-500"
+                                    className="h-full bg-primary-dark transition-all duration-500"
                                 />
                             </div>
                         ))}
@@ -44,17 +40,17 @@ export default function RegisterPage() {
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-nile-silver/30 uppercase tracking-[0.3em] ml-2">Restaurant / Business Name</label>
-                                    <div className="relative group">
-                                        <Store className="absolute left-6 top-1/2 -translate-y-1/2 text-nile-silver/20 group-focus-within:text-white transition-colors" size={20} />
-                                        <input type="text" placeholder="The Grand Cairo Grill" className="w-full nile-input pl-16 py-5" />
+                                    <label className="text-sm font-medium text-primary-dark">Restaurant / Business Name</label>
+                                    <div className="relative">
+                                        <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={20} />
+                                        <input type="text" placeholder="The Grand Cairo Grill" className="w-full pl-12 pr-4 py-3 border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-dark focus:border-transparent" />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-nile-silver/30 uppercase tracking-[0.3em] ml-2">Business Category</label>
-                                    <div className="relative group">
-                                        <Building2 className="absolute left-6 top-1/2 -translate-y-1/2 text-nile-silver/20 group-focus-within:text-white transition-colors" size={20} />
-                                        <select className="w-full nile-input pl-16 py-5 appearance-none bg-nile-dark/40">
+                                    <label className="text-sm font-medium text-primary-dark">Business Category</label>
+                                    <div className="relative">
+                                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={20} />
+                                        <select className="w-full pl-12 pr-4 py-3 border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-dark focus:border-transparent appearance-none bg-background-light">
                                             <option>Food & Beverage (F&B)</option>
                                             <option>Retail & Grocery</option>
                                             <option>Pharmacy & Health</option>
@@ -63,9 +59,9 @@ export default function RegisterPage() {
                                     </div>
                                 </div>
                             </div>
-                            <button onClick={() => setStep(2)} className="w-full h-20 btn-primary flex items-center justify-center gap-4 text-lg">
+                            <button onClick={() => setStep(2)} className="w-full h-12 bg-primary-dark text-background-light rounded-lg font-semibold hover:bg-primary-light transition-colors flex items-center justify-center gap-2">
                                 Continue
-                                <ArrowRight size={20} />
+                                <ArrowRight size={16} />
                             </button>
                         </motion.div>
                     )}
