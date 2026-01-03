@@ -1,11 +1,12 @@
 # Backend Dockerfile for NileLink API Server
-FROM node:18-alpine AS base
+FROM node:18-slim AS base
 
 # Install runtime system dependencies
-RUN apk add --no-cache \
-    sqlite \
+RUN apt-get update && apt-get install -y \
+    sqlite3 \
     postgresql-client \
-    redis
+    redis-tools \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -26,13 +27,14 @@ COPY . .
 # RUN npm run build
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:18-slim AS production
 
 # Install runtime dependencies
-RUN apk add --no-cache \
-    sqlite \
+RUN apt-get update && apt-get install -y \
+    sqlite3 \
     postgresql-client \
-    redis
+    redis-tools \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create app user
 RUN addgroup -g 1001 -S nodejs && \
