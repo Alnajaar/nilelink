@@ -10,8 +10,15 @@ import {
     Package,
     TrendingUp,
     AlertCircle,
-    Search
+    Search,
+    ArrowRight
 } from 'lucide-react';
+import { Card } from '@/shared/components/Card';
+import { Button } from '@/shared/components/Button';
+import { Input } from '@/shared/components/Input';
+import { Badge } from '@/shared/components/Badge';
+import { CurrencyDisplay } from '@/shared/components/CurrencyDisplay';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface RecipeIngredient {
     ingredientId: string;
@@ -63,142 +70,145 @@ export default function RecipeManagement() {
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
     return (
-        <div className="space-y-12 max-w-7xl">
+        <div className="h-full flex flex-col p-6 gap-8 bg-background overflow-hidden relative">
             {/* Header */}
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 shrink-0 z-10">
                 <div>
-                    <div className="flex items-center gap-3 mb-4">
-                        <ChefHat size={24} className="text-nile-silver" />
-                        <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">Recipe Management</h1>
-                    </div>
-                    <p className="text-nile-silver/30 font-bold uppercase tracking-widest text-xs">Menu Intelligence & Cost Control</p>
+                    <h1 className="text-4xl font-black text-text-main uppercase tracking-tight leading-none mb-2">Recipe Costing</h1>
+                    <p className="text-text-muted font-medium">Menu Engineering & Profit Analysis</p>
                 </div>
-                <button className="btn-primary flex items-center gap-3 py-3 px-8 shadow-nile-silver/10">
-                    <Plus size={18} />
+                <Button size="lg" className="shadow-xl shadow-primary/20 rounded-2xl h-14">
+                    <Plus size={20} className="mr-2" />
                     New Recipe
-                </button>
+                </Button>
             </header>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div className="p-8 rounded-[3rem] bg-white/5 border border-white/10">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-nile-silver/20 mb-2">Total Recipes</div>
-                    <div className="text-3xl font-black text-white italic tracking-tighter">{recipes.length}</div>
-                </div>
-                <div className="p-8 rounded-[3rem] bg-white/5 border border-white/10">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-nile-silver/20 mb-2">Avg Cost</div>
-                    <div className="text-3xl font-black text-white italic tracking-tighter">
-                        {(recipes.reduce((sum, r) => sum + r.costPerServing, 0) / recipes.length || 0).toFixed(2)} EGP
-                    </div>
-                </div>
-                <div className="p-8 rounded-[3rem] bg-white/5 border border-white/10">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-nile-silver/20 mb-2">Avg Margin</div>
-                    <div className="text-3xl font-black text-emerald-500 italic tracking-tighter">
-                        {(recipes.reduce((sum, r) => sum + r.profitMargin, 0) / recipes.length || 0).toFixed(1)}%
-                    </div>
-                </div>
-                <div className="p-8 rounded-[3rem] bg-white/5 border border-white/10">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-nile-silver/20 mb-2">Ingredients</div>
-                    <div className="text-3xl font-black text-white italic tracking-tighter">
-                        {new Set(recipes.flatMap(r => r.ingredients.map(i => i.ingredientId))).size}
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0">
+                {[
+                    { label: 'Total Recipes', value: recipes.length, unit: '' },
+                    { label: 'Avg Cost', value: (recipes.reduce((sum, r) => sum + r.costPerServing, 0) / recipes.length || 0).toFixed(2), unit: 'EGP' },
+                    { label: 'Avg Margin', value: (recipes.reduce((sum, r) => sum + r.profitMargin, 0) / recipes.length || 0).toFixed(1), unit: '%', textClass: 'text-success' },
+                    { label: 'Ingredients', value: new Set(recipes.flatMap(r => r.ingredients.map(i => i.ingredientId))).size, unit: 'Unique' },
+                ].map((stat, i) => (
+                    <Card key={i} className="p-6 bg-white border-border-subtle">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{stat.label}</div>
+                        <div className={`text-3xl font-black italic tracking-tighter ${stat.textClass || 'text-text-main'}`}>
+                            {stat.value} <span className="text-sm not-italic opacity-50 ml-1">{stat.unit}</span>
+                        </div>
+                    </Card>
+                ))}
             </div>
 
-            {/* Recipe List */}
-            <div className="glass-panel rounded-[3rem] overflow-hidden border-white/10">
-                <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
-                    <div className="flex items-center gap-4 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-nile-silver text-sm flex-1 max-w-md">
-                        <Search size={18} className="text-nile-silver/20" />
-                        <input type="text" placeholder="Search recipes..." className="bg-transparent border-none focus:outline-none w-full" />
+            {/* Main Content Split */}
+            <div className="flex-1 flex gap-6 min-h-0">
+                {/* List View */}
+                <div className="flex-1 flex flex-col gap-4">
+                    <div className="relative shrink-0">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors" size={20} />
+                        <Input
+                            placeholder="Search recipes..."
+                            className="pl-12 h-14 rounded-2xl bg-white border-border-subtle text-lg font-medium"
+                        />
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
+                        {recipes.map((recipe) => (
+                            <motion.div
+                                key={recipe.id}
+                                layoutId={`recipe-${recipe.id}`}
+                                onClick={() => setSelectedRecipe(recipe)}
+                                className={`
+                                    cursor-pointer group relative overflow-hidden rounded-3xl border-2 transition-all p-6
+                                    ${selectedRecipe?.id === recipe.id
+                                        ? 'bg-secondary border-secondary text-white shadow-2xl shadow-primary/20'
+                                        : 'bg-white border-border-subtle hover:border-primary/30 text-text-main hover:shadow-lg'
+                                    }
+                                `}
+                            >
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h3 className="text-xl font-black uppercase tracking-tight mb-2">{recipe.menuItemName}</h3>
+                                        <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-wider opacity-80">
+                                            <span className="flex items-center gap-1"><Package size={14} /> {recipe.ingredients.length} Ingred.</span>
+                                            <span className="flex items-center gap-1"><DollarSign size={14} /> Cost: {recipe.costPerServing.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Margin</div>
+                                        <div className={`text-2xl font-black italic ${selectedRecipe?.id === recipe.id ? 'text-emerald-400' : 'text-success'
+                                            }`}>
+                                            {recipe.profitMargin.toFixed(1)}%
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
                     </div>
                 </div>
 
-                <div className="divide-y divide-white/5">
-                    {recipes.map((recipe) => (
-                        <div
-                            key={recipe.id}
-                            className="p-8 hover:bg-white/[0.02] transition-all cursor-pointer group"
-                            onClick={() => setSelectedRecipe(recipe)}
+                {/* Details View */}
+                <AnimatePresence mode="wait">
+                    {selectedRecipe ? (
+                        <motion.div
+                            key="details"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            className="w-[480px] shrink-0 flex flex-col gap-6"
                         >
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <h3 className="text-xl font-black text-white italic tracking-tight uppercase mb-2">{recipe.menuItemName}</h3>
-                                    <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-nile-silver/20">
-                                        <span className="flex items-center gap-2">
-                                            <Package size={12} />
-                                            {recipe.ingredients.length} Ingredients
-                                        </span>
-                                        <span className="flex items-center gap-2">
-                                            <DollarSign size={12} />
-                                            Cost: {recipe.costPerServing.toFixed(2)} EGP
-                                        </span>
-                                        <span className="flex items-center gap-2">
-                                            <TrendingUp size={12} className="text-emerald-500" />
-                                            Margin: {recipe.profitMargin.toFixed(1)}%
-                                        </span>
+                            <Card className="flex-1 bg-white border-border-subtle p-8 overflow-y-auto rounded-[32px] shadow-2xl">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h2 className="text-2xl font-black text-text-main uppercase tracking-tight">Ingredient Breakdown</h2>
+                                    <div className="flex gap-2">
+                                        <Button size="sm" variant="ghost"><Edit2 size={18} /></Button>
+                                        <Button size="sm" variant="ghost" className="text-error hover:text-error hover:bg-error/10"><Trash2 size={18} /></Button>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-6">
-                                    <div className="text-right">
-                                        <div className="text-[10px] font-black uppercase tracking-widest text-nile-silver/20 mb-1">Selling Price</div>
-                                        <div className="text-2xl font-black text-white italic tracking-tighter">{recipe.sellingPrice} EGP</div>
-                                    </div>
-                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-nile-silver">
-                                            <Edit2 size={16} />
-                                        </button>
-                                        <button className="p-3 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/5 text-nile-silver hover:text-red-500">
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
 
-                            {/* Ingredients Breakdown (Expandable) */}
-                            {selectedRecipe?.id === recipe.id && (
-                                <div className="mt-8 pt-8 border-t border-white/5">
-                                    <h4 className="text-sm font-black uppercase tracking-widest text-nile-silver/20 mb-6">Ingredient Breakdown</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {recipe.ingredients.map((ing, i) => (
-                                            <div key={i} className="p-6 rounded-3xl bg-white/5 border border-white/5">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-sm font-bold text-white">{ing.ingredientName}</span>
-                                                    <span className="text-xs font-black text-nile-silver/40">{(ing.quantity * ing.costPerUnit).toFixed(2)} EGP</span>
-                                                </div>
-                                                <div className="text-[10px] font-black uppercase tracking-widest text-nile-silver/20">
-                                                    {ing.quantity} {ing.unit} × {ing.costPerUnit} EGP/{ing.unit}
+                                <div className="space-y-4">
+                                    {selectedRecipe.ingredients.map((ing, i) => (
+                                        <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-background-subtle border border-border-subtle">
+                                            <div>
+                                                <div className="font-bold text-text-main">{ing.ingredientName}</div>
+                                                <div className="text-xs text-text-muted font-medium mt-1">
+                                                    {ing.quantity} {ing.unit} @ {ing.costPerUnit}/{ing.unit}
                                                 </div>
                                             </div>
-                                        ))}
+                                            <div className="font-black font-mono text-primary">
+                                                <CurrencyDisplay amount={ing.quantity * ing.costPerUnit} currency="USD" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="mt-8 pt-8 border-t-2 border-dashed border-border-subtle space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-bold text-text-muted">Total Cost</span>
+                                        <span className="text-xl font-black text-text-main"><CurrencyDisplay amount={selectedRecipe.costPerServing} currency="USD" /></span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-bold text-text-muted">Selling Price</span>
+                                        <span className="text-xl font-black text-text-main"><CurrencyDisplay amount={selectedRecipe.sellingPrice} currency="USD" /></span>
+                                    </div>
+                                    <div className="p-4 bg-success/10 rounded-xl flex justify-between items-center">
+                                        <span className="text-sm font-black text-success uppercase tracking-widest">Net Profit</span>
+                                        <span className="text-2xl font-black text-success">
+                                            <CurrencyDisplay amount={selectedRecipe.sellingPrice - selectedRecipe.costPerServing} currency="USD" />
+                                        </span>
                                     </div>
                                 </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Profit Analysis */}
-            <div className="p-12 rounded-[4rem] bg-gradient-to-br from-nile-dark to-black border border-white/5">
-                <div className="flex items-center gap-4 mb-8">
-                    <AlertCircle size={24} className="text-nile-silver/20" />
-                    <h3 className="text-xl font-black text-white italic tracking-tight">Cost Intelligence</h3>
-                </div>
-                <p className="text-sm font-medium text-nile-silver/30 leading-relaxed mb-8">
-                    Recipe costing is automatically recalculated when ingredient prices change.
-                    Each sale deducts exact ingredient quantities from inventory for perfect variance tracking.
-                </p>
-                <div className="grid grid-cols-3 gap-8">
-                    {recipes.slice(0, 3).map((recipe) => (
-                        <div key={recipe.id} className="p-6 rounded-3xl bg-white/5 text-center">
-                            <div className="text-xs font-bold text-white mb-2">{recipe.menuItemName}</div>
-                            <div className={`text-2xl font-black italic ${recipe.profitMargin > 50 ? 'text-emerald-500' : 'text-amber-500'}`}>
-                                {recipe.profitMargin.toFixed(1)}%
+                            </Card>
+                        </motion.div>
+                    ) : (
+                        <div className="w-[480px] shrink-0 flex items-center justify-center text-text-muted opacity-40">
+                            <div className="text-center">
+                                <ChefHat size={64} className="mx-auto mb-4" />
+                                <p className="font-bold uppercase tracking-widest">Select a recipe to view details</p>
                             </div>
                         </div>
-                    ))}
-                </div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );

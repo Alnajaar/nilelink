@@ -19,19 +19,19 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
                         type="checkbox"
                         ref={ref}
                         className={cn(
-                            "peer h-4 w-4 cursor-pointer appearance-none rounded border border-black/20 bg-white transition-all checked:border-primary-dark checked:bg-primary-dark",
+                            "peer h-4 w-4 cursor-pointer appearance-none rounded border border-border-subtle bg-background-subtle transition-all checked:border-primary checked:bg-primary",
                             className
                         )}
                         {...props}
                     />
-                    <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100">
+                    <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-background-card opacity-0 peer-checked:opacity-100">
                         <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                     </div>
                 </div>
                 {label && (
-                    <span className="ml-2 text-sm text-primary-dark/90 select-none">
+                    <span className="ml-2 text-sm text-text-main select-none">
                         {label}
                     </span>
                 )}

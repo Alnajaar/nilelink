@@ -1,125 +1,142 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
-    Wallet,
-    ArrowUpRight,
-    ArrowDownLeft,
-    History,
-    Filter,
-    DollarSign,
-    AlertCircle,
-    CheckCircle2
+    Wallet, TrendingUp, ArrowUpRight, ArrowDownLeft,
+    Calendar, ChevronRight, PieChart, Activity,
+    ShieldCheck, DollarSign, Download, Zap
 } from 'lucide-react';
-import { DeliveryProtocol } from '@/lib/protocol/DeliveryProtocol';
-import { LedgerEvent } from '@/lib/ledger/MobileLedger';
+import { motion } from 'framer-motion';
+import { Card } from '@/shared/components/Card';
+import { Button } from '@/shared/components/Button';
+import { Badge } from '@/shared/components/Badge';
 
-export default function WalletPage() {
-    const [cash, setCash] = useState(0);
-    const [history, setHistory] = useState<LedgerEvent[]>([]);
-    const [protocol] = useState(() => new DeliveryProtocol());
+export default function EarningsHub() {
+    const stats = {
+        balance: 1242.80,
+        pending: 142.50,
+        thisWeek: 850.20,
+        target: 1000.00
+    };
 
-    useEffect(() => {
-        const load = async () => {
-            const currentCash = await protocol.getCashInHand();
-            const events = await (protocol as any).ledger.getEvents(); // Accessing ledger directly for history
-            setCash(currentCash);
-            setHistory(events.filter((e: LedgerEvent) => e.type === 'CASH_COLLECTED' || e.type === 'CASH_DEPOSITED').reverse());
-        };
-        load();
-    }, [protocol]);
+    const history = [
+        { id: 'TX-8921', date: 'Today, 14:30', type: 'Payout', amount: 12.50, status: 'Settled' },
+        { id: 'TX-8920', date: 'Today, 12:15', type: 'Payout', amount: 42.00, status: 'Settled' },
+        { id: 'TX-8919', date: 'Yesterday', type: 'Weekly Settlement', amount: -650.00, status: 'Transfer' },
+        { id: 'TX-8918', date: 'Oct 23', type: 'Referral Bonus', amount: 50.00, status: 'Settled' }
+    ];
 
     return (
-        <div className="flex flex-col gap-8 px-6">
-
+        <div className="space-y-8">
             {/* Header */}
-            <header className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-black text-white italic tracking-tighter uppercase mb-1">Vault</h1>
-                    <p className="text-xs font-black text-nile-silver/30 uppercase tracking-[0.2em]">Cash Custody Ledger</p>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
-                    Audited
-                </div>
+            <header className="flex flex-col gap-1">
+                <h1 className="text-4xl font-black text-text tracking-tighter uppercase leading-tight">Earnings Hub</h1>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Financial Nexus • NileLink Treasury</p>
             </header>
 
-            {/* Total Balance Card */}
-            <div className="p-10 rounded-[3rem] bg-white/[0.02] border border-white/5 relative overflow-hidden">
-                <div className="relative z-10">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-nile-silver/40 mb-2">Total Cash In Hand</div>
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-black text-white italic tracking-tighter">{cash.toFixed(2)}</span>
-                        <span className="text-lg font-bold text-nile-silver/20 uppercase tracking-widest">EGP</span>
+            {/* main Balance Card */}
+            <Card className="p-10 border-2 border-text bg-white relative overflow-hidden group">
+                <div className="absolute -right-20 -bottom-20 opacity-5 group-hover:scale-110 transition-transform duration-[2000ms]">
+                    <Wallet size={320} />
+                </div>
+                <div className="relative">
+                    <div className="flex justify-between items-start mb-10">
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-30 mb-2">Available for Instant Payout</p>
+                            <h2 className="text-6xl font-black font-mono tracking-tighter text-text">${stats.balance.toFixed(2)}</h2>
+                        </div>
+                        <Badge className="bg-emerald-500/10 text-emerald-600 border-0 font-black text-[10px] uppercase tracking-widest px-3 py-1">
+                            Verified Node
+                        </Badge>
+                    </div>
+
+                    <div className="flex gap-4">
+                        <Button className="flex-1 h-16 bg-text text-background font-black uppercase tracking-widest text-xs rounded-2xl hover:bg-primary transition-all shadow-xl shadow-text/10">
+                            Cash Out Now
+                        </Button>
+                        <Button variant="outline" className="w-16 h-16 border-2 border-surface flex items-center justify-center text-text hover:border-text rounded-2xl transition-all">
+                            <Download size={24} />
+                        </Button>
                     </div>
                 </div>
-                <div className="absolute top-0 right-0 p-8 opacity-[0.03]">
-                    <Wallet size={140} />
-                </div>
+            </Card>
+
+            {/* Performance Goals */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="p-8 border-2 border-surface bg-background">
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                            <TrendingUp size={24} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Weekly Target</p>
+                            <p className="text-xl font-black font-mono tracking-tight">${stats.thisWeek.toFixed(2)} / ${stats.target}</p>
+                        </div>
+                    </div>
+                    <div className="h-2 w-full bg-surface rounded-full overflow-hidden">
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(stats.thisWeek / stats.target) * 100}%` }}
+                            className="h-full bg-primary"
+                        />
+                    </div>
+                </Card>
+
+                <Card className="p-8 border-2 border-primary/20 bg-primary/5 relative overflow-hidden group">
+                    <Zap className="absolute -right-4 -bottom-4 text-primary opacity-10 group-hover:scale-125 transition-transform" size={100} />
+                    <div className="relative">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-2">Next Mission Forecast</p>
+                        <h3 className="text-2xl font-black uppercase tracking-tighter text-text">+$15-25 Est.</h3>
+                        <p className="text-[10px] font-bold text-text opacity-40 uppercase tracking-widest mt-2">Demand surge in Zamalek</p>
+                    </div>
+                </Card>
             </div>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-4">
-                <div className="p-6 rounded-3xl bg-white/5 border border-white/5">
-                    <div className="text-xs font-black text-nile-silver/20 uppercase tracking-widest mb-1">Today's Take</div>
-                    <div className="text-xl font-black text-emerald-400">+{cash.toFixed(2)}</div>
+            {/* Transaction Ledger */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                    <h3 className="text-xs font-black uppercase tracking-[0.3em] opacity-30">Transaction Ledger</h3>
+                    <div className="flex items-center gap-1.5 opacity-30">
+                        <Calendar size={12} />
+                        <span className="text-[10px] font-black uppercase">Filter by Date</span>
+                    </div>
                 </div>
-                <div className="p-6 rounded-3xl bg-white/5 border border-white/5">
-                    <div className="text-xs font-black text-nile-silver/20 uppercase tracking-widest mb-1">Discrepancy</div>
-                    <div className="text-xl font-black text-white">0.00</div>
-                </div>
-            </div>
-
-            {/* Transaction History */}
-            <div className="flex flex-col gap-6">
-                <div className="flex justify-between items-center">
-                    <h2 className="text-xs font-black text-nile-silver/40 uppercase tracking-widest flex items-center gap-2">
-                        <History size={14} /> Activity Log
-                    </h2>
-                    <button className="p-2 rounded-lg bg-white/5 text-nile-silver">
-                        <Filter size={14} />
-                    </button>
-                </div>
-
-                <div className="space-y-3">
-                    {history.length > 0 ? history.map((event) => (
-                        <div key={event.id} className="p-5 rounded-3xl bg-white/5 border border-white/5 flex items-center justify-between group hover:bg-white/[0.08] transition-all">
-                            <div className="flex items-center gap-4">
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${event.type === 'CASH_COLLECTED' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-blue-500/10 text-blue-50'}`}>
-                                    {event.type === 'CASH_COLLECTED' ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
+                <div className="space-y-4">
+                    {history.map((tx, i) => (
+                        <Card key={tx.id} className="p-6 border-2 border-surface bg-white hover:border-text transition-all group">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-6">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${tx.amount > 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-500'
+                                        }`}>
+                                        {tx.amount > 0 ? <ArrowUpRight size={20} /> : <ArrowDownLeft size={20} />}
+                                    </div>
+                                    <div>
+                                        <div className="font-black text-lg text-text tracking-tighter uppercase leading-none mb-1">{tx.type}</div>
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-text opacity-20 uppercase tracking-widest">
+                                            {tx.date} • {tx.id}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div className="text-sm font-bold text-white uppercase tracking-tight">
-                                        {event.type === 'CASH_COLLECTED' ? `Order #${event.payload.orderId.split('-')[1]}` : 'Deposit to Store'}
+                                <div className="text-right">
+                                    <div className={`text-xl font-black font-mono tracking-tighter ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'
+                                        }`}>
+                                        {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
                                     </div>
-                                    <div className="text-[10px] font-black text-nile-silver/20 uppercase tracking-widest">
-                                        {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {event.id.substring(0, 8)}
-                                    </div>
+                                    <Badge className="bg-surface text-text/30 font-black text-[8px] uppercase tracking-tighter border-0">{tx.status}</Badge>
                                 </div>
                             </div>
-                            <div className="text-right">
-                                <div className={`text-lg font-black italic ${event.type === 'CASH_COLLECTED' ? 'text-emerald-400' : 'text-blue-400'}`}>
-                                    {event.type === 'CASH_COLLECTED' ? '+' : '-'}{event.payload.amount.toFixed(2)}
-                                </div>
-                                <div className="text-[10px] font-bold text-nile-silver/20 uppercase tracking-widest">EGP</div>
-                            </div>
-                        </div>
-                    )) : (
-                        <div className="py-20 text-center flex flex-col items-center gap-4 opacity-20">
-                            <AlertCircle size={40} />
-                            <p className="text-xs font-black uppercase tracking-widest italic">No financial events recorded</p>
-                        </div>
-                    )}
+                        </Card>
+                    ))}
                 </div>
             </div>
 
-            {/* Info Banner */}
-            <div className="p-6 rounded-3xl bg-amber-500/5 border border-amber-500/10 flex gap-4">
-                <AlertCircle size={20} className="text-amber-500 shrink-0" />
-                <p className="text-[11px] font-medium text-amber-500/70 leading-relaxed italic">
-                    Any mismatch between the physical cash and this digital ledger must be reported during shift closure.
+            {/* Protocol Security Disclaimer */}
+            <div className="p-8 rounded-[3rem] bg-text/5 border border-text/10 flex items-start gap-4">
+                <ShieldCheck size={20} className="text-primary shrink-0 mt-1" />
+                <p className="text-[11px] text-text opacity-40 leading-relaxed font-bold uppercase tracking-wider italic">
+                    "All earnings are settled via the NileLink Economic Protocol. Funds are cryptographically secured and verified by 12 regional validator nodes."
                 </p>
             </div>
-
         </div>
     );
 }

@@ -1,12 +1,26 @@
-
 interface Env {
     // Environment variables
 }
 
+interface ExecutionContext {
+    waitUntil(promise: Promise<any>): void;
+    passThroughOnException(): void;
+}
+
+interface Request {
+    method: string;
+    url: string;
+    headers: any;
+    cf?: {
+        colo: string;
+        [key: string]: any;
+    };
+}
+
 export default {
-	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
         const url = new URL(request.url);
-        
+
         // Advanced Security Headers (CORS & Security)
         const corsHeaders = {
             "Access-Control-Allow-Origin": "*", // In production allow specific origins
@@ -19,13 +33,13 @@ export default {
         };
 
         if (request.method === "OPTIONS") {
-             return new Response(null, { headers: corsHeaders });
+            return new Response(null, { headers: corsHeaders });
         }
 
         // Health Check Endpoint
         if (url.pathname === "/health" || url.pathname === "/api/health") {
-            return new Response(JSON.stringify({ 
-                status: "healthy", 
+            return new Response(JSON.stringify({
+                status: "healthy",
                 environment: "edge-worker",
                 region: request.cf?.colo || "unknown",
                 timestamp: new Date().toISOString()
@@ -35,8 +49,8 @@ export default {
         }
 
         // Main Entry Response
-		return new Response("NileLink API Edge Gateway (Phase 23 Active)", { 
-            headers: { "Content-Type": "text/plain", ...corsHeaders } 
+        return new Response("NileLink API Edge Gateway (Phase 23 Active)", {
+            headers: { "Content-Type": "text/plain", ...corsHeaders }
         });
-	},
+    },
 };

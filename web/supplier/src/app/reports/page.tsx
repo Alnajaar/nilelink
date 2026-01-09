@@ -1,156 +1,237 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import {
-    ArrowLeft,
-    BarChart3,
-    TrendingUp,
-    TrendingDown,
-    AlertCircle,
-    Zap,
-    PieChart,
-    Activity,
-    ChevronDown,
-    Download,
-    Globe
+    TrendingUp, DollarSign, Package, Users, Download,
+    Calendar, ArrowLeft, BarChart3, PieChart, Activity
 } from 'lucide-react';
-import { RestockEngine } from '@/lib/engines/RestockEngine';
 
-export default function SupplierReports() {
-    const [forecast, setForecast] = useState<any[]>([]);
-    const [restock] = useState(() => new RestockEngine());
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { Button } from '@/shared/components/Button';
+import { Card } from '@/shared/components/Card';
+import { Badge } from '@/shared/components/Badge';
 
-    useEffect(() => {
-        const load = async () => {
-            setForecast(await restock.getForecast());
-        };
-        load();
-    }, [restock]);
+export default function ReportsPage() {
+    const router = useRouter();
+    const { user, isLoading } = useAuth();
+
+    const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
+
+    const [analytics, setAnalytics] = useState({
+        totalRevenue: 145600.00,
+        totalOrders: 342,
+        avgOrderValue: 425.73,
+        topProducts: [
+            { name: 'Roma Tomatoes', revenue: 12500, orders: 50 },
+            { name: 'Chicken Breast', revenue: 10200, orders: 30 },
+            { name: 'Basmati Rice', revenue: 9800, orders: 61 },
+            { name: 'Olive Oil', revenue: 7200, orders: 15 },
+            { name: 'Yellow Onions', revenue: 6900, orders: 77 }
+        ],
+        topCustomers: [
+            { name: 'Cairo Grill', orders: 45, revenue: 25000 },
+            { name: 'Nile Bistro', orders: 38, revenue: 19500 },
+            { name: 'Delta Kitchen', orders: 32, revenue: 18000 }
+        ],
+        monthlyTrend: [
+            { month: 'Jan', revenue: 38000 },
+            { month: 'Feb', revenue: 42000 },
+            { month: 'Mar', revenue: 45000 },
+            { month: 'Apr', revenue: 48000 },
+            { month: 'May', revenue: 52000 },
+            { month: 'Jun', revenue: 56000 }
+        ]
+    });
+
+    const handleExport = () => {
+        alert('Exporting report to CSV...');
+    };
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white flex flex-col font-sans">
-
-            {/* Header */}
-            <header className="p-8 flex items-center justify-between border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
-                <div className="flex items-center gap-6">
-                    <Link href="/" className="p-3 rounded-2xl bg-white/5 text-nile-silver hover:text-white transition-colors">
-                        <ArrowLeft size={24} />
-                    </Link>
-                    <div>
-                        <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">Insights</h1>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-nile-silver/20 mt-1">Intelligence Terminal</p>
-                    </div>
-                </div>
-                <button className="h-12 px-6 rounded-xl bg-white text-black text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
-                    <Download size={14} /> Export Protocol Data
-                </button>
-            </header>
-
-            <main className="flex-1 p-6 md:p-10 space-y-12">
-
-                {/* Demand Forecast (Intelligence Section) */}
-                <section>
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h2 className="text-2xl font-black italic tracking-tighter uppercase">Demand Intelligence</h2>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-nile-silver/20">Predicted Exhaustion Levels</p>
+        <AuthGuard requiredRole={['VENDOR', 'ADMIN', 'SUPER_ADMIN']}>
+            <div className="min-h-screen bg-background">
+                {/* Header */}
+                <div className="bg-white border-b border-surface px-6 py-4">
+                    <div className="max-w-7xl mx-auto flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => router.push('/dashboard')} className="p-2 hover:bg-surface rounded-lg">
+                                <ArrowLeft size={20} className="text-text" />
+                            </button>
+                            <div>
+                                <h1 className="text-3xl font-black text-text">Analytics & Reports</h1>
+                                <p className="text-sm text-text opacity-70">Track performance and insights</p>
+                            </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Live Model</span>
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            {/* Date Range Filter */}
+                            <div className="flex gap-2">
+                                {(['7d', '30d', '90d', '1y'] as const).map((range) => (
+                                    <button
+                                        key={range}
+                                        onClick={() => setDateRange(range)}
+                                        className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${dateRange === range
+                                            ? 'bg-primary text-background'
+                                            : 'bg-surface text-text hover:bg-surface/70'
+                                            }`}
+                                    >
+                                        {range}
+                                    </button>
+                                ))}
+                            </div>
+                            <Button onClick={handleExport} variant="outline" className="h-12 px-6 rounded-xl font-bold">
+                                <Download size={18} className="mr-2" />
+                                Export
+                            </Button>
                         </div>
                     </div>
+                </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {forecast.map((f) => (
-                            <div key={f.productId} className="p-8 rounded-[2.5rem] bg-white/5 border border-white/5 hover:bg-white/[0.08] transition-all relative overflow-hidden group">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div>
-                                        <h4 className="text-xl font-black italic tracking-tight uppercase group-hover:text-white transition-colors">{f.name}</h4>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-nile-silver/20">ID: {f.productId}</p>
-                                    </div>
-                                    <div className={`p-2 rounded-lg ${f.status === 'CRITICAL' ? 'bg-red-500/10 text-red-500' : f.status === 'WARNING' ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                                        <Activity size={18} />
-                                    </div>
+                <div className="max-w-7xl mx-auto px-6 py-8">
+                    {/* Key Metrics */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <Card className="p-6 bg-white border border-surface">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                                    <DollarSign size={24} className="text-primary" />
                                 </div>
-                                <div className="flex items-end gap-3">
-                                    <div className="text-5xl font-black italic tracking-tighter">{f.predictedOutDays}</div>
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-nile-silver/40 mb-2">Days Remaining</div>
-                                </div>
-                                <div className="mt-8 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full transition-all duration-1000 ${f.status === 'CRITICAL' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : f.status === 'WARNING' ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                                        style={{ width: `${Math.max(10, 100 - (f.predictedOutDays * 5))}%` }}
-                                    />
-                                </div>
+                                <TrendingUp size={16} className="text-primary" />
                             </div>
-                        ))}
+                            <p className="text-xs text-text opacity-50 uppercase tracking-widest font-bold mb-1">
+                                Total Revenue
+                            </p>
+                            <p className="text-3xl font-black font-mono text-text">
+                                ${analytics.totalRevenue.toLocaleString()}
+                            </p>
+                            <p className="text-xs text-primary font-bold mt-2">+12.5% vs last period</p>
+                        </Card>
+
+                        <Card className="p-6 bg-white border border-surface">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                                    <Package size={24} className="text-primary" />
+                                </div>
+                                <Activity size={16} className="text-text opacity-50" />
+                            </div>
+                            <p className="text-xs text-text opacity-50 uppercase tracking-widest font-bold mb-1">
+                                Total Orders
+                            </p>
+                            <p className="text-3xl font-black font-mono text-text">
+                                {analytics.totalOrders}
+                            </p>
+                            <p className="text-xs text-primary font-bold mt-2">+8.3% vs last period</p>
+                        </Card>
+
+                        <Card className="p-6 bg-primary text-background">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="w-12 h-12 bg-background/20 rounded-xl flex items-center justify-center">
+                                    <BarChart3 size={24} />
+                                </div>
+                                <TrendingUp size={16} />
+                            </div>
+                            <p className="text-xs opacity-70 uppercase tracking-widest font-bold mb-1">
+                                Avg Order Value
+                            </p>
+                            <p className="text-3xl font-black font-mono">
+                                ${analytics.avgOrderValue.toFixed(2)}
+                            </p>
+                            <p className="text-xs font-bold mt-2 opacity-80">+3.2% vs last period</p>
+                        </Card>
                     </div>
-                </section>
 
-                {/* Performance Stats */}
-                <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="p-10 rounded-[3.5rem] bg-white/5 border border-white/5 space-y-8">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-black italic tracking-tighter uppercase">Credit Health Ratio</h3>
-                            <PieChart size={24} className="text-nile-silver/20" />
-                        </div>
-                        <div className="flex items-center gap-10">
-                            <div className="w-32 h-32 rounded-full border-[10px] border-emerald-500 border-t-white/10 flex items-center justify-center relative">
-                                <span className="text-2xl font-black italic">84%</span>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Top Products */}
+                        <Card className="p-6 bg-white border border-surface">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                                    <Package size={20} className="text-primary" />
+                                </div>
+                                <h2 className="text-xl font-black text-text">Top Products</h2>
                             </div>
+
                             <div className="space-y-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-nile-silver/40">Healthy Accounts</span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-3 h-3 rounded-full bg-amber-500" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-nile-silver/40">Watch List</span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-3 h-3 rounded-full bg-red-500" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-nile-silver/40">In Dispute</span>
-                                </div>
+                                {analytics.topProducts.map((product, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-4 bg-surface/30 rounded-lg hover:bg-surface/50 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                                                <span className="text-background font-black text-sm">#{idx + 1}</span>
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-text">{product.name}</p>
+                                                <p className="text-xs text-text opacity-50">{product.orders} orders</p>
+                                            </div>
+                                        </div>
+                                        <p className="font-mono font-black text-primary">
+                                            ${product.revenue.toLocaleString()}
+                                        </p>
+                                    </div>
+                                ))}
                             </div>
-                        </div>
+                        </Card>
+
+                        {/* Top Customers */}
+                        <Card className="p-6 bg-white border border-surface">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                                    <Users size={20} className="text-primary" />
+                                </div>
+                                <h2 className="text-xl font-black text-text">Top Customers</h2>
+                            </div>
+
+                            <div className="space-y-3">
+                                {analytics.topCustomers.map((customer, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-4 bg-surface/30 rounded-lg hover:bg-surface/50 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                                                <span className="text-background font-black text-sm">#{idx + 1}</span>
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-text">{customer.name}</p>
+                                                <p className="text-xs text-text opacity-50">{customer.orders} orders</p>
+                                            </div>
+                                        </div>
+                                        <p className="font-mono font-black text-primary">
+                                            ${customer.revenue.toLocaleString()}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>
                     </div>
 
-                    <div className="p-10 rounded-[3.5rem] bg-white/5 border border-white/5 space-y-8">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-black italic tracking-tighter uppercase">Volume Flux</h3>
-                            <TrendingUp size={24} className="text-emerald-500/40" />
+                    {/* Monthly Trend Chart (Simplified) */}
+                    <Card className="p-6 bg-white border border-surface mt-8">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                                <TrendingUp size={20} className="text-primary" />
+                            </div>
+                            <h2 className="text-xl font-black text-text">Revenue Trend</h2>
                         </div>
-                        <div className="space-y-6">
-                            {[
-                                { label: 'Grand Cairo Grill', value: '+14% Week-over-Week', icon: TrendingUp, color: 'text-emerald-500' },
-                                { label: 'Sultan Bakery', value: '-2% Week-over-Week', icon: TrendingDown, color: 'text-red-500' },
-                            ].map((row, i) => (
-                                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-black/20 border border-white/5">
-                                    <div>
-                                        <div className="text-sm font-bold text-white">{row.label}</div>
-                                        <div className={`text-[9px] font-black uppercase tracking-widest mt-1 ${row.color}`}>{row.value}</div>
+
+                        <div className="flex items-end justify-between gap-4 h-64">
+                            {analytics.monthlyTrend.map((month, idx) => (
+                                <div key={idx} className="flex-1 flex flex-col items-center gap-2">
+                                    <div className="w-full flex flex-col justify-end flex-1">
+                                        <div
+                                            className="w-full bg-primary rounded-t-lg transition-all hover:opacity-80"
+                                            style={{ height: `${(month.revenue / 60000) * 100}%` }}
+                                        />
                                     </div>
-                                    <row.icon size={18} className={row.color} />
+                                    <div className="text-center">
+                                        <p className="text-xs font-bold text-text">{month.month}</p>
+                                        <p className="text-xs text-text opacity-50 font-mono">${(month.revenue / 1000).toFixed(0)}k</p>
+                                    </div>
                                 </div>
                             ))}
                         </div>
+                    </Card>
+                    {/* Settlement Matrix (Phase 12) */}
+                    <div className="mt-12">
+                        <SettlementMatrix />
                     </div>
-                </section>
-
-                {/* Network Map Placeholder */}
-                <section className="p-20 rounded-[4rem] bg-gradient-to-br from-indigo-600/20 to-black border border-white/5 flex flex-col items-center justify-center text-center">
-                    <Globe size={80} className="text-indigo-500/20 mb-10 animate-[spin_20s_linear_infinite]" />
-                    <h3 className="text-3xl font-black italic tracking-tighter uppercase mb-4">Distribution Network Map</h3>
-                    <p className="text-sm font-medium text-nile-silver/30 max-w-md italic mb-10">Real-time visualization of supply events across the NileLink protocol. Active nodes: 124.</p>
-                    <button className="h-14 px-10 rounded-2xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-600/30">
-                        Initialize Node Grid
-                    </button>
-                </section>
-
-            </main>
-
-        </div>
+                </main>
+            </div>
+        </AuthGuard>
     );
 }

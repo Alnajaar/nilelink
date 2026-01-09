@@ -6,7 +6,7 @@ services:
   backend:
     environment:
       - NODE_ENV=development
-      - CHOKIDAR_USEPOLLING=true  # For file watching in containers
+      - CHOKIDAR_USEPOLLING=true # For file watching in containers
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -17,7 +17,8 @@ services:
   web-customer:
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://backend:3001/api
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+      - API_URL_INTERNAL=http://backend:3001/api
       - CHOKIDAR_USEPOLLING=true
     volumes:
       - ./web/customer:/app
@@ -27,7 +28,8 @@ services:
   web-pos:
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://backend:3001/api
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+      - API_URL_INTERNAL=http://backend:3001/api
       - CHOKIDAR_USEPOLLING=true
     volumes:
       - ./web/pos:/app
@@ -37,7 +39,8 @@ services:
   web-delivery:
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://backend:3001/api
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+      - API_URL_INTERNAL=http://backend:3001/api
       - CHOKIDAR_USEPOLLING=true
     volumes:
       - ./web/delivery:/app
@@ -47,7 +50,8 @@ services:
   web-supplier:
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://backend:3001/api
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+      - API_URL_INTERNAL=http://backend:3001/api
       - CHOKIDAR_USEPOLLING=true
     volumes:
       - ./web/supplier:/app
@@ -57,7 +61,8 @@ services:
   web-portal:
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://backend:3001/api
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+      - API_URL_INTERNAL=http://backend:3001/api
       - CHOKIDAR_USEPOLLING=true
     volumes:
       - ./web/portal:/app
@@ -67,7 +72,8 @@ services:
   web-dashboard:
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://backend:3001/api
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+      - API_URL_INTERNAL=http://backend:3001/api
       - CHOKIDAR_USEPOLLING=true
     volumes:
       - ./web/dashboard:/app
@@ -77,7 +83,8 @@ services:
   web-unified:
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://backend:3001/api
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+      - API_URL_INTERNAL=http://backend:3001/api
       - CHOKIDAR_USEPOLLING=true
     volumes:
       - ./web/unified:/app

@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { currencyService } from '../src/services/CurrencyService';
 
 const prisma = new PrismaClient();
@@ -19,7 +19,7 @@ async function main() {
     console.log('\n👤 Creating super admin user...');
 
     const adminEmail = 'admin@nilelink.app';
-    const adminPassword = 'Admin@123!'; // Change this in production!
+    const adminPassword = 'DGGASHdggash100%'; // Secured per request
 
     const existingAdmin = await prisma.user.findFirst({
         where: {
@@ -45,12 +45,12 @@ async function main() {
 
         await prisma.user.create({
             data: {
-                tenantId: systemTenant.id,
+                tenant: { connect: { id: systemTenant.id } },
                 email: adminEmail,
                 password: hashedPassword,
                 firstName: 'Super',
                 lastName: 'Admin',
-                isVerified: true,
+                emailVerified: true,
                 isActive: true,
             }
         });
@@ -176,12 +176,13 @@ async function main() {
 
         await prisma.user.create({
             data: {
-                tenantId: demoTenant.id,
+                tenant: { connect: { id: demoTenant.id } },
                 email: ownerEmail,
                 password: hashedOwnerPassword,
                 firstName: 'Demo',
                 lastName: 'Owner',
-                isVerified: true,
+                role: 'RESTAURANT_OWNER',
+                emailVerified: true,
                 isActive: true,
                 roles: {
                     connect: { id: ownerRole!.id }

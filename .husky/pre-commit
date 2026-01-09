@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run color compliance check
+npm run check-colors
+
+# If check fails, prevent commit
+if [ $? -ne 0 ]; then
+  echo "❌ Commit blocked: Forbidden hex codes detected"
+  echo "   Run 'npm run check-colors' to see violations"
+  echo "   Only colors.ts, gradients.ts, and globals.shared.css may contain hex codes"
+  exit 1
+fi

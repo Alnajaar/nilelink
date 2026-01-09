@@ -8,11 +8,15 @@ import { initializeDatabase } from './src/services/database';
 import { initializeSagaContext } from './src/store/rootSaga';
 
 // Import screens
+import { CustomerHomeScreen } from './src/screens/CustomerHomeScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import RestaurantDetailScreen from './src/screens/RestaurantDetailScreen';
+import { RestaurantListScreen } from './src/screens/RestaurantListScreen';
+import { MenuScreen } from './src/screens/MenuScreen';
 import CheckoutScreen from './src/screens/CheckoutScreen';
 import OrderTrackingScreen from './src/screens/OrderTrackingScreen';
-import CustomerHomeScreen from './src/screens/CustomerHomeScreen';
+import { ProfileScreen } from './src/screens/ProfileScreen';
+import { WelcomeScreen } from './src/screens/WelcomeScreen';
 
 // Ignore specific warnings
 LogBox.ignoreLogs([
@@ -23,10 +27,15 @@ LogBox.ignoreLogs([
 const store = configureStore();
 
 export type RootStackParamList = {
+  Welcome: undefined;
+  CustomerHome: undefined;
   Home: undefined;
+  RestaurantList: undefined;
   RestaurantDetail: { restaurantId: string };
+  Menu: { restaurantId: string };
   Checkout: undefined;
   OrderTracking: { orderId: string };
+  Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -50,16 +59,21 @@ export default function App() {
     <Provider store={store}>
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="Home"
+          initialRouteName="CustomerHome"
           screenOptions={{
             headerShown: false,
             animation: 'slide_from_right',
           }}
         >
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
+          <Stack.Screen name="CustomerHome" component={CustomerHomeScreen} />
           <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="RestaurantList" component={RestaurantListScreen} />
           <Stack.Screen name="RestaurantDetail" component={RestaurantDetailScreen} />
+          <Stack.Screen name="Menu" component={MenuScreen} />
           <Stack.Screen name="Checkout" component={CheckoutScreen} />
           <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>

@@ -5,54 +5,15 @@
  * consistent styling across the entire platform.
  */
 
-const designTokens = require('./design-tokens.js').default;
+// LOCKED THEME ENFORCEMENT
+// Import from shared design tokens
+const designTokens = require('./design-tokens.js');
 
 module.exports = {
     theme: {
+        screens: designTokens.breakpoints,
         extend: {
-            colors: {
-                // Brand Palette
-                primary: {
-                    DEFAULT: 'var(--color-primary)',
-                    dark: 'var(--color-primary-dark)',
-                    light: 'var(--color-primary-light)',
-                    surface: 'var(--color-primary-surface)',
-                },
-                secondary: {
-                    DEFAULT: 'var(--color-secondary)',
-                    dark: 'var(--color-secondary-dark)',
-                    light: 'var(--color-secondary-light)',
-                },
-                accent: 'var(--color-accent)',
-
-                // Semantics
-                success: 'var(--color-success)',
-                warning: 'var(--color-warning)',
-                danger: 'var(--color-danger)',
-                info: 'var(--color-info)',
-
-                // Backgrounds
-                background: {
-                    DEFAULT: 'var(--color-bg-body)',
-                    card: 'var(--color-bg-card)',
-                    subtle: 'var(--color-bg-subtle)',
-                },
-
-                // Typography
-                text: {
-                    main: 'var(--color-text-main)',
-                    muted: 'var(--color-text-muted)',
-                    subtle: 'var(--color-text-subtle)',
-                    inverse: 'var(--color-text-on-primary)',
-                },
-
-                // Borders
-                border: {
-                    DEFAULT: 'var(--color-border)',
-                    subtle: 'var(--color-border-subtle)',
-                    strong: 'var(--color-border-strong)',
-                },
-            },
+            colors: designTokens.colors,
 
             fontFamily: designTokens.typography.fontFamily,
             fontSize: designTokens.typography.fontSize,

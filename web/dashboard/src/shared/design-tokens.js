@@ -12,84 +12,71 @@
  */
 
 export const colors = {
-    // Primary palette - Earthy, trustworthy, economic
+    // 1️⃣ BRAND COLOR PALETTE (LOCKED)
+    // Primary Color (Brand / Infrastructure)
     primary: {
-        dark: '#0e372b',      // Deep forest green - primary brand color
-        DEFAULT: '#0e372b',
-        light: '#1a5240',     // Lighter variant for hover states
-        lighter: '#267055',   // Even lighter for backgrounds
+        DEFAULT: '#0A2540',   // Deep Nile Blue
+        dark: '#06121f',      // Darker shade for hover/active
+        light: '#13304d',     // Lighter shade
     },
 
-    // Secondary palette - Soft, neutral
+    // Secondary Color (Status / Intelligence)
     secondary: {
-        soft: '#d2dad1',      // Soft sage - secondary brand color
-        DEFAULT: '#d2dad1',
-        dark: '#b8c2b7',      // Darker variant
-        light: '#e5ebe4',     // Lighter variant
+        DEFAULT: '#0FB9B1',   // Emerald Intelligence Green
+        dark: '#0a8f88',
+        light: '#3ad4cd',
     },
 
-    // Background palette
-    background: {
-        light: '#f9f8f4',     // Warm off-white - main background
-        DEFAULT: '#f9f8f4',
-        white: '#ffffff',     // Pure white for cards
-        cream: '#fdfcf8',     // Subtle cream variant
-    },
-
-    // Accent palette
+    // Accent / Action Color (CTA / Focus)
     accent: {
-        dark: '#372c2d',      // Deep brown - accent/contrast
-        DEFAULT: '#372c2d',
-        light: '#4d3f40',     // Lighter variant
+        DEFAULT: '#F5A623',   // Signal Amber
+        dark: '#d68b13',
+        light: '#f7b84f',
     },
 
-    // Semantic colors - derived from palette
-    success: {
-        DEFAULT: '#0e372b',   // Use primary dark for success
-        light: '#1a5240',
-        bg: '#e8f5f0',
+    // Neutral System Colors
+    background: {
+        dark: '#060D14',      // Main App Background
+        light: '#F5F7FA',     // Alt / Light Mode
+        DEFAULT: '#060D14',   // Dark-first design
+        card: '#0F2A44',      // Surface / Card
     },
 
-    warning: {
-        DEFAULT: '#8b6914',   // Earthy gold
-        light: '#a68419',
-        bg: '#fef9e7',
+    // Semantic Colors
+    success: {                // Tied to Emerald Intelligence Green
+        DEFAULT: '#0FB9B1',
+        bg: 'rgba(15, 185, 177, 0.1)',
+    },
+
+    warning: {                // Tied to Signal Amber
+        DEFAULT: '#F5A623',
+        bg: 'rgba(245, 166, 35, 0.1)',
     },
 
     error: {
-        DEFAULT: '#8b2c2c',   // Earthy red
-        light: '#a63838',
-        bg: '#fdeaea',
+        DEFAULT: '#D64545',   // Critical Error Red
+        bg: 'rgba(214, 69, 69, 0.1)',
     },
 
     info: {
-        DEFAULT: '#2c5f7b',   // Earthy blue
-        light: '#3a7a9e',
-        bg: '#e8f4f8',
+        DEFAULT: '#0A2540',   // Using Primary Blue
+        bg: 'rgba(11, 31, 51, 0.1)',
     },
 
-    // Text colors
+    // Text Colors
     text: {
-        primary: '#1a1a1a',   // Almost black
-        secondary: '#4a4a4a', // Dark gray
-        tertiary: '#6a6a6a',  // Medium gray
-        disabled: '#9a9a9a',  // Light gray
-        inverse: '#ffffff',   // White text
+        primary: '#E6EEF7',   // Primary Text (Dark UI)
+        secondary: '#9FB3C8', // Secondary Text
+        muted: '#5e7387',
+        inverse: '#0A2540',   // Text on light backgrounds
+        error: '#D64545',
     },
 
-    // Border colors
+    // Border Colors
     border: {
-        light: '#e5e5e5',
-        DEFAULT: '#d0d0d0',
-        dark: '#a0a0a0',
-    },
-
-    // State colors for sync status
-    state: {
-        synced: '#0e372b',    // Green - fully synced
-        pending: '#8b6914',   // Gold - pending sync
-        offline: '#8b2c2c',   // Red - offline
-        verifying: '#2c5f7b', // Blue - verifying
+        DEFAULT: '#1C3B5A',   // Divider Color
+        subtle: '#13283f',
+        strong: '#2d5b88',
     },
 };
 

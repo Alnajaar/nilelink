@@ -1,63 +1,85 @@
-# Backend Dockerfile for NileLink API Server
-FROM node:18-slim AS base
+# Dockerfile for NileLink Backend API v1.0.0
+# Production-optimized multi-stage build
 
-# Install runtime system dependencies
-RUN apt-get update && apt-get install -y \
-    sqlite3 \
+# ============================================================================
+# Stage 1: Base Image
+# ============================================================================
+FROM node:18-alpine AS base
+
+RUN apk add --no-cache \
+    libc6-compat \
     postgresql-client \
-    redis-tools \
-    && rm -rf /var/lib/apt/lists/*
+    curl
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
+# ============================================================================
+# Stage 2: Dependencies
+# ============================================================================
+FROM base AS deps
+
+# Copy dependency manifests
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies (including dev dependencies for building native modules)
-RUN npm ci && npm cache clean --force
+# Install production dependencies only
+# Use --legacy-peer-deps to handle Hardhat conflicts (not needed in prod)
+RUN npm ci --only=production --legacy-peer-deps && \
+    npm cache clean --force
 
+# ============================================================================
+# Stage 3: Builder
+# ============================================================================
+FROM base AS builder
 
+# Copy dependency manifests
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install all dependencies (including dev for build)
+RUN npm ci --legacy-peer-deps
 
 # Copy source code
 COPY . .
 
-# Build the application (temporarily disabled for quick setup)
-# RUN npm run build
+# Generate Prisma Client
+RUN npx prisma generate
 
-# Production stage
-FROM node:18-slim AS production
+# Build TypeScript
+RUN npm run build
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    sqlite3 \
-    postgresql-client \
-    redis-tools \
-    && rm -rf /var/lib/apt/lists/*
+# ============================================================================
+# Stage 4: Production Runner
+# ============================================================================
+FROM base AS runner
 
-# Create app user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001
-
-# Set working directory
 WORKDIR /app
 
-# Copy application from base stage (source code for now)
-COPY --from=base --chown=nextjs:nodejs /app/package*.json ./
-COPY --from=base --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=base --chown=nextjs:nodejs /app/src ./src
-COPY --from=base --chown=nextjs:nodejs /app/prisma ./prisma
+# Set production environment
+ENV NODE_ENV=production
+ENV PORT=4000
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nilelink
+
+# Copy production dependencies
+COPY --from=deps --chown=nilelink:nodejs /app/node_modules ./node_modules
+
+# Copy built application
+COPY --from=builder --chown=nilelink:nodejs /app/dist ./dist
+COPY --from=builder --chown=nilelink:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nilelink:nodejs /app/package*.json ./
 
 # Switch to non-root user
-USER nextjs
+USER nilelink
 
-# Expose port
-EXPOSE 3001
+# Expose API port
+EXPOSE 4000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3001/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:4000/api/system/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) })"
 
-# Start the application (dev mode for now)
-CMD ["npm", "run", "dev"]
+# Start command
+CMD ["npm", "run", "start:prod"]

@@ -1,286 +1,236 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Activity,
-    BarChart3,
-    Globe,
-    LayoutDashboard,
-    PieChart,
-    Settings,
-    ShieldCheck,
-    TrendingUp,
-    Zap,
-    ArrowUpRight,
-    Database,
-    Search,
-    ChevronRight
+    Zap, TrendingUp, Activity, Box, Search,
+    Menu, X, Bell, LayoutDashboard, ShoppingBag,
+    Users, Settings, LogOut, Globe, ShieldCheck,
+    ChevronRight, ArrowUpRight, ArrowDownRight,
+    Database, Cpu, Network
 } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 
 export default function Dashboard() {
+    const [mounted, setMounted] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) return null;
 
     const stats = [
-        { label: 'Total Revenue', value: '$1.24M', trend: '+12.5%', icon: TrendingUp, color: 'text-blue-400', glow: 'bg-blue-500/10' },
-        { label: 'Active Orders', value: '4,892', trend: '+5.2%', icon: Activity, color: 'text-purple-400', glow: 'bg-purple-500/10' },
-        { label: 'Edge Latency', value: '14ms', trend: '-2.1%', icon: Zap, color: 'text-cyan-400', glow: 'bg-cyan-500/10' },
-        { label: 'Nodes Sync', value: '100%', trend: 'Verified', icon: ShieldCheck, color: 'text-emerald-400', glow: 'bg-emerald-500/10' },
+        { label: 'Total Revenue', value: '$1.24M', trend: '+12.5%', icon: TrendingUp, color: 'text-primary', glow: 'bg-primary/10' },
+        { label: 'Active Orders', value: '4,892', trend: '+5.2%', icon: Activity, color: 'text-secondary', glow: 'bg-secondary/10' },
+        { label: 'Node Status', value: 'Healthy', trend: '100%', icon: Network, color: 'text-success', glow: 'bg-success/10' },
+        { label: 'Branch Flow', value: '18 Units', trend: '+2.1%', icon: Box, color: 'text-accent', glow: 'bg-accent/10' },
+    ];
+
+    const menuItems = [
+        { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
+        { id: 'sales', icon: ShoppingBag, label: 'Sales Engine' },
+        { id: 'inventory', icon: Box, label: 'Resources' },
+        { id: 'staff', icon: Users, label: 'Human Assets' },
+        { id: 'network', icon: Globe, label: 'Node Network' },
+        { id: 'security', icon: ShieldCheck, label: 'SecOps' },
     ];
 
     return (
-        <div className="flex h-screen bg-[#050505] text-white selection:bg-blue-500/30 overflow-hidden">
+        <div className="flex h-screen bg-neutral text-text-primary selection:bg-primary/20 overflow-hidden relative">
             {/* Background Orbs */}
-            <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
-            <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full" />
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/5 blur-[120px] rounded-full" />
+            </div>
 
             {/* Sidebar */}
-            <aside className="w-72 border-r border-white/5 p-8 hidden lg:flex flex-col relative z-20 bg-black/20 backdrop-blur-xl">
+            <aside className="w-80 border-r border-border-subtle p-8 hidden lg:flex flex-col relative z-20 bg-white/40 backdrop-blur-2xl">
                 <div className="flex items-center gap-4 mb-12">
                     <motion.div
                         whileHover={{ scale: 1.1, rotate: 5 }}
-                        className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20"
+                        className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-2xl shadow-primary/20"
                     >
-                        <Zap size={22} fill="white" />
+                        <Zap size={24} className="text-background" />
                     </motion.div>
-                    <span className="text-2xl font-bold tracking-tighter bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+                    <span className="text-2xl font-black tracking-tighter uppercase italic text-text-primary">
                         NileLink
                     </span>
                 </div>
 
-                <nav className="space-y-2 flex-1">
-                    {[
-                        { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-                        { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-                        { id: 'investments', label: 'Portfolio', icon: PieChart },
-                        { id: 'nodes', label: 'Edge Nodes', icon: Globe },
-                        { id: 'ledger', label: 'Protocol Ledger', icon: Database },
-                        { id: 'governance', label: 'Governance', icon: ShieldCheck },
-                    ].map((item, i) => (
-                        <motion.button
+                <nav className="flex-1 space-y-2">
+                    {menuItems.map((item) => (
+                        <button
                             key={item.id}
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: i * 0.1 }}
                             onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center gap-4 px-5 py-3 rounded-2xl transition-all duration-300 group ${activeTab === item.id
-                                    ? 'bg-gradient-to-r from-blue-600/20 to-transparent text-blue-400 border border-blue-500/20'
-                                    : 'text-zinc-500 hover:text-white hover:bg-white/5'
+                            className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all duration-300 group ${activeTab === item.id
+                                    ? 'bg-primary text-background shadow-lg shadow-primary/20'
+                                    : 'text-text-secondary hover:bg-neutral hover:text-text-primary'
                                 }`}
                         >
-                            <item.icon size={20} className={activeTab === item.id ? 'text-blue-400' : 'group-hover:text-white transition-colors'} />
-                            <span className="font-semibold text-sm">{item.label}</span>
-                            {activeTab === item.id && (
-                                <motion.div layoutId="active" className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
-                            )}
-                        </motion.button>
+                            <item.icon size={20} className={activeTab === item.id ? 'text-background' : 'group-hover:text-primary transition-colors'} />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{item.label}</span>
+                        </button>
                     ))}
                 </nav>
 
-                <div className="pt-8 border-t border-white/5">
-                    <button className="flex items-center gap-4 px-5 py-3 text-zinc-500 hover:text-zinc-200 w-full transition-all group">
-                        <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center group-hover:bg-zinc-800">
-                            <Settings size={18} />
+                <div className="mt-auto space-y-4">
+                    <div className="bg-neutral/50 rounded-2xl p-6 border border-border-subtle">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-[8px] font-black text-text-secondary uppercase tracking-widest opacity-60">Node Load</span>
+                            <span className="text-[8px] font-black text-primary uppercase tracking-widest">42%</span>
                         </div>
-                        <span className="font-medium text-sm">Protocol Settings</span>
+                        <div className="h-1 bg-neutral-dark rounded-full overflow-hidden">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: '42%' }}
+                                className="h-full bg-primary"
+                            />
+                        </div>
+                    </div>
+                    <button className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-error hover:bg-error/5 transition-all group">
+                        <LogOut size={20} className="group-hover:rotate-12 transition-transform" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Deauthorize</span>
                     </button>
                 </div>
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto relative z-10 custom-scrollbar">
-                <header className="px-10 py-8 border-b border-white/5 flex items-center justify-between sticky top-0 bg-[#050505]/60 backdrop-blur-2xl z-30">
+            <main className="flex-1 overflow-y-auto relative z-10 custom-scrollbar bg-neutral/30">
+                <header className="px-10 py-8 border-b border-border-subtle flex items-center justify-between sticky top-0 bg-white/40 backdrop-blur-2xl z-30">
                     <div className="flex items-center gap-8">
                         <div>
                             <motion.h1
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white via-white to-zinc-500 bg-clip-text text-transparent"
+                                className="text-3xl font-black tracking-tight text-text-primary uppercase italic"
                             >
-                                Welcome, NileLink Partner
+                                Executive Console
                             </motion.h1>
-                            <p className="text-zinc-500 text-sm mt-1 font-medium">Monitoring the decentralized economic engine.</p>
+                            <p className="text-text-secondary text-[10px] font-black uppercase tracking-[0.2em] mt-2 opacity-60">Real-time Protocol Monitoring</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-6">
-                        <div className="hidden lg:flex items-center gap-3 px-4 py-2 rounded-2xl bg-zinc-900/50 border border-white/5 focus-within:border-blue-500/50 transition-all">
-                            <Search size={18} className="text-zinc-500" />
-                            <input type="text" placeholder="Search events..." className="bg-transparent border-none focus:outline-none text-sm w-48 placeholder:text-zinc-600" />
+                        <div className="hidden lg:flex items-center gap-3 px-6 py-3 rounded-2xl bg-white border border-border-subtle focus-within:border-primary/50 transition-all shadow-sm">
+                            <Search size={18} className="text-text-muted opacity-50" />
+                            <input type="text" placeholder="Search parameters..." className="bg-transparent border-none focus:outline-none text-xs font-bold uppercase tracking-widest w-48 placeholder:text-text-muted/40" />
                         </div>
-                        <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-emerald-400 text-[10px] font-bold tracking-widest uppercase">Protocol Live</span>
+                        <div className="flex items-center gap-3 px-5 py-2.5 rounded-full bg-success/5 border border-success/20">
+                            <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                            <span className="text-success text-[10px] font-black tracking-[0.2em] uppercase">Protocol Online</span>
                         </div>
                         <motion.div
                             whileHover={{ scale: 1.05 }}
-                            className="w-11 h-11 rounded-2xl bg-zinc-800 border border-white/10 p-0.5 overflow-hidden cursor-pointer"
+                            className="w-12 h-12 rounded-2xl bg-white border border-border-subtle p-1 flex items-center justify-center cursor-pointer shadow-lg"
                         >
-                            <div className="w-full h-full rounded-[14px] bg-gradient-to-br from-zinc-700 to-zinc-900" />
+                            <div className="w-full h-full rounded-xl bg-neutral flex items-center justify-center font-black text-[10px] text-primary">NL</div>
                         </motion.div>
                     </div>
                 </header>
 
-                <section className="p-10 max-w-[1600px] mx-auto">
-                    {/* Stats Bar */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-12">
-                        {stats.map((stat, i) => (
-                            <GlassCard key={i} delay={i * 0.1}>
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className={`p-3 rounded-2xl ${stat.glow} border border-white/5`}>
-                                        <stat.icon size={22} className={stat.color} />
-                                    </div>
-                                    <motion.div
-                                        whileHover={{ scale: 1.2, rotate: 45 }}
-                                        className="p-1.5 rounded-full bg-white/5 text-zinc-500 hover:text-white cursor-pointer transition-colors"
-                                    >
-                                        <ArrowUpRight size={16} />
-                                    </motion.div>
-                                </div>
-                                <div>
-                                    <p className="text-zinc-500 text-sm font-semibold mb-2">{stat.label}</p>
-                                    <div className="flex items-end justify-between">
-                                        <h3 className="text-3xl font-bold tracking-tighter">{stat.value}</h3>
-                                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold ${stat.trend.startsWith('+') ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-500/10 text-zinc-400'}`}>
-                                            {stat.trend}
+                <div className="p-10 space-y-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {stats.map((stat, index) => (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.1 }}
+                            >
+                                <div className="bg-white rounded-[2rem] p-8 border border-border-subtle shadow-xl hover:shadow-2xl hover:shadow-primary/5 transition-all group relative overflow-hidden">
+                                    <div className={`absolute top-0 right-0 w-32 h-32 ${stat.glow} blur-[60px] rounded-full -mr-16 -mt-16 group-hover:blur-[80px] transition-all`} />
+
+                                    <div className="flex items-center justify-between mb-6 relative z-10">
+                                        <div className={`w-14 h-14 rounded-2xl ${stat.glow} flex items-center justify-center`}>
+                                            <stat.icon className={`w-7 h-7 ${stat.color}`} />
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[10px] font-black text-success uppercase tracking-widest leading-none mb-1">{stat.trend}</span>
+                                            <span className="text-[8px] font-black text-text-muted uppercase tracking-[0.2em] opacity-40">vs last cycle</span>
                                         </div>
                                     </div>
+                                    <div className="relative z-10">
+                                        <h3 className="text-[10px] font-black text-text-secondary uppercase tracking-[0.3em] mb-2">{stat.label}</h3>
+                                        <p className="text-4xl font-black text-text-primary tracking-tighter italic">{stat.value}</p>
+                                    </div>
                                 </div>
-                                {/* Micro-chart simulation */}
-                                <div className="mt-6 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: i % 2 === 0 ? '70%' : '45%' }}
-                                        transition={{ duration: 1, delay: 0.5 + (i * 0.1) }}
-                                        className={`h-full bg-gradient-to-r ${stat.color.replace('text', 'from')} to-white/20`}
-                                    />
-                                </div>
-                            </GlassCard>
+                            </motion.div>
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                        {/* Real-time Growth Chart */}
-                        <GlassCard className="lg:col-span-8 p-10" delay={0.4}>
-                            <div className="flex items-center justify-between mb-12">
-                                <div>
-                                    <h2 className="text-2xl font-bold tracking-tight">Ecosystem Growth</h2>
-                                    <p className="text-zinc-500 text-sm mt-1 font-medium italic">Consolidated revenue across global edge nodes.</p>
-                                </div>
-                                <div className="flex p-1 rounded-2xl bg-zinc-900 border border-white/5">
-                                    {['7D', '30D', '1Y'].map(d => (
-                                        <button key={d} className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${d === '30D' ? 'bg-white text-black shadow-lg shadow-white/10' : 'text-zinc-500 hover:text-white'}`}>
-                                            {d}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="h-80 flex items-end gap-2 w-full group/chart">
-                                {[45, 65, 55, 85, 75, 95, 110, 80, 70, 100, 120, 115, 130, 150, 140, 160, 170, 155, 180, 200, 190, 210, 230].map((h, i) => (
-                                    <motion.div
-                                        key={i}
-                                        initial={{ height: 0 }}
-                                        animate={{ height: `${(h / 230) * 100}%` }}
-                                        transition={{ duration: 1, delay: 0.8 + (i * 0.03) }}
-                                        className="flex-1 bg-gradient-to-t from-blue-600/40 via-blue-500/20 to-blue-400 rounded-t-lg transition-all duration-300 hover:scale-x-110 hover:from-blue-400 hover:to-white relative group"
-                                    >
-                                        <div className="absolute top-[-30px] left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-black text-[10px] font-bold px-2 py-1 rounded-md pointer-events-none">
-                                            ${h}k
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                            <div className="flex justify-between mt-6 px-2">
-                                {['Oct 23', 'Nov 04', 'Nov 16', 'Nov 28', 'Dec 10', 'Dec 22'].map(date => (
-                                    <span key={date} className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">{date}</span>
-                                ))}
-                            </div>
-                        </GlassCard>
-
-                        {/* Health & Verification Sidebar */}
-                        <div className="lg:col-span-4 space-y-8">
-                            <GlassCard className="bg-gradient-to-br from-indigo-600/20 via-transparent to-transparent border-indigo-500/10" delay={0.5}>
-                                <div className="flex items-center justify-between mb-8">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400">
-                                            <Globe size={18} />
-                                        </div>
-                                        <h3 className="font-bold text-lg">Live Nodes</h3>
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                        <div className="xl:col-span-2 space-y-8">
+                            <div className="bg-white rounded-[2.5rem] border border-border-subtle p-10 shadow-2xl overflow-hidden relative group">
+                                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 blur-[120px] rounded-full -mr-48 -mt-48" />
+                                <div className="flex items-center justify-between mb-12 relative z-10">
+                                    <div>
+                                        <h3 className="text-xl font-black text-text-primary uppercase italic tracking-tight">Revenue Trajectory</h3>
+                                        <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] opacity-60 mt-1">Institutional volume analysis</p>
                                     </div>
-                                    <span className="text-[10px] font-bold text-zinc-500">SYNCED</span>
+                                    <div className="flex gap-2">
+                                        {['24H', '7D', '30D', 'ALL'].map((p) => (
+                                            <button key={p} className={`px-4 py-1.5 rounded-full text-[9px] font-black tracking-widest uppercase transition-all ${p === '7D' ? 'bg-primary text-background' : 'bg-neutral text-text-secondary hover:bg-neutral-dark'}`}>{p}</button>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div className="space-y-4">
-                                    {[
-                                        { node: 'Cairo-North-1', load: '42%', status: 'active' },
-                                        { node: 'Alex-Dist-2', load: '18%', status: 'idle' },
-                                        { node: 'Dubai-Main-Gateway', load: '76%', status: 'high' },
-                                        { node: 'Casablanca-Edge', load: '31%', status: 'active' },
-                                    ].map((node, i) => (
+                                <div className="h-[400px] flex items-end gap-3 relative z-10">
+                                    {[65, 45, 75, 55, 85, 95, 70, 60, 80, 50, 90, 100].map((h, i) => (
                                         <motion.div
                                             key={i}
-                                            whileHover={{ x: 5 }}
-                                            className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/[0.08]"
+                                            initial={{ height: 0 }}
+                                            animate={{ height: `${h}%` }}
+                                            transition={{ delay: i * 0.05, duration: 1, ease: "circOut" }}
+                                            className="flex-1 bg-neutral rounded-t-xl relative group"
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-1.5 h-1.5 rounded-full ${node.status === 'high' ? 'bg-orange-500' : 'bg-emerald-500'}`} />
-                                                <span className="text-sm font-semibold text-zinc-200">{node.node}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-mono text-indigo-400 font-bold">{node.load}</span>
-                                                <ChevronRight size={14} className="text-zinc-600" />
-                                            </div>
+                                            <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-100 transition-all rounded-t-xl shadow-[0_-10px_30px_rgba(var(--primary-rgb),0.3)]" />
                                         </motion.div>
                                     ))}
                                 </div>
-                            </GlassCard>
+                            </div>
+                        </div>
 
-                            <GlassCard className="border-dashed border-zinc-700 bg-transparent flex flex-col items-center justify-center py-12" delay={0.6}>
-                                <div className="relative mb-6">
-                                    <motion.div
-                                        animate={{ rotate: 360 }}
-                                        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                                        className="w-20 h-20 rounded-full border border-zinc-800 border-t-blue-500 border-r-purple-500"
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <ShieldCheck size={32} className="text-blue-400" />
-                                    </div>
+                        <div className="space-y-8">
+                            <div className="bg-white rounded-[2.5rem] border border-border-subtle p-10 shadow-2xl relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-48 h-48 bg-secondary/5 blur-[80px] rounded-full -mr-24 -mt-24" />
+                                <h3 className="text-xl font-black text-text-primary uppercase italic tracking-tight mb-8 relative z-10">Recent Operations</h3>
+                                <div className="space-y-6 relative z-10">
+                                    {[1, 2, 3, 4, 5].map((i) => (
+                                        <div key={i} className="flex items-center gap-4 group cursor-pointer p-4 rounded-2xl hover:bg-neutral transition-all">
+                                            <div className="w-12 h-12 rounded-xl bg-neutral flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-background transition-all">
+                                                <Activity size={20} />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-xs font-black text-text-primary uppercase tracking-tight">External Sync #{4820 + i}</p>
+                                                <p className="text-[10px] font-black text-text-secondary opacity-60 uppercase tracking-widest mt-1">04:{10 + i} AM · Verified</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-xs font-black text-success">+$240.00</p>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <h4 className="font-bold text-xl mb-2">Immutable Ledger</h4>
-                                <p className="text-xs text-zinc-500 text-center leading-relaxed px-10">
-                                    NileLink Protocol ensures every event is hashed, salted, and anchored for 100% financial transparency.
-                                </p>
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className="mt-8 px-6 py-3 rounded-2xl bg-white text-black text-xs font-bold shadow-xl shadow-white/5"
-                                >
-                                    Verify Contract
-                                </motion.button>
-                            </GlassCard>
+                                <button className="w-full mt-10 py-4 bg-neutral hover:bg-neutral-dark rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-text-secondary transition-all">View All Logs</button>
+                            </div>
                         </div>
                     </div>
-                </section>
+                </div>
             </main>
 
             <style jsx global>{`
-        .glass {
-          background: rgba(255, 255, 255, 0.02);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 5px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
-        }
-      `}</style>
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 5px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(var(--primary-rgb), 0.1);
+                    border-radius: 10px;
+                }
+            `}</style>
         </div>
     );
 }

@@ -173,15 +173,13 @@ contract NileLinkProtocol is Ownable, Pausable, ReentrancyGuard {
     /// @notice Get comprehensive protocol statistics
     /// @return stats Protocol statistics structure
     function getProtocolStats() external view returns (ProtocolStats memory stats) {
-        // This would typically aggregate data from all contracts
-        // For now, return basic structure
         return ProtocolStats({
-            totalRestaurants: 0, // Would query RestaurantRegistry
-            totalOrders: 0, // Would query OrderSettlement
-            totalVolumeUsd6: 0, // Would aggregate order volumes
-            activeDisputes: 0, // Would query DisputeResolution
-            totalInvestmentsUsd6: 0, // Would query InvestorVault
-            protocolFeesCollectedUsd6: 0 // Would track fees
+            totalRestaurants: restaurantRegistry.totalRestaurants(),
+            totalOrders: orderSettlement.totalOrders(),
+            totalVolumeUsd6: orderSettlement.totalVolumeUsd6(),
+            activeDisputes: disputeResolution.activeDisputes(),
+            totalInvestmentsUsd6: investorVault.totalInvestmentsUsd6(),
+            protocolFeesCollectedUsd6: usdc.balanceOf(feeRecipient) // Approximation or track in OrderSettlement
         });
     }
     

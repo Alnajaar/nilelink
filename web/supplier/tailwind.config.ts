@@ -10,63 +10,49 @@ const config: Config = {
     theme: {
         extend: {
             colors: {
-                nile: {
-                    dark: "#0c4a6e",
-                    deep: "#020617",
-                    emerald: "#10b981",
-                    silver: "#f8fafc",
-                },
-                // Shared colors from globals.shared.css
+                // 🟦 Brand Palette - LOCKED COLORS
                 primary: {
-                    dark: 'var(--color-primary-dark)',
-                    DEFAULT: 'var(--color-primary)',
-                    light: 'var(--color-primary-light)',
-                    lighter: 'var(--color-primary-lighter)',
+                    DEFAULT: '#0A2540',  // Deep Nile Blue
+                    dark: '#06121f',
+                    light: '#13304d',
                 },
                 secondary: {
-                    soft: 'var(--color-secondary-soft)',
-                    DEFAULT: 'var(--color-secondary)',
-                    dark: 'var(--color-secondary-dark)',
-                    light: 'var(--color-secondary-light)',
+                    DEFAULT: '#0FB9B1',  // Emerald Intelligence Green
+                    dark: '#0a8f88',
+                    light: '#3ad4cd',
                 },
+                accent: '#F5A623',  // Signal Amber - CTA ONLY
+
+                // 🟩 Semantics - Tied to locked colors
+                success: '#0FB9B1',  // Emerald Green
+                warning: '#F5A623',  // Signal Amber
+                error: '#D64545',   // Error Red
+                info: '#0A2540',     // Deep Nile Blue
+
+                // 🔵 Backgrounds (Dark-first design)
                 background: {
-                    light: 'var(--color-bg-light)',
-                    DEFAULT: 'var(--color-bg)',
-                    white: 'var(--color-bg-white)',
-                    cream: 'var(--color-bg-cream)',
+                    DEFAULT: '#ffffff',   // Main background (light)
+                    card: '#f8fafc',      // Surface/card
+                    light: '#F5F7FA',     // Light mode
                 },
-                accent: {
-                    dark: 'var(--color-accent-dark)',
-                    DEFAULT: 'var(--color-accent)',
-                    light: 'var(--color-accent-light)',
-                },
-                success: 'var(--color-success)',
-                warning: 'var(--color-warning)',
-                error: 'var(--color-error)',
-                info: 'var(--color-info)',
+
+                surface: '#f1f5f9',       // Surface color
+                
+                // 📝 Typography
                 text: {
-                    primary: 'var(--color-text-primary)',
-                    secondary: 'var(--color-text-secondary)',
-                    tertiary: 'var(--color-text-tertiary)',
-                    disabled: 'var(--color-text-disabled)',
-                    inverse: 'var(--color-text-inverse)',
+                    primary: '#E6EEF7',   // Main text (dark UI)
+                    main: '#0f172a',      // Dark main text
+                    muted: '#5e7387',     // Muted text
+                    secondary: '#9FB3C8', // Secondary text
+                    inverse: '#0A2540',   // Text on light backgrounds
                 },
+
+                // 🔳 Borders
                 border: {
-                    light: 'var(--color-border-light)',
-                    DEFAULT: 'var(--color-border)',
-                    dark: 'var(--color-border-dark)',
+                    DEFAULT: '#1C3B5A',   // Main border
+                    subtle: '#13283f',    // Subtle borders
+                    strong: '#2d5b88',    // Strong borders
                 },
-                state: {
-                    synced: 'var(--color-state-synced)',
-                    pending: 'var(--color-state-pending)',
-                    offline: 'var(--color-state-offline)',
-                    verifying: 'var(--color-state-verifying)',
-                },
-                // Background colors for badges
-                'success-bg': '#e6f7f0',
-                'warning-bg': '#fef3c7',
-                'error-bg': '#fef2f2',
-                'info-bg': '#e0f2fe',
             },
             backgroundImage: {
                 "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

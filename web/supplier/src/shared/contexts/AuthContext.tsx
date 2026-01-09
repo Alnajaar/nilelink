@@ -20,6 +20,13 @@ interface AuthContextType {
     login: (token: string, user: User) => void;
     logout: () => void;
     isAuthenticated: boolean;
+    loginWithEmail: (email: string, password: string) => Promise<void>;
+    loginWithPhone: (phone: string, password: string) => Promise<void>;
+    loginWithWallet: (address: string, signature: string) => Promise<void>;
+    register: (data: any) => Promise<void>;
+    sendOtp: (phone: string) => Promise<void>;
+    verifyOtp: (phone: string, otp: string) => Promise<void>;
+    connectWallet: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -71,6 +78,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // window.location.href = '/'; 
     };
 
+    const loginWithEmail = async (email: string, password: string) => {
+        // TODO: Implement email login
+        console.log('loginWithEmail', email, password);
+    };
+
+    const loginWithPhone = async (phone: string, password: string) => {
+        // TODO: Implement phone login
+        console.log('loginWithPhone', phone, password);
+    };
+
+    const loginWithWallet = async (address: string, signature: string) => {
+        // TODO: Implement wallet login
+        console.log('loginWithWallet', address, signature);
+    };
+
+    const register = async (data: any) => {
+        // TODO: Implement registration
+        console.log('register', data);
+    };
+
+    const sendOtp = async (phone: string) => {
+        // TODO: Implement OTP sending
+        console.log('sendOtp', phone);
+    };
+
+    const verifyOtp = async (phone: string, otp: string) => {
+        // TODO: Implement OTP verification
+        console.log('verifyOtp', phone, otp);
+    };
+
+    const connectWallet = async () => {
+        // TODO: Implement wallet connection
+        console.log('connectWallet');
+    };
+
     return (
         <AuthContext.Provider value={{
             user,
@@ -78,14 +120,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             isLoading,
             login,
             logout,
-            isAuthenticated: !!user
+            isAuthenticated: !!user,
+            loginWithEmail,
+            loginWithPhone,
+            loginWithWallet,
+            register,
+            sendOtp,
+            verifyOtp,
+            connectWallet
         }}>
             {children}
         </AuthContext.Provider>
     );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextType {
     const context = useContext(AuthContext);
     if (context === undefined) {
         throw new Error('useAuth must be used within an AuthProvider');

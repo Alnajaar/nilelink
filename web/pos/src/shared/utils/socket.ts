@@ -29,17 +29,23 @@ export const SocketEvents = {
 export type SocketEventName = typeof SocketEvents[keyof typeof SocketEvents];
 
 // Initialize socket connection
-export function initializeSocket(userId?: string): Socket {
+export function initializeSocket(userId?: string, token?: string): Socket {
   if (socket && socket.connected) {
     return socket;
   }
 
-  socket = io(SOCKET_URL, {
+  const options: any = {
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
-  });
+  };
+
+  if (token) {
+    options.auth = { token };
+  }
+
+  socket = io(SOCKET_URL, options);
 
   socket.on('connect', () => {
     console.log('Socket connected:', socket?.id);
@@ -58,9 +64,9 @@ export function initializeSocket(userId?: string): Socket {
 }
 
 // Get existing socket or create new one
-export function getSocket(userId?: string): Socket {
+export function getSocket(userId?: string, token?: string): Socket {
   if (!socket) {
-    return initializeSocket(userId);
+    return initializeSocket(userId, token);
   }
   return socket;
 }

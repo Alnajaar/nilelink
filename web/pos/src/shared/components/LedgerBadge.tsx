@@ -16,13 +16,13 @@ export const LedgerBadge: React.FC<LedgerBadgeProps> = ({ verified, hash }) => {
     }
 
     return (
-        <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-[#f0fdf4] border border-green-200 text-[#15803d]">
+        <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-[rgba(15,185,177,0.1)] border border-success/20 text-success">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <span className="text-xs font-medium">Ledger Verified</span>
             {hash && (
-                <span className="text-[10px] font-mono opacity-50 border-l border-green-200 pl-1.5 ml-0.5">
+                <span className="text-[10px] font-mono opacity-50 border-l border-success/20 pl-1.5 ml-0.5">
                     {hash.slice(0, 6)}...
                 </span>
             )}

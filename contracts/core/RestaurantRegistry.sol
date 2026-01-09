@@ -22,6 +22,9 @@ contract RestaurantRegistry is IRestaurantRegistry, Ownable, Pausable, Reentranc
     
     /// @notice Mapping to track last settlement timestamp
     mapping(address => uint64) public lastSettlement;
+
+    /// @notice Total number of registered restaurants
+    uint256 public totalRestaurants;
     
     /// @notice Chainlink oracle for exchange rates
     mapping(bytes3 => address) public currencyOracles;
@@ -114,6 +117,8 @@ contract RestaurantRegistry is IRestaurantRegistry, Ownable, Pausable, Reentranc
             createdAt: uint64(block.timestamp),
             lastModified: uint64(block.timestamp)
         });
+
+        totalRestaurants++;
         
         // Initialize rate tracking
         lastSettlement[restaurant] = uint64(block.timestamp);

@@ -1,0 +1,903 @@
+// ============================================================================
+// ADVANCED ECOSYSTEM LOYALTY & GAMIFICATION MODELS
+// ============================================================================
+
+// ============================================================================
+// NEURAL LOYALTY ENGINE MODELS
+// ============================================================================
+
+model LoyaltyProfile {
+    id              String   @id @default(cuid())
+    userId          String   @unique
+    user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    // Core Metrics
+    totalPoints     Decimal  @default(0)
+    availablePoints Decimal  @default(0)
+    lifetimeEarned  Decimal  @default(0)
+    lifetimeSpent   Decimal  @default(0)
+
+    // AI-Personalized Scoring
+    neuralScore     Float    @default(0) // 0-1 AI confidence score
+    behaviorCluster String?  // AI-assigned behavior pattern
+    rewardSensitivity Float  @default(0.5) // How responsive to rewards
+
+    // Tier System
+    currentTierId   String?
+    currentTier     LoyaltyTier? @relation(fields: [currentTierId], references: [id])
+    tierProgress    Float    @default(0) // 0-1 progress to next tier
+
+    // Activity Tracking
+    lastActivityAt  DateTime?
+    streakCount     Int      @default(0)
+    maxStreak       Int      @default(0)
+
+    // Chaos Event Bonuses
+    chaosMultiplier Float    @default(1.0)
+    lastChaosEvent  DateTime?
+
+    // Relations
+    transactions    LoyaltyTransaction[]
+    achievements    UserAchievement[]
+    challenges      UserChallenge[]
+    rewards         UserReward[]
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@index([userId])
+    @@index([neuralScore])
+    @@index([currentTierId])
+}
+
+model LoyaltyTier {
+    id              String   @id @default(cuid())
+    name            String   @unique // Bronze, Silver, Gold, Platinum, Diamond
+    displayName     String
+    description     String?
+    color           String   @default("#6B7280") // Hex color
+
+    // Requirements
+    minLifetimeSpent Decimal  @default(0)
+    minOrderCount    Int      @default(0)
+    minStreakDays    Int      @default(0)
+
+    // Benefits
+    pointMultiplier  Float    @default(1.0)
+    bonusMultiplier  Float    @default(1.0)
+    priorityLevel    Int      @default(0) // Queue priority
+
+    // Limits
+    maxMonthlyOrders Int?
+    maxMonthlySpend  Decimal?
+
+    // Status
+    isActive        Boolean  @default(true)
+    sortOrder       Int      @default(0)
+
+    // Relations
+    profiles        LoyaltyProfile[]
+    benefits        LoyaltyBenefit[]
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@index([isActive])
+    @@index([sortOrder])
+}
+
+model LoyaltyBenefit {
+    id          String   @id @default(cuid())
+    tierId      String
+    tier        LoyaltyTier @relation(fields: [tierId], references: [id], onDelete: Cascade)
+
+    type        BenefitType
+    title       String
+    description String?
+    value       Json?    // Flexible value storage
+
+    displayOrder Int     @default(0)
+    isActive     Boolean @default(true)
+
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@index([tierId])
+    @@index([type])
+    @@index([displayOrder])
+}
+
+enum BenefitType {
+    DISCOUNT_PERCENTAGE
+    FREE_DELIVERY
+    PRIORITY_SUPPORT
+    EARLY_ACCESS
+    EXCLUSIVE_ITEM
+    BONUS_POINTS_MULTIPLIER
+    SPECIAL_BADGE
+    VIP_INVITATIONS
+    CUSTOM
+}
+
+model LoyaltyTransaction {
+    id              String   @id @default(cuid())
+    profileId       String
+    profile         LoyaltyProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+    amount          Decimal
+    type            LoyaltyTxType
+    reason          String
+    description     String?
+
+    // AI Context
+    aiConfidence    Float?   // How confident AI was in this reward
+    behaviorFactors Json?    // AI analysis of user behavior
+    chaosEventBonus Boolean  @default(false)
+
+    // Source tracking
+    orderId         String?
+    challengeId     String?
+    achievementId   String?
+    rewardId        String?
+
+    // Metadata
+    metadata        Json?
+    expiresAt       DateTime?
+
+    createdAt       DateTime @default(now())
+
+    @@index([profileId])
+    @@index([type])
+    @@index([createdAt])
+    @@index([expiresAt])
+}
+
+enum LoyaltyTxType {
+    EARN_ORDER     // From order completion
+    EARN_REFERRAL  // From referrals
+    EARN_STREAK    // From activity streaks
+    EARN_ACHIEVEMENT // From achievements
+    EARN_CHAOS     // From chaos event participation
+    EARN_AI_BONUS  // AI-generated personalized bonus
+
+    SPEND_REWARD   // Redeemed for reward
+    EXPIRE         // Points expired
+    ADJUSTMENT     // Manual adjustment
+    TRANSFER       // Points transferred to another user
+}
+
+// ============================================================================
+// INSTITUTIONAL REPUTATION SCORES MODELS
+// ============================================================================
+
+model InstitutionalReputation {
+    id              String   @id @default(cuid())
+    entityId        String   // Restaurant or Supplier ID
+    entityType      ReputationEntityType // RESTAURANT or SUPPLIER
+
+    // On-Chain Data
+    contractAddress String?  // Smart contract address
+    tokenId         String?  // NFT token ID for reputation
+    chainId         Int      @default(137) // Polygon mainnet
+
+    // Reputation Metrics
+    overallScore    Float    @default(0) // 0-100 composite score
+    trustScore      Float    @default(0) // Based on delivery/payment reliability
+    qualityScore    Float    @default(0) // Based on ratings and feedback
+    volumeScore     Float    @default(0) // Based on transaction volume
+
+    // Performance History
+    totalOrders     Int      @default(0)
+    successfulOrders Int     @default(0)
+    averageRating   Float    @default(0)
+    responseTime    Float?   // Average response time in minutes
+
+    // Negotiation Priority
+    negotiationPriority Float @default(0) // 0-1 affects contract terms
+    preferredPartner  Boolean @default(false)
+
+    // Risk Assessment
+    riskLevel       ReputationRiskLevel @default(MEDIUM)
+    lastAuditAt     DateTime?
+    nextAuditAt     DateTime?
+
+    // Relations
+    reviews         InstitutionalReview[]
+    achievements    InstitutionalAchievement[]
+    incidents       ReputationIncident[]
+
+    // Metadata
+    verifiedAt      DateTime?
+    lastUpdatedAt   DateTime @default(now())
+    createdAt       DateTime @default(now())
+
+    @@unique([entityId, entityType])
+    @@index([entityType])
+    @@index([overallScore])
+    @@index([negotiationPriority])
+    @@index([riskLevel])
+}
+
+enum ReputationEntityType {
+    RESTAURANT
+    SUPPLIER
+    DELIVERY_PARTNER
+    MARKETPLACE_SELLER
+}
+
+enum ReputationRiskLevel {
+    LOW
+    MEDIUM
+    HIGH
+    CRITICAL
+}
+
+model InstitutionalReview {
+    id              String   @id @default(cuid())
+    reputationId    String
+    reputation      InstitutionalReputation @relation(fields: [reputationId], references: [id], onDelete: Cascade)
+
+    reviewerId      String   // User who left review
+    reviewerType    ReputationEntityType
+    rating          Int      // 1-5 stars
+    comment         String?
+
+    // Review Categories
+    qualityRating   Int?     // Product/service quality
+    timelinessRating Int?    // Delivery/on-time performance
+    communicationRating Int? // Responsiveness
+
+    // AI Analysis
+    sentimentScore  Float?   // -1 to 1 (negative to positive)
+    aiVerified      Boolean  @default(false)
+    authenticityScore Float? // How likely this review is genuine
+
+    // Transaction Context
+    orderId         String?
+    transactionId   String?
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@index([reputationId])
+    @@index([rating])
+    @@index([createdAt])
+}
+
+model InstitutionalAchievement {
+    id              String   @id @default(cuid())
+    reputationId    String
+    reputation      InstitutionalReputation @relation(fields: [reputationId], references: [id], onDelete: Cascade)
+
+    type            AchievementType
+    title           String
+    description     String
+    badgeIcon       String?  // Icon/emoji for display
+
+    earnedAt        DateTime @default(now())
+    expiresAt       DateTime? // Some achievements expire
+
+    @@index([reputationId])
+    @@index([type])
+    @@index([earnedAt])
+}
+
+enum AchievementType {
+    TOP_RATED         // Consistently high ratings
+    HIGH_VOLUME       // Large transaction volume
+    PERFECT_STREAK    // No failed deliveries/orders
+    FAST_RESPONDER    // Quick response times
+    LOYAL_CUSTOMER    // Long-term partner
+    INNOVATION_LEADER // First to adopt new features
+    QUALITY_CHAMPION  // Highest quality scores
+    RELIABILITY_MASTER // Best uptime/reliability
+}
+
+model ReputationIncident {
+    id              String   @id @default(cuid())
+    reputationId    String
+    reputation      InstitutionalReputation @relation(fields: [reputationId], references: [id], onDelete: Cascade)
+
+    type            IncidentType
+    severity        IncidentSeverity
+    description     String
+    impact          Float    // Impact on reputation score (0-1)
+
+    // Resolution
+    resolvedAt      DateTime?
+    resolution      String?
+    preventiveMeasures String?
+
+    // Evidence
+    evidence        Json?    // Links to orders, messages, etc.
+    witnesses       String[] // Other entities that confirmed incident
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@index([reputationId])
+    @@index([type])
+    @@index([severity])
+    @@index([createdAt])
+}
+
+enum IncidentType {
+    LATE_DELIVERY
+    ORDER_CANCELLATION
+    QUALITY_ISSUE
+    COMMUNICATION_FAILURE
+    PAYMENT_DISPUTE
+    COMPLIANCE_VIOLATION
+    SYSTEM_OUTAGE
+    FRAUD_ATTEMPT
+}
+
+enum IncidentSeverity {
+    LOW      // Minor inconvenience, no lasting impact
+    MEDIUM   // Some impact on operations
+    HIGH     // Significant business impact
+    CRITICAL // Major damage to reputation/trust
+}
+
+// ============================================================================
+// GAMIFIED GOVERNANCE MODELS
+// ============================================================================
+
+model GovernanceProfile {
+    id              String   @id @default(cuid())
+    userId          String   @unique
+    user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    // Protocol Merit Tokens
+    totalMerit      Decimal  @default(0)
+    availableMerit  Decimal  @default(0)
+    stakedMerit     Decimal  @default(0)
+
+    // Participation Metrics
+    proposalsCreated Int     @default(0)
+    votesCast        Int     @default(0)
+    successfulProposals Int  @default(0)
+
+    // Activity Streaks
+    votingStreak     Int     @default(0)
+    maxVotingStreak  Int     @default(0)
+    lastVoteAt       DateTime?
+
+    // Reputation & Influence
+    governanceLevel  Int     @default(1) // 1-5 influence levels
+    influenceScore   Float   @default(0) // 0-1 voting weight modifier
+    reputationBadge  String? // "Pioneer", "Guardian", "Architect", etc.
+
+    // Special Roles
+    isDelegate       Boolean @default(false)
+    delegatedVotes   Decimal @default(0)
+    delegateSince    DateTime?
+
+    // Rewards & Bonuses
+    meritEarned      Decimal @default(0)
+    meritSpent       Decimal @default(0)
+    lastRewardAt     DateTime?
+
+    // Relations
+    votes            GovernanceVote[]
+    delegations      GovernanceDelegation[]
+
+    createdAt        DateTime @default(now())
+    updatedAt        DateTime @updatedAt
+
+    @@index([userId])
+    @@index([governanceLevel])
+    @@index([influenceScore])
+    @@index([isDelegate])
+}
+
+model GovernanceDelegation {
+    id              String   @id @default(cuid())
+    delegatorId     String
+    delegator       GovernanceProfile @relation(fields: [delegatorId], references: [id], onDelete: Cascade)
+
+    delegateId      String
+    delegate        GovernanceProfile @relation(fields: [delegateId], references: [id], onDelete: Cascade)
+
+    // Delegation Details
+    votingPower     Decimal  // Amount of voting power delegated
+    delegationType  DelegationType @default(TEMPORARY)
+
+    // Duration
+    startsAt        DateTime @default(now())
+    expiresAt       DateTime?
+    revokedAt       DateTime?
+
+    // Conditions (future feature)
+    conditions      Json?    // Smart contract conditions
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@unique([delegatorId, delegateId])
+    @@index([delegatorId])
+    @@index([delegateId])
+    @@index([expiresAt])
+}
+
+enum DelegationType {
+    PERMANENT    // Until revoked
+    TEMPORARY    // Time-limited
+    CONDITIONAL  // Based on conditions
+    LIMITED      // Limited voting power
+}
+
+model MeritTransaction {
+    id              String   @id @default(cuid())
+    profileId       String
+    profile         GovernanceProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+    amount          Decimal
+    type            MeritTxType
+    reason          String
+    description     String?
+
+    // Source tracking
+    proposalId      String?
+    voteId          String?
+    challengeId     String?
+
+    // AI Context
+    aiBonus         Boolean  @default(false)
+    aiMultiplier    Float    @default(1.0)
+
+    createdAt       DateTime @default(now())
+
+    @@index([profileId])
+    @@index([type])
+    @@index([createdAt])
+}
+
+enum MeritTxType {
+    EARN_PROPOSAL     // Created successful proposal
+    EARN_VOTE         // Participated in voting
+    EARN_STREAK       // Consistent participation
+    EARN_DELEGATION   // Received delegation
+    EARN_ACHIEVEMENT  // Governance achievements
+
+    SPEND_STAKE       // Staked for influence
+    SPEND_REWARD      // Redeemed for rewards
+    TRANSFER          // Transferred to another user
+    EXPIRE            // Merit tokens expired
+}
+
+// ============================================================================
+// ACHIEVEMENT & CHALLENGE SYSTEM
+// ============================================================================
+
+model Achievement {
+    id              String   @id @default(cuid())
+    name            String   @unique
+    title           String
+    description     String
+    category        AchievementCategory
+
+    // Requirements
+    requirements    Json     // Flexible requirement structure
+    difficulty      AchievementDifficulty @default(MEDIUM)
+
+    // Rewards
+    meritReward     Decimal  @default(0)
+    pointReward     Decimal  @default(0)
+    specialBadge    String?
+
+    // Rarity & Visibility
+    rarity          AchievementRarity @default(COMMON)
+    isActive        Boolean  @default(true)
+    isSecret        Boolean  @default(false)
+
+    // Relations
+    userAchievements UserAchievement[]
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@index([category])
+    @@index([difficulty])
+    @@index([rarity])
+    @@index([isActive])
+}
+
+enum AchievementCategory {
+    LOYALTY
+    GOVERNANCE
+    PERFORMANCE
+    SOCIAL
+    SPECIAL
+}
+
+enum AchievementDifficulty {
+    EASY
+    MEDIUM
+    HARD
+    EPIC
+    LEGENDARY
+}
+
+enum AchievementRarity {
+    COMMON
+    UNCOMMON
+    RARE
+    EPIC
+    LEGENDARY
+    MYTHIC
+}
+
+model UserAchievement {
+    id              String   @id @default(cuid())
+    achievementId   String
+    achievement     Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+    userId          String
+    loyaltyProfileId String
+    loyaltyProfile  LoyaltyProfile @relation(fields: [loyaltyProfileId], references: [id], onDelete: Cascade)
+
+    // Progress & Status
+    progress        Float    @default(0) // 0-1 completion progress
+    isCompleted     Boolean  @default(false)
+    completedAt     DateTime?
+
+    // Rewards Claimed
+    rewardsClaimed  Boolean  @default(false)
+    claimedAt       DateTime?
+
+    // Metadata
+    progressData    Json?    // Current progress details
+    completionData  Json?    // Data when completed
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@unique([achievementId, userId])
+    @@index([userId])
+    @@index([isCompleted])
+    @@index([completedAt])
+}
+
+// ============================================================================
+// CHALLENGE & QUEST SYSTEM
+// ============================================================================
+
+model Challenge {
+    id              String   @id @default(cuid())
+    name            String   @unique
+    title           String
+    description     String
+    category        ChallengeCategory
+
+    // Challenge Details
+    type            ChallengeType
+    duration        ChallengeDuration?
+    maxParticipants Int?
+
+    // Requirements & Objectives
+    objectives      Json     // Array of objectives to complete
+    requirements    Json?    // Prerequisites to join
+
+    // Rewards
+    meritReward     Decimal  @default(0)
+    pointReward     Decimal  @default(0)
+    bonusMultiplier Float    @default(1.0)
+
+    // Timing
+    startsAt        DateTime?
+    endsAt          DateTime?
+    isRecurring     Boolean  @default(false)
+    recurrenceRule  String?  // Cron-like expression
+
+    // Status
+    status          ChallengeStatus @default(DRAFT)
+    isActive        Boolean @default(true)
+
+    // Relations
+    participants    UserChallenge[]
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@index([category])
+    @@index([type])
+    @@index([status])
+    @@index([startsAt])
+    @@index([endsAt])
+}
+
+enum ChallengeCategory {
+    LOYALTY_BUILDING
+    GOVERNANCE_PARTICIPATION
+    PERFORMANCE_IMPROVEMENT
+    SOCIAL_ENGAGEMENT
+    SEASONAL_EVENT
+    CHAOS_EVENT
+}
+
+enum ChallengeType {
+    INDIVIDUAL  // Single user completion
+    TEAM        // Group collaboration
+    COMPETITIVE // Leaderboard competition
+    COLLABORATIVE // Community wide goal
+    STREAK      // Daily/weekly consistency
+}
+
+enum ChallengeDuration {
+    DAILY
+    WEEKLY
+    MONTHLY
+    QUARTERLY
+    CUSTOM
+}
+
+enum ChallengeStatus {
+    DRAFT
+    ACTIVE
+    COMPLETED
+    CANCELLED
+    EXPIRED
+}
+
+model UserChallenge {
+    id              String   @id @default(cuid())
+    challengeId     String
+    challenge       Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+    userId          String
+    loyaltyProfileId String
+    loyaltyProfile  LoyaltyProfile @relation(fields: [loyaltyProfileId], references: [id], onDelete: Cascade)
+
+    // Participation
+    joinedAt        DateTime @default(now())
+    status          UserChallengeStatus @default(ACTIVE)
+
+    // Progress
+    progress        Float    @default(0) // 0-1 overall completion
+    objectivesProgress Json  // Progress on individual objectives
+    score           Int      @default(0) // Points earned in challenge
+
+    // Results
+    completedAt     DateTime?
+    finalRank       Int?
+    rewardsClaimed  Boolean  @default(false)
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@unique([challengeId, userId])
+    @@index([userId])
+    @@index([status])
+    @@index([completedAt])
+}
+
+enum UserChallengeStatus {
+    ACTIVE
+    COMPLETED
+    ABANDONED
+    DISQUALIFIED
+}
+
+// ============================================================================
+// REWARD SYSTEM
+// ============================================================================
+
+model Reward {
+    id              String   @id @default(cuid())
+    name            String   @unique
+    title           String
+    description     String
+    category        RewardCategory
+
+    // Reward Details
+    type            RewardType
+    value           Json     // Flexible value structure
+    cost            Decimal  // Points/merit cost
+
+    // Availability
+    isActive        Boolean  @default(true)
+    stockLimit      Int?     // Limited availability
+    currentStock    Int      @default(-1) // -1 = unlimited
+
+    // Targeting
+    targetAudience  RewardAudience @default(ALL)
+    requirements    Json?    // Eligibility requirements
+
+    // Relations
+    userRewards     UserReward[]
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@index([category])
+    @@index([type])
+    @@index([isActive])
+    @@index([targetAudience])
+}
+
+enum RewardCategory {
+    DISCOUNT
+    FREE_ITEM
+    EXCLUSIVE_ACCESS
+    SPECIAL_EXPERIENCE
+    DIGITAL_BADGE
+    PHYSICAL_ITEM
+    DONATION_MATCH
+    CUSTOM
+}
+
+enum RewardType {
+    PERCENTAGE_DISCOUNT
+    FIXED_AMOUNT_DISCOUNT
+    FREE_DELIVERY
+    FREE_ITEM
+    EARLY_ACCESS
+    VIP_TICKET
+    BADGE
+    CERTIFICATE
+    PHYSICAL_PRODUCT
+    EXPERIENCE
+}
+
+enum RewardAudience {
+    ALL
+    PREMIUM
+    TOP_TIER
+    NEW_USERS
+    LONG_TERM
+    HIGH_SPENDERS
+    CUSTOM
+}
+
+model UserReward {
+    id              String   @id @default(cuid())
+    rewardId        String
+    reward          Reward   @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+
+    userId          String
+    loyaltyProfileId String
+    loyaltyProfile  LoyaltyProfile @relation(fields: [loyaltyProfileId], references: [id], onDelete: Cascade)
+
+    // Redemption
+    redeemedAt      DateTime @default(now())
+    costPaid        Decimal
+
+    // Fulfillment
+    status          RewardStatus @default(PENDING)
+    fulfillmentData Json?
+    fulfilledAt     DateTime?
+    expiresAt       DateTime?
+
+    // Usage
+    usedAt          DateTime?
+    usageData       Json?
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@index([rewardId])
+    @@index([userId])
+    @@index([status])
+    @@index([redeemedAt])
+}
+
+enum RewardStatus {
+    PENDING
+    PROCESSING
+    FULFILLED
+    EXPIRED
+    CANCELLED
+    USED
+}
+
+// ============================================================================
+// CHAOS EVENT SYSTEM (AI-Powered Special Events)
+// ============================================================================
+
+model ChaosEvent {
+    id              String   @id @default(cuid())
+    name            String   @unique
+    title           String
+    description     String
+
+    // Event Configuration
+    type            ChaosEventType
+    triggerCondition Json    // AI conditions to trigger event
+    duration        Int      // Duration in hours
+
+    // AI Parameters
+    intensity       Float    @default(1.0) // 0-1 event intensity
+    targetAudience  ChaosAudience
+    participantLimit Int?
+
+    // Rewards Multipliers
+    pointMultiplier Float    @default(2.0)
+    meritMultiplier Float    @default(1.5)
+    streakBonus     Float    @default(0.5)
+
+    // Timing
+    scheduledAt     DateTime?
+    startedAt       DateTime?
+    endedAt         DateTime?
+
+    // Status
+    status          ChaosEventStatus @default(DRAFT)
+
+    // Relations
+    participants    ChaosParticipant[]
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@index([type])
+    @@index([status])
+    @@index([scheduledAt])
+    @@index([startedAt])
+}
+
+enum ChaosEventType {
+    HIGH_DEMAND       // Peak hours with extra orders
+    WEATHER_DISRUPTION // Weather affecting deliveries
+    SYSTEM_STRESS     // High load periods
+    MARKET_VOLATILITY // Price fluctuations requiring quick adaptation
+    SUPPLY_SHORTAGE   // Limited ingredient availability
+    EMERGENCY_RESPONSE // Real-world emergency requiring system adaptation
+    AI_CHALLENGE      // AI-generated business puzzle
+    SOCIAL_CHALLENGE  // Community participation challenge
+}
+
+enum ChaosAudience {
+    DRIVERS           // Delivery drivers
+    RESTAURANTS       // Restaurant staff
+    CUSTOMERS         // End customers
+    SUPPLIERS         // Supply chain partners
+    ALL               // Everyone in ecosystem
+    RANDOM            // Random selection
+}
+
+enum ChaosEventStatus {
+    DRAFT
+    SCHEDULED
+    ACTIVE
+    COMPLETED
+    CANCELLED
+}
+
+model ChaosParticipant {
+    id              String   @id @default(cuid())
+    eventId         String
+    event           ChaosEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+    userId          String
+    loyaltyProfileId String
+    loyaltyProfile  LoyaltyProfile @relation(fields: [loyaltyProfileId], references: [id], onDelete: Cascade)
+
+    // Participation
+    joinedAt        DateTime @default(now())
+    role            ChaosParticipantRole @default(PARTICIPANT)
+
+    // Performance
+    participationScore Float  @default(0) // 0-1 performance metric
+    tasksCompleted   Int      @default(0)
+    bonusEarned      Decimal  @default(0)
+
+    // Results
+    finalRank        Int?
+    achievements     Json?    // Special achievements during event
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@unique([eventId, userId])
+    @@index([eventId])
+    @@index([userId])
+    @@index([role])
+}
+
+enum ChaosParticipantRole {
+    PARTICIPANT
+    LEADER
+    COORDINATOR
+    SPECIALIST
+}

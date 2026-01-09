@@ -1,22 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Pressable, ScrollView, StatusBar } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { api } from '@nilelink/mobile-shared';
 
 export function CashSummaryScreen() {
     const navigation = useNavigation();
 
-    // Local state for v0.1 - In a real app, this pulls calculated totals from local SQLite
-    const [summary] = useState({
+    const [summary, setSummary] = useState({
         totalCollected: 145.50,
         deliveriesCount: 8,
         pendingSettlement: 145.50,
+        weeklyEarnings: 425.75,
+        monthlyEarnings: 1850.25,
+        averagePerDelivery: 18.10,
         history: [
-            { id: '1', amount: 24.50, time: '14:20', status: 'COLLECTED' },
-            { id: '2', amount: 18.00, time: '13:45', status: 'COLLECTED' },
-            { id: '3', amount: 12.00, time: '12:15', status: 'COLLECTED' },
+            { id: '1', amount: 24.50, time: '14:20', status: 'COLLECTED', type: 'DELIVERY' },
+            { id: '2', amount: 18.00, time: '13:45', status: 'COLLECTED', type: 'DELIVERY' },
+            { id: '3', amount: 12.00, time: '12:15', status: 'COLLECTED', type: 'TIP' },
+            { id: '4', amount: 15.75, time: '11:30', status: 'PENDING', type: 'DELIVERY' },
         ]
     });
+
+    // Fetch real earnings data
+    useEffect(() => {
+        const fetchEarnings = async () => {
+            try {
+                const response = await api.get('/driver/earnings');
+                if (response.data.success) {
+                    setSummary(prev => ({ ...prev, ...response.data.data }));
+                }
+            } catch (error) {
+                console.log('Could not fetch earnings:', error);
+                // Keep mock data as fallback
+            }
+        };
+        fetchEarnings();
+    }, []);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -39,12 +59,27 @@ export function CashSummaryScreen() {
                     <View style={styles.statsRow}>
                         <View style={styles.statItem}>
                             <Text style={styles.statValue}>{summary.deliveriesCount}</Text>
-                            <Text style={styles.statLabel}>Jobs</Text>
+                            <Text style={styles.statLabel}>Jobs Today</Text>
                         </View>
                         <View style={styles.statDivider} />
                         <View style={styles.statItem}>
-                            <Text style={styles.statValue}>$18.10</Text>
+                            <Text style={styles.statValue}>${summary.averagePerDelivery.toFixed(2)}</Text>
                             <Text style={styles.statLabel}>Avg/Job</Text>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Earnings Overview */}
+                <View style={styles.earningsCard}>
+                    <Text style={styles.sectionTitle}>Earnings Overview</Text>
+                    <View style={styles.earningsGrid}>
+                        <View style={styles.earningItem}>
+                            <Text style={styles.earningLabel}>This Week</Text>
+                            <Text style={styles.earningValue}>${summary.weeklyEarnings.toFixed(2)}</Text>
+                        </View>
+                        <View style={styles.earningItem}>
+                            <Text style={styles.earningLabel}>This Month</Text>
+                            <Text style={styles.earningValue}>${summary.monthlyEarnings.toFixed(2)}</Text>
                         </View>
                     </View>
                 </View>
@@ -56,17 +91,33 @@ export function CashSummaryScreen() {
                 </Pressable>
 
                 {/* History Section */}
-                <Text style={styles.sectionTitle}>Today's Collections</Text>
+                <Text style={styles.sectionTitle}>Today's Earnings</Text>
                 {summary.history.map((item) => (
                     <View key={item.id} style={styles.historyItem}>
                         <View style={styles.historyIcon}>
-                            <Ionicons name="cash-outline" size={20} color="#28a745" />
+                            <Ionicons
+                                name={item.type === 'TIP' ? 'heart' : 'cash-outline'}
+                                size={20}
+                                color={item.type === 'TIP' ? '#ff6b6b' : '#28a745'}
+                            />
                         </View>
                         <View style={styles.historyInfo}>
-                            <Text style={styles.historyText}>Payment Collected</Text>
+                            <Text style={styles.historyText}>
+                                {item.type === 'TIP' ? 'Tip Received' : 'Delivery Payment'}
+                            </Text>
                             <Text style={styles.historyTime}>{item.time}</Text>
                         </View>
-                        <Text style={styles.historyAmount}>+${item.amount.toFixed(2)}</Text>
+                        <View style={styles.historyAmountContainer}>
+                            <Text style={[
+                                styles.historyAmount,
+                                item.status === 'PENDING' && styles.pendingAmount
+                            ]}>
+                                {item.status === 'PENDING' ? '~' : '+'}${item.amount.toFixed(2)}
+                            </Text>
+                            {item.status === 'PENDING' && (
+                                <Text style={styles.pendingLabel}>Pending</Text>
+                            )}
+                        </View>
                     </View>
                 ))}
 
@@ -139,6 +190,9 @@ const styles = StyleSheet.create({
     historyText: { color: '#fff', fontWeight: '600' },
     historyTime: { color: '#666', fontSize: 12, marginTop: 2 },
     historyAmount: { color: '#fff', fontWeight: '700', fontSize: 16 },
+    historyAmountContainer: { alignItems: 'flex-end' },
+    pendingAmount: { color: '#fbbf24' },
+    pendingLabel: { color: '#fbbf24', fontSize: 10, fontWeight: '600', marginTop: 2 },
     infoBox: {
         flexDirection: 'row',
         backgroundColor: 'rgba(13,110,253,0.05)',
@@ -148,5 +202,37 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(13,110,253,0.1)'
     },
-    infoText: { color: '#666', fontSize: 12, flex: 1, marginLeft: 10, lineHeight: 18 }
+    infoText: { color: '#666', fontSize: 12, flex: 1, marginLeft: 10, lineHeight: 18 },
+    earningsCard: {
+        backgroundColor: '#1a1a1a',
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#333'
+    },
+    earningsGrid: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 15
+    },
+    earningItem: {
+        flex: 1,
+        alignItems: 'center',
+        backgroundColor: '#2a2a2a',
+        padding: 15,
+        borderRadius: 12,
+        marginHorizontal: 5
+    },
+    earningLabel: {
+        color: '#999',
+        fontSize: 12,
+        fontWeight: '600',
+        marginBottom: 5
+    },
+    earningValue: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: '800'
+    }
 });

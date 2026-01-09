@@ -21,10 +21,9 @@ import { RootState, AppDispatch } from '../store';
 // Import Actions
 import {
     loadNearbyRestaurants,
-    searchRestaurants,
     loadRecommendedRestaurants,
-    setUserLocation,
-} from '../store/slices/restaurantsSlice';
+    searchRestaurants,
+} from '../store/restaurantsSlice';
 
 // Import Components
 import RestaurantCard from '../components/RestaurantCard';
@@ -173,8 +172,7 @@ const HomeScreen: React.FC = () => {
     };
 
     const handleRestaurantPress = (restaurant: Restaurant) => {
-        // Navigate to restaurant detail
-        Alert.alert('Restaurant Selected', `Opening ${restaurant.name}`);
+        navigation.navigate('RestaurantDetail' as never, { restaurantId: restaurant.id } as any);
     };
 
     const handleQuickAction = (action: string) => {
@@ -194,7 +192,7 @@ const HomeScreen: React.FC = () => {
         }
     };
 
-    const filteredRestaurants = mockRestaurants.filter(restaurant => {
+    const filteredRestaurants = (restaurants.nearbyRestaurants || []).filter(restaurant => {
         const matchesCategory = selectedCategory === 'All' ||
             restaurant.cuisines.some(cuisine =>
                 cuisine.toLowerCase().includes(selectedCategory.toLowerCase())
@@ -234,6 +232,18 @@ const HomeScreen: React.FC = () => {
 
     return (
         <View style={{ flex: 1, backgroundColor: '#f9f8f4' }}>
+            {restaurants.loading && (
+                <View style={{
+                    position: 'absolute',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(255,255,255,0.7)',
+                    zIndex: 1000,
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                }}>
+                    <ActivityIndicator size="large" color="#0e372b" />
+                </View>
+            )}
             {/* Header */}
             <LinearGradient
                 colors={['#0e372b', '#1a5240']}

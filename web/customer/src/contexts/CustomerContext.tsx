@@ -21,6 +21,8 @@ interface CustomerContextType {
     cartCount: number;
     activeOrderId: string | null;
     setActiveOrderId: (id: string | null) => void;
+    location: { lat: number; lng: number; address: string } | null;
+    setLocation: (location: { lat: number; lng: number; address: string } | null) => void;
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined);
@@ -36,10 +38,13 @@ export const useCustomer = () => {
 export function CustomerProvider({ children }: { children: React.ReactNode }) {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+    const [location, setLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
 
     // Persist cart to localStorage
     useEffect(() => {
         const savedCart = localStorage.getItem('nilelink_customer_cart');
+        const savedLocation = localStorage.getItem('nilelink_customer_location'); // Persist location
+
         if (savedCart) {
             try {
                 setCart(JSON.parse(savedCart));
@@ -47,11 +52,24 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
                 console.error('Failed to parse cart', e);
             }
         }
+        if (savedLocation) {
+            try {
+                setLocation(JSON.parse(savedLocation));
+            } catch (e) {
+                console.error('Failed to parse location', e);
+            }
+        }
     }, []);
 
     useEffect(() => {
         localStorage.setItem('nilelink_customer_cart', JSON.stringify(cart));
     }, [cart]);
+
+    useEffect(() => {
+        if (location) {
+            localStorage.setItem('nilelink_customer_location', JSON.stringify(location));
+        }
+    }, [location]);
 
     const addToCart = (item: CartItem) => {
         setCart(prev => {
@@ -88,7 +106,9 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
                 cartTotal,
                 cartCount,
                 activeOrderId,
-                setActiveOrderId
+                setActiveOrderId,
+                location,
+                setLocation
             }}
         >
             {children}

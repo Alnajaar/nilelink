@@ -1,9 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import {
+    Cpu, Printer, Smartphone, Search, Plus, Settings,
+    RefreshCw, ShieldCheck, CreditCard, Box, Zap,
+    Activity, ArrowLeft, Terminal, Laptop
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/shared/components/Card';
 import { Button } from '@/shared/components/Button';
 import { Badge } from '@/shared/components/Badge';
+import { useRouter } from 'next/navigation';
 
 interface Device {
     id: string;
@@ -14,139 +21,229 @@ interface Device {
 }
 
 export default function HardwareSettings() {
+    const router = useRouter();
+    const [mounted, setMounted] = useState(false);
     const [devices, setDevices] = useState<Device[]>([]);
     const [isSearching, setIsSearching] = useState(false);
 
-    // Mock scanning for demo purposes (real WebUSB logic would go here)
+    useEffect(() => {
+        setMounted(true);
+        // Initial mock device
+        setDevices([
+            {
+                id: 'usb-72x1',
+                productName: 'Protocol-X Thermal Printer',
+                manufacturerName: 'NILELINK CORE',
+                serialNumber: 'NL-PRN-8829',
+                type: 'printer'
+            }
+        ]);
+    }, []);
+
     const scanForDevices = async () => {
         setIsSearching(true);
-        // Simulate WebUSB requestDevice
         setTimeout(() => {
             const mockDevice: Device = {
-                id: 'usb-1234',
-                productName: 'TM-T20II Receipt Printer',
-                manufacturerName: 'EPSON',
-                serialNumber: 'EPS-XP-9921',
-                type: 'printer'
+                id: `usb-${Math.random().toString(36).substr(2, 4)}`,
+                productName: 'Quantum Scan Pro',
+                manufacturerName: 'NILELINK EDGE',
+                serialNumber: 'NL-SCN-4421',
+                type: 'scanner'
             };
             setDevices(prev => [...prev, mockDevice]);
             setIsSearching(false);
-        }, 1500);
+        }, 2000);
     };
 
     const runTestPrint = (device: Device) => {
-        alert(`🔔 Printing Test Page to ${device.productName} via ESC/POS protocol...`);
+        // Test sequence simulation
+        console.log(`Executing test sequence on ${device.id}`);
     };
 
+    if (!mounted) return null;
+
     return (
-        <div className="p-8 max-w-5xl mx-auto">
-            <div className="flex justify-between items-end mb-8">
-                <div>
-                    <h1 className="text-4xl font-bold tracking-tight text-primary-dark">Hardware Integration</h1>
-                    <p className="text-primary-dark/60 mt-2">Manage physical terminals, printers, and scanners.</p>
+        <div className="min-h-screen bg-neutral text-text-primary selection:bg-primary/20 overflow-hidden relative">
+            {/* Background Effects */}
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/5 blur-[120px] rounded-full" />
+            </div>
+
+            <header className="px-10 py-10 flex justify-between items-center relative z-10 bg-white/40 backdrop-blur-2xl border-b border-border-subtle sticky top-0">
+                <div className="flex items-center gap-6">
+                    <Button
+                        onClick={() => router.back()}
+                        className="w-14 h-14 rounded-2xl bg-white border border-border-subtle hover:bg-neutral text-text-primary p-0 shadow-sm"
+                    >
+                        <ArrowLeft size={20} />
+                    </Button>
+                    <div>
+                        <h1 className="text-3xl font-black text-text-primary uppercase tracking-tighter italic leading-none mb-2">Hardware Nodes</h1>
+                        <p className="text-text-secondary font-black uppercase tracking-[0.3em] text-[9px] opacity-60 italic">Physical terminal & perimeter bridge control</p>
+                    </div>
                 </div>
+
                 <Button
-                    variant="primary"
                     onClick={scanForDevices}
                     isLoading={isSearching}
-                    leftIcon={
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
-                        </svg>
-                    }
+                    className="h-14 px-8 bg-primary text-background font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                 >
-                    Discover New Hardware
+                    <RefreshCw size={16} className={`mr-3 ${isSearching ? 'animate-spin' : ''}`} />
+                    INITIALIZE DISCOVERY
                 </Button>
-            </div>
+            </header>
 
-            <div className="grid grid-cols-1 gap-6">
-                <Card>
-                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-primary-dark">
-                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        Connected Devices ({devices.length})
-                    </h2>
-
-                    {devices.length === 0 ? (
-                        <div className="py-12 text-center bg-black/5 rounded-2xl border-2 border-dashed border-black/10">
-                            <p className="text-primary-dark/40 font-medium">No hardware devices detected.</p>
-                            <p className="text-xs text-primary-dark/30 mt-1">Connect your USB receipt printer and click 'Discover'.</p>
+            <main className="max-w-7xl mx-auto p-12 space-y-12 relative z-10">
+                {/* Active Grid */}
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between px-4">
+                        <div className="flex items-center gap-3">
+                            <Activity size={16} className="text-primary" />
+                            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-text-secondary">Connected Hardware Array</h2>
                         </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {devices.map(device => (
-                                <div key={device.id} className="flex items-center justify-between p-4 bg-black/5 rounded-xl border border-black/5 hover:border-black/10 transition-colors">
+                        <Badge className="bg-success text-background text-[8px] font-black uppercase tracking-widest px-3 py-1">Nodes Active: {devices.length}</Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6">
+                        {devices.length === 0 ? (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="py-24 text-center bg-white/40 backdrop-blur-xl rounded-[3rem] border-2 border-dashed border-border-subtle"
+                            >
+                                <div className="w-20 h-20 bg-neutral rounded-full flex items-center justify-center mx-auto mb-6 text-text-secondary opacity-20">
+                                    <Terminal size={40} />
+                                </div>
+                                <p className="text-xs font-black uppercase tracking-widest text-text-secondary opacity-60">No hardware nodes detected in local perimeter.</p>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted mt-2">Activate discovery to sync devices via USB.</p>
+                            </motion.div>
+                        ) : (
+                            <div className="space-y-4">
+                                {devices.map((device, idx) => (
+                                    <motion.div
+                                        key={device.id}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: idx * 0.1 }}
+                                        className="bg-white rounded-[2.5rem] p-8 border border-border-subtle shadow-xl hover:shadow-2xl transition-all group flex items-center justify-between"
+                                    >
+                                        <div className="flex items-center gap-8">
+                                            <div className="w-20 h-20 bg-neutral rounded-3xl flex items-center justify-center text-primary shadow-inner group-hover:scale-105 transition-transform">
+                                                {device.type === 'printer' ? <Printer size={32} /> : <Search size={32} />}
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-4 mb-2">
+                                                    <h4 className="text-xl font-black text-text-primary uppercase tracking-tight italic">{device.productName}</h4>
+                                                    <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase tracking-widest px-3 py-1">USB 4.0</Badge>
+                                                </div>
+                                                <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.3em] opacity-40 italic">
+                                                    {device.manufacturerName} · HWID: {device.serialNumber}
+                                                </p>
+                                                <div className="flex items-center gap-4 mt-4">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className="w-1.5 h-1.5 bg-success rounded-full"></div>
+                                                        <span className="text-[8px] font-black uppercase tracking-widest text-success opacity-80">Online</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <ShieldCheck size={12} className="text-primary opacity-60" />
+                                                        <span className="text-[8px] font-black uppercase tracking-widest text-text-secondary opacity-40">Secure Bridge</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <Button
+                                                variant="outline"
+                                                className="h-14 px-8 rounded-2xl border-border-subtle hover:bg-neutral font-black text-[9px] tracking-[0.2em] uppercase transition-all"
+                                                onClick={() => runTestPrint(device)}
+                                            >
+                                                RUN TEST SEQUENCE
+                                            </Button>
+                                            <Button
+                                                className="h-14 px-8 rounded-2xl bg-neutral text-text-primary hover:bg-neutral-dark font-black text-[9px] tracking-[0.2em] uppercase transition-all"
+                                            >
+                                                CONFIGURE NODE
+                                            </Button>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Settings Matrix */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-12">
+                    <Card className="p-10 rounded-[3rem] bg-white border border-border-subtle shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 blur-3xl rounded-full -mr-24 -mt-24" />
+                        <div className="flex items-center gap-4 mb-10 relative z-10">
+                            <div className="w-12 h-12 bg-neutral rounded-2xl flex items-center justify-center text-primary">
+                                <Zap size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-text-primary uppercase tracking-tighter italic">Protocol Standard</h3>
+                                <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest opacity-60">Data transmission encoding</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 relative z-10">
+                            {[
+                                { id: 'escpos', label: 'ESC/POS (Protocol Def)', desc: 'Industry standard for thermal nodes.' },
+                                { id: 'star', label: 'Star Graphics System', desc: 'Accelerated for Star Micronics hardware.' },
+                                { id: 'legacy', label: 'Legacy Text Driver', desc: 'Fallback for vintage matrix devices.' }
+                            ].map(p => (
+                                <label key={p.id} className="flex items-center justify-between p-6 bg-neutral/30 rounded-[1.5rem] border border-transparent hover:border-primary/20 transition-all cursor-pointer group">
                                     <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-white rounded-lg shadow-sm">
-                                            {device.type === 'printer' ? (
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                                    <path d="M6 9V2H18V9" /><path d="M6 18H4C2.89543 18 2 17.1046 2 16V11C2 9.89543 2.89543 9 4 9H20C21.1046 9 22 9.89543 22 11V16C22 17.1046 21.1046 18 20 18H18" /><path d="M18 14H6V22H18V14Z" />
-                                                </svg>
-                                            ) : (
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                                    <path d="M17 3.5V5H19V3.5" /><path d="M5 3.5V5H7V3.5" /><path d="M3 21H21" /><path d="M5 19H19" /><path d="M11 11H13V15H11V11Z" />
-                                                </svg>
-                                            )}
+                                        <div className="w-5 h-5 rounded-full border-2 border-border-subtle flex items-center justify-center group-hover:border-primary transition-colors">
+                                            <div className="w-2.5 h-2.5 bg-primary rounded-full scale-0 group-hover:scale-100 transition-transform" />
                                         </div>
                                         <div>
-                                            <div className="flex items-center gap-2">
-                                                <h4 className="font-bold text-primary-dark">{device.productName}</h4>
-                                                <Badge size="sm" variant="info">USB</Badge>
-                                            </div>
-                                            <p className="text-xs text-primary-dark/50">{device.manufacturerName} • S/N: {device.serialNumber}</p>
+                                            <span className="block font-black text-xs uppercase tracking-widest text-text-primary mb-1">{p.label}</span>
+                                            <span className="text-[10px] font-medium text-text-secondary opacity-60">{p.desc}</span>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <Button variant="ghost" size="sm" onClick={() => runTestPrint(device)}>Test Print</Button>
-                                        <Button variant="secondary" size="sm">Configure</Button>
-                                    </div>
-                                </div>
+                                    <input type="radio" name="protocol" defaultChecked={p.id === 'escpos'} className="hidden" />
+                                </label>
                             ))}
-                        </div>
-                    )}
-                </Card>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card>
-                        <h3 className="text-lg font-bold mb-4 text-primary-dark">Protocol Settings</h3>
-                        <div className="space-y-4">
-                            <label className="flex items-center justify-between p-3 rounded-xl hover:bg-black/5 cursor-pointer transition-colors">
-                                <div>
-                                    <span className="block font-medium">ESC/POS (Standard)</span>
-                                    <span className="text-xs text-primary-dark/40">Default for thermal printers.</span>
-                                </div>
-                                <input type="radio" name="protocol" defaultChecked className="accent-primary-dark" />
-                            </label>
-                            <label className="flex items-center justify-between p-3 rounded-xl hover:bg-black/5 cursor-pointer transition-colors">
-                                <div>
-                                    <span className="block font-medium">Star Graphics</span>
-                                    <span className="text-xs text-primary-dark/40">For Star Micronics hardware.</span>
-                                </div>
-                                <input type="radio" name="protocol" className="accent-primary-dark" />
-                            </label>
                         </div>
                     </Card>
 
-                    <Card>
-                        <h3 className="text-lg font-bold mb-4 text-primary-dark">Automation</h3>
-                        <div className="space-y-4">
-                            <label className="flex items-center justify-between p-3 rounded-xl hover:bg-black/5 cursor-pointer transition-colors">
-                                <div>
-                                    <span className="block font-medium">Auto-Open Drawer</span>
-                                    <span className="text-xs text-primary-dark/40">Trigger pulse on cash payment.</span>
-                                </div>
-                                <input type="checkbox" defaultChecked className="accent-primary-dark h-5 w-5 rounded" />
-                            </label>
-                            <label className="flex items-center justify-between p-3 rounded-xl hover:bg-black/5 cursor-pointer transition-colors">
-                                <div>
-                                    <span className="block font-medium">Kitchen Auto-Print</span>
-                                    <span className="text-xs text-primary-dark/40">Direct print on new order.</span>
-                                </div>
-                                <input type="checkbox" className="accent-primary-dark h-5 w-5 rounded" />
-                            </label>
+                    <Card className="p-10 rounded-[3rem] bg-white border border-border-subtle shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-secondary/5 blur-3xl rounded-full -mr-24 -mt-24" />
+                        <div className="flex items-center gap-4 mb-10 relative z-10">
+                            <div className="w-12 h-12 bg-neutral rounded-2xl flex items-center justify-center text-secondary">
+                                <Settings size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-text-primary uppercase tracking-tighter italic">Bridge Automation</h3>
+                                <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest opacity-60">Triggered node sequences</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 relative z-10">
+                            {[
+                                { id: 'drawer', label: 'Quantum Drawer Pulse', desc: 'Auto-trigger on tangible asset settlement.' },
+                                { id: 'print', label: 'Direct Kitchen Print', desc: 'Synchronous printing on order anchoring.' },
+                                { id: 'label', label: 'Barcode Label Auto-Gen', desc: 'Print manifest IDs for all items.' }
+                            ].map(a => (
+                                <label key={a.id} className="flex items-center justify-between p-6 bg-neutral/30 rounded-[1.5rem] border border-transparent hover:border-secondary/20 transition-all cursor-pointer group">
+                                    <div className="flex items-center gap-6">
+                                        <div className="w-6 h-6 rounded-lg bg-white border border-border-subtle flex items-center justify-center group-hover:border-secondary transition-colors">
+                                            <Zap size={14} className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
+                                        <div>
+                                            <span className="block font-black text-xs uppercase tracking-widest text-text-primary mb-1">{a.label}</span>
+                                            <span className="text-[10px] font-medium text-text-secondary opacity-60">{a.desc}</span>
+                                        </div>
+                                    </div>
+                                    <input type="checkbox" defaultChecked={a.id !== 'label'} className="hidden" />
+                                </label>
+                            ))}
                         </div>
                     </Card>
                 </div>
-            </div>
+            </main>
         </div>
     );
 }

@@ -1,14 +1,20 @@
-import { Router, Request, Response } from 'express';
+import express, { Router, Request, Response } from 'express';
 import Stripe from 'stripe';
-import { PrismaClient } from '@prisma/client';
-import { authenticate } from '../middleware/authenticate';
-import { extractTenant } from '../middleware/tenantContext';
+import { z } from 'zod';
+import { prisma } from '../../services/DatabasePoolService';
+import { authenticate } from '../../middleware/authenticate';
+import { requireRole } from '../../middleware/authorize';
+import { auditService } from '../../services/AuditService';
+import { extractTenant } from '../../middleware/tenantContext';
+import { logger } from '../../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-    apiVersion: '2024-12-18.acacia',
-});
+
+// Initialize Stripe only if secret key is provided
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
+const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
+    apiVersion: '2025-12-15.clover',
+}) : null;
 
 const PLAN_PRICES = {
     BASIC: process.env.STRIPE_BASIC_PRICE_ID || 'price_basic',
@@ -29,15 +35,18 @@ router.post('/create-checkout',
     authenticate,
     async (req: Request, res: Response) => {
         try {
-            const { plan } = req.body; // 'BASIC', 'PROFESSIONAL', 'ENTERPRISE'
-
-            if (!['BASIC', 'PROFESSIONAL', 'ENTERPRISE'].includes(plan)) {
-                return res.status(400).json({
+            if (!stripe) {
+                return res.status(503).json({
                     success: false,
-                    error: 'Invalid plan'
+                    error: 'Stripe integration not configured. Please configure STRIPE_SECRET_KEY in environment variables.'
                 });
             }
 
+            const CreateCheckoutSchema = z.object({
+                plan: z.enum(['BASIC', 'PROFESSIONAL', 'ENTERPRISE']),
+            });
+
+            const { plan } = CreateCheckoutSchema.parse(req.body);
             const tenant = req.tenant;
             const priceId = PLAN_PRICES[plan as keyof typeof PLAN_PRICES];
 
@@ -68,7 +77,7 @@ router.post('/create-checkout',
                 }
             });
         } catch (error: any) {
-            console.error('Create checkout error:', error);
+            logger.error('Create checkout error:', error);
             res.status(500).json({
                 success: false,
                 error: 'Failed to create checkout session'
@@ -92,7 +101,7 @@ router.post('/webhook',
         try {
             event = stripe.webhooks.constructEvent(req.body, sig!, webhookSecret);
         } catch (err: any) {
-            console.error('Webhook signature verification failed:', err.message);
+            logger.error('Webhook signature verification failed:', err.message);
             return res.status(400).send(`Webhook Error: ${err.message}`);
         }
 
@@ -115,7 +124,7 @@ router.post('/webhook',
 
             case 'invoice.payment_succeeded':
                 const invoice = event.data.object as any;
-                console.log('Payment succeeded:', invoice.id);
+                logger.info('Payment succeeded:', { invoiceId: invoice.id });
                 break;
 
             case 'invoice.payment_failed':
@@ -124,7 +133,7 @@ router.post('/webhook',
                 break;
 
             default:
-                console.log(`Unhandled event type ${event.type}`);
+                logger.info(`Unhandled event type ${event.type}`);
         }
 
         res.json({ received: true });
@@ -154,11 +163,145 @@ router.get('/portal',
                 }
             });
         } catch (error) {
-            console.error('Create portal error:', error);
+            logger.error('Create portal error:', error);
             res.status(500).json({
                 success: false,
                 error: 'Failed to create billing portal session'
             });
+        }
+    }
+);
+
+/**
+ * GET /api/billing/payouts
+ * Retrieve recent payouts for the tenant
+ */
+router.get('/payouts',
+    extractTenant,
+    authenticate,
+    async (req: Request, res: Response) => {
+        try {
+            const tenant = req.tenant;
+
+            // Get payouts from Stripe
+            const payouts = await stripe.payouts.list({
+                limit: 20
+            }, {
+                stripeAccount: tenant.stripeConnectId // Assuming Connect is used for payouts
+            });
+
+            res.json({
+                success: true,
+                data: payouts.data
+            });
+        } catch (error) {
+            logger.error('Fetch payouts error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to fetch payouts'
+            });
+        }
+    }
+);
+
+/**
+ * POST /api/billing/payouts
+ * Trigger a manual payout for a merchant or driver
+ */
+router.post('/payouts',
+    extractTenant,
+    authenticate,
+    async (req: Request, res: Response) => {
+        try {
+            const PayoutSchema = z.object({
+                amount: z.number().min(0.01),
+                currency: z.string().default('usd'),
+                destination: z.string().optional(),
+            });
+
+            const { amount, currency = 'usd', destination } = PayoutSchema.parse(req.body);
+            const tenant = req.tenant;
+
+            // Create transfer to Connect account
+            const transfer = await stripe.transfers.create({
+                amount: Math.round(amount * 100),
+                currency,
+                destination: destination || tenant.stripeConnectId,
+                metadata: {
+                    tenantId: tenant.id,
+                    type: 'MANUAL_SETTLEMENT'
+                }
+            });
+
+            res.json({
+                success: true,
+                data: transfer
+            });
+        } catch (error: any) {
+            logger.error('Payout error:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message || 'Failed to process payout'
+            });
+        }
+    }
+);
+
+/**
+ * GET /api/billing/settlements
+ * Get settlement stats for the dashboard
+ */
+router.get('/settlements',
+    extractTenant,
+    authenticate,
+    async (req: Request, res: Response) => {
+        try {
+            const tenant = req.tenant;
+
+            // Get settlements for all restaurants in this tenant
+            const settlements = await prisma.settlement.findMany({
+                where: {
+                    restaurant: {
+                        tenantId: tenant.id
+                    }
+                },
+                include: {
+                    restaurant: {
+                        select: {
+                            id: true,
+                            name: true
+                        }
+                    }
+                },
+                orderBy: { periodEnd: 'desc' },
+                take: 50
+            });
+
+            // Calculate pending and available balances
+            const pendingSettlements = settlements.filter(s => s.status === 'PENDING');
+            const processedSettlements = settlements.filter(s => s.status === 'PROCESSED');
+
+            const pendingBalance = pendingSettlements.reduce((sum, s) => sum + Number(s.netSettlement), 0);
+            const availableBalance = processedSettlements.reduce((sum, s) => sum + Number(s.netSettlement), 0);
+
+            res.json({
+                success: true,
+                data: {
+                    history: settlements.map(s => ({
+                        id: s.id,
+                        date: s.periodEnd.toISOString().split('T')[0],
+                        amount: Number(s.netSettlement),
+                        status: s.status,
+                        type: 'REVENUE_SHARE',
+                        restaurantName: s.restaurant?.name || 'Unknown'
+                    })),
+                    pendingBalance,
+                    availableBalance
+                }
+            });
+        } catch (error) {
+            logger.error('Fetch settlements error:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch settlements' });
         }
     }
 );
@@ -178,7 +321,7 @@ async function handleCheckoutCompleted(session: any) {
         }
     });
 
-    console.log(`✅ Tenant ${tenantId} upgraded to ${plan}`);
+    logger.info(`Tenant ${tenantId} upgraded to ${plan}`);
 }
 
 async function handleSubscriptionUpdated(subscription: any) {
@@ -190,7 +333,7 @@ async function handleSubscriptionUpdated(subscription: any) {
 
     if (tenant) {
         // Handle plan changes, cancellations, etc.
-        console.log(`Subscription updated for tenant ${tenant.id}`);
+        logger.info(`Subscription updated for tenant ${tenant.id}`);
     }
 }
 
@@ -212,7 +355,7 @@ async function handleSubscriptionDeleted(subscription: any) {
             }
         });
 
-        console.log(`⚠️ Subscription cancelled for tenant ${tenant.id}`);
+        logger.warn(`Subscription cancelled for tenant ${tenant.id}`);
     }
 }
 
@@ -224,7 +367,7 @@ async function handlePaymentFailed(invoice: any) {
     });
 
     if (tenant) {
-        console.error(`❌ Payment failed for tenant ${tenant.id}`);
+        logger.error(`Payment failed for tenant ${tenant.id}`);
         // TODO: Send email notification
     }
 }

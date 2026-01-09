@@ -1,5 +1,5 @@
 import React from 'react';
-import { URLS } from '@/shared/utils/urls';
+import { URLS } from '@shared/utils/urls';
 
 export const UniversalFooter: React.FC = () => {
     return (

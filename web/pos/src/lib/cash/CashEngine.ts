@@ -7,6 +7,8 @@
 
 import { EventEngine } from '../events/EventEngine';
 import { EventType, CashHandoverEvent, CashReconciliationEvent } from '../events/types';
+import { printerService } from '../../services/PrinterService';
+import { LocalLedger } from '../storage/LocalLedger';
 
 export interface CashBalance {
     staffId: string;
@@ -38,11 +40,30 @@ export interface CashReconciliation {
 
 export class CashEngine {
     private eventEngine: EventEngine;
+    private ledger: LocalLedger;
     private cashBalances: Map<string, CashBalance> = new Map();
     private denominationValues = [200, 100, 50, 20, 10, 5, 1, 0.5, 0.25];
 
-    constructor(eventEngine: EventEngine) {
+    constructor(eventEngine: EventEngine, ledger: LocalLedger) {
         this.eventEngine = eventEngine;
+        this.ledger = ledger;
+        this.hydrateBalances();
+    }
+
+    private async hydrateBalances() {
+        try {
+            const balances = await this.ledger.getAllStaffCashBalances();
+            balances.forEach(b => {
+                this.cashBalances.set(b.staffId, {
+                    ...b,
+                    staffName: '', // Resolving name would require StaffEngine or lookup
+                    responsibility: 'cashier',
+                    lastUpdated: b.lastUpdated
+                });
+            });
+        } catch (err) {
+            console.error('Failed to hydrate cash balances:', err);
+        }
     }
 
     /**
@@ -71,7 +92,21 @@ export class CashEngine {
         );
 
         // Update cashier's balance
-        this.updateStaffBalance(cashierId, amount, currency);
+        await this.updateStaffBalance(cashierId, amount, currency);
+
+        // Automatically open cash drawer for cash payments
+        try {
+            await printerService.openCashDrawer();
+            console.log('💰 Cash drawer opened for cash payment', { orderId, amount });
+
+            // Multi-sensory feedback (Phase 13)
+            if (typeof window !== 'undefined' && (window as any).triggerNileLinkHaptic) {
+                (window as any).triggerNileLinkHaptic('SUCCESS');
+            }
+        } catch (error) {
+            console.warn('⚠️ Failed to open cash drawer', { error, orderId });
+            // Don't fail the payment if drawer opening fails - just log the warning
+        }
     }
 
     /**
@@ -104,8 +139,8 @@ export class CashEngine {
         );
 
         // Update balances
-        this.updateStaffBalance(fromStaffId, -actualAmount, currency);
-        this.updateStaffBalance(toStaffId, actualAmount, currency);
+        await this.updateStaffBalance(fromStaffId, -actualAmount, currency);
+        await this.updateStaffBalance(toStaffId, actualAmount, currency);
 
         return event;
     }
@@ -157,7 +192,7 @@ export class CashEngine {
         );
 
         // Reset staff balance after reconciliation
-        this.resetStaffBalance(staffId);
+        await this.resetStaffBalance(staffId);
 
         return reconciliation;
     }
@@ -181,7 +216,28 @@ export class CashEngine {
             }
         );
 
-        this.updateStaffBalance(staffId, openingBalance, currency);
+        await this.updateStaffBalance(staffId, openingBalance, currency);
+
+        // Also trigger physical cash drawer opening
+        try {
+            await printerService.openCashDrawer();
+            console.log('💰 Cash drawer opened for shift start', { staffId, openingBalance });
+        } catch (error) {
+            console.warn('⚠️ Failed to open cash drawer for shift', { error, staffId });
+        }
+    }
+
+    /**
+     * Manually open cash drawer (for change, access, etc.)
+     */
+    async openCashDrawer(reason?: string): Promise<void> {
+        try {
+            await printerService.openCashDrawer();
+            console.log('💰 Cash drawer manually opened', { reason });
+        } catch (error) {
+            console.error('❌ Failed to open cash drawer manually', { error, reason });
+            throw error;
+        }
     }
 
     /**
@@ -207,14 +263,14 @@ export class CashEngine {
     /**
      * Update staff cash balance
      */
-    private updateStaffBalance(
+    private async updateStaffBalance(
         staffId: string,
         amount: number,
         currency: 'EGP' | 'USD'
-    ): void {
+    ): Promise<void> {
         const balance = this.cashBalances.get(staffId) || {
             staffId,
-            staffName: '', // Should be fetched from staff DB
+            staffName: '',
             currentBalance: 0,
             currency,
             lastUpdated: Date.now(),
@@ -225,17 +281,23 @@ export class CashEngine {
         balance.lastUpdated = Date.now();
 
         this.cashBalances.set(staffId, balance);
+
+        // Persist to ledger (Phase 10)
+        await this.ledger.upsertStaffCashBalance(staffId, balance.currentBalance, currency);
     }
 
     /**
      * Reset staff balance after reconciliation
      */
-    private resetStaffBalance(staffId: string): void {
+    private async resetStaffBalance(staffId: string): Promise<void> {
         const balance = this.cashBalances.get(staffId);
         if (balance) {
             balance.currentBalance = 0;
             balance.lastUpdated = Date.now();
             this.cashBalances.set(staffId, balance);
+
+            // Persist reset to ledger
+            await this.ledger.upsertStaffCashBalance(staffId, 0, balance.currency);
         }
     }
 

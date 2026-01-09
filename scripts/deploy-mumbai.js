@@ -86,6 +86,25 @@ async function main() {
         console.log('SupplierCredit deployed to:', creditAddress);
         deploymentInfo.contracts.supplierCredit = creditAddress;
 
+        // Verify contracts on Polygonscan
+        console.log('\n🔍 Verifying contracts on Polygonscan...');
+
+        try {
+            // Note: Contract verification requires API keys and proper setup
+            // This is a placeholder for the verification process
+            console.log('⚠️  Contract verification requires POLYGONSCAN_API_KEY environment variable');
+            console.log('   Run: npx hardhat verify --network polygon-amoy <contract-address> <constructor-args>');
+
+            // Example verification commands (would need to be automated):
+            // await run("verify:verify", { address: registryAddress, constructorArguments: [] });
+            // await run("verify:verify", { address: settlementAddress, constructorArguments: [registryAddress, usdcAddress, deployer.address] });
+            // etc.
+
+        } catch (error) {
+            console.log('⚠️  Contract verification failed:', error.message);
+            console.log('   Manual verification required via Polygonscan UI');
+        }
+
         // Save deployment info
         const fs = require('fs');
         fs.writeFileSync('./deployment-mumbai.json', JSON.stringify(deploymentInfo, null, 2));
@@ -100,7 +119,7 @@ async function main() {
         });
         console.log('=====================================');
         console.log('🌐 Network: Polygon Amoy Testnet');
-        console.log('⛽️  All contracts verified and ready for use!');
+        console.log('⛽️  Contracts deployed - verification may be required manually');
 
     } catch (error) {
         console.error('❌ Deployment failed:', error);

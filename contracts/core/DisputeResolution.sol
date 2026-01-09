@@ -24,6 +24,9 @@ contract DisputeResolution is IDisputeResolution, Ownable, Pausable, ReentrancyG
     // Dispute management
     mapping(bytes16 => DisputeData) public disputes;
     mapping(bytes16 => uint256) public disputeEscrow;
+
+    /// @notice Total number of active disputes
+    uint256 public activeDisputes;
     
     struct DisputeData {
         bytes16 orderId;
@@ -144,6 +147,8 @@ contract DisputeResolution is IDisputeResolution, Ownable, Pausable, ReentrancyG
             isEscrowed: false,
             escrowRecipient: address(0)
         });
+
+        activeDisputes++;
         
         // For claims over $1000, hold funds in escrow
         if (claimAmountUsd6 > 1000 * 10**6) {
@@ -229,6 +234,8 @@ contract DisputeResolution is IDisputeResolution, Ownable, Pausable, ReentrancyG
         if (resolution == NileLinkTypes.DisputeResolution.REFUND && refundAmountUsd6 > 0) {
             _processDisputeRefund(orderId, refundAmountUsd6);
         }
+
+        activeDisputes--;
         
         emit DisputeResolved(orderId, resolution, refundAmountUsd6, uint64(block.timestamp));
     }

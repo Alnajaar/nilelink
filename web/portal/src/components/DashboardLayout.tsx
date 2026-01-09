@@ -39,7 +39,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     ];
 
     return (
-        <div className="flex h-screen bg-[#050505] text-white selection:bg-blue-500/30 overflow-hidden">
+        <div className="flex h-screen bg-primary text-white selection:bg-blue-500/30 overflow-hidden">
             {/* Sidebar */}
             <aside className={`fixed inset-y-0 left-0 z-50 w-72 border-r border-white/5 bg-black/40 backdrop-blur-2xl transition-transform lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-8 flex flex-col h-full">
@@ -109,7 +109,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="absolute inset-0 flex items-center justify-center bg-[#050505]"
+                                className="absolute inset-0 flex items-center justify-center bg-primary"
                             >
                                 <div className="flex flex-col items-center gap-4">
                                     <div className="w-12 h-12 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />

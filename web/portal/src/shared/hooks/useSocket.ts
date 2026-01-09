@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getSocket, subscribeToEvent, SocketEventName } from '@/shared/utils/socket';
+import { getSocket, subscribeToEvent, SocketEventName } from '@shared/utils/socket';
 
 /**
  * Hook to subscribe to real-time socket events

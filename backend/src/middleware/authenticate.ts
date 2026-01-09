@@ -3,15 +3,18 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 
 interface JwtPayload {
+    id: string;
     userId: string;
     role: string;
     email: string;
+    tenantId?: string;
 }
 
 declare global {
     namespace Express {
         interface Request {
             user?: JwtPayload;
+            tenantId?: string;
         }
     }
 }

@@ -7,7 +7,7 @@ const IS_DEV = process.env.NODE_ENV === 'development';
 const DOMAIN = 'nilelink.app';
 
 export const APP_PORTS = {
-    backend: 3001,
+    backend: 3010,
     customer: 3002,
     pos: 3003,
     delivery: 3004,
@@ -36,6 +36,6 @@ export const URLS = {
     supplier: getAppUrl('supplier'),
     dashboard: getAppUrl('dashboard'),
     unified: getAppUrl('unified'),
-    api: IS_DEV ? 'http://localhost:3001/api' : 'https://api.nilelink.app/api',
-    docs: IS_DEV ? `http://docs.${DOMAIN}:3001/api/docs` : `https://docs.${DOMAIN}`,
+    api: IS_DEV ? 'http://localhost:3010/api' : 'https://api.nilelink.app/api',
+    docs: IS_DEV ? `http://docs.${DOMAIN}:3010/api/docs` : `https://docs.${DOMAIN}`,
 };

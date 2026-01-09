@@ -1,13 +1,14 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
-import { PrismaClient } from '@prisma/client';
-import { authenticate } from '../middleware/authenticate';
-import { extractTenant } from '../middleware/tenantContext';
-import { requirePermission } from '../middleware/authorize';
-import { dataImportService } from '../services/DataImportService';
+import { z } from 'zod';
+import { prisma } from '../../services/DatabasePoolService';
+import { authenticate } from '../../middleware/authenticate';
+import { extractTenant } from '../../middleware/tenantContext';
+import { requirePermission } from '../../middleware/authorize';
+import { dataImportService } from '../../services/DataImportService';
+import { logger } from '../../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
@@ -61,7 +62,7 @@ router.post('/preview',
                 }
             });
         } catch (error: any) {
-            console.error('Preview error:', error);
+            logger.error('Preview error:', error);
             res.status(500).json({
                 success: false,
                 error: 'Failed to preview file'
@@ -103,7 +104,7 @@ router.post('/menu',
             await prisma.importJob.create({
                 data: {
                     tenantId: req.tenantId!,
-                    userId: req.user.id,
+                    userId: req.user!.id,
                     type: 'MENU_ITEMS',
                     status: result.success ? 'COMPLETED' : 'FAILED',
                     fileName: req.file.originalname,
@@ -124,7 +125,7 @@ router.post('/menu',
                 data: result
             });
         } catch (error: any) {
-            console.error('Import menu error:', error);
+            logger.error('Import menu error:', error);
             res.status(500).json({
                 success: false,
                 error: 'Failed to import menu items'
@@ -151,12 +152,17 @@ router.post('/inventory',
                 });
             }
 
-            const { restaurantId, columnMapping } = req.body;
-            const mapping = JSON.parse(columnMapping || '{}');
+            const ImportInventorySchema = z.object({
+                restaurantId: z.string(),
+                columnMapping: z.string().optional(),
+            });
+
+            const bodyData = ImportInventorySchema.parse(req.body);
+            const mapping = bodyData.columnMapping ? JSON.parse(bodyData.columnMapping) : {};
 
             const result = await dataImportService.importInventory(
                 req.tenantId!,
-                restaurantId,
+                bodyData.restaurantId,
                 req.file.buffer,
                 req.file.originalname,
                 mapping
@@ -165,7 +171,7 @@ router.post('/inventory',
             await prisma.importJob.create({
                 data: {
                     tenantId: req.tenantId!,
-                    userId: req.user.id,
+                    userId: req.user!.id,
                     type: 'INVENTORY',
                     status: result.success ? 'COMPLETED' : 'FAILED',
                     fileName: req.file.originalname,
@@ -186,7 +192,7 @@ router.post('/inventory',
                 data: result
             });
         } catch (error: any) {
-            console.error('Import inventory error:', error);
+            logger.error('Import inventory error:', error);
             res.status(500).json({
                 success: false,
                 error: 'Failed to import inventory'
@@ -215,10 +221,49 @@ router.get('/jobs',
                 data: jobs
             });
         } catch (error) {
-            console.error('List import jobs error:', error);
+            logger.error('List import jobs error:', error);
             res.status(500).json({
                 success: false,
                 error: 'Failed to fetch import jobs'
+            });
+        }
+    }
+);
+
+/**
+ * GET /api/imports/jobs/:id
+ * Get import job by ID
+ */
+router.get('/jobs/:id',
+    extractTenant,
+    authenticate,
+    async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            const job = await prisma.importJob.findFirst({
+                where: {
+                    id,
+                    tenantId: req.tenantId
+                }
+            });
+
+            if (!job) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Import job not found'
+                });
+            }
+
+            res.json({
+                success: true,
+                data: job
+            });
+        } catch (error) {
+            logger.error('Get import job error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to fetch import job'
             });
         }
     }

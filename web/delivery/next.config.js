@@ -4,6 +4,10 @@ const nextConfig = {
     images: {
         unoptimized: true,
     },
+    transpilePackages: ['@shared'],
+    experimental: {
+        externalDir: true,
+    },
 }
 
 module.exports = nextConfig

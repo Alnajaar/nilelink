@@ -1,4 +1,4 @@
-import express from 'express';
+import net from 'net';
 
 /**
  * Hardware Service for POS Peripherals
@@ -150,7 +150,6 @@ export class HardwareService {
      * Send raw ESC/POS commands to network printer
      */
     async printToNetworkPrinter(printerIP: string, port: number, data: Buffer): Promise<void> {
-        const net = require('net');
 
         return new Promise((resolve, reject) => {
             const client = new net.Socket();

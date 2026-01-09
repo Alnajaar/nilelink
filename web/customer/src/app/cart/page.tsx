@@ -8,6 +8,8 @@ import { useCustomer } from '@/contexts/CustomerContext';
 import { Button } from '@/components/shared/Button';
 import { Card } from '@/components/shared/Card';
 import { EmptyState } from '@/components/shared/EmptyState';
+
+export const dynamic = 'force-dynamic';
 import { CurrencyDisplay } from '@/components/shared/CurrencyDisplay';
 
 export default function CartPage() {

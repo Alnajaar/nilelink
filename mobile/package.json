@@ -1,6 +1,14 @@
 {
   "name": "nilelink-mobile",
   "private": true,
+  "scripts": {
+    "android:customer": "npm run android --workspace=nilelink-customer",
+    "ios:customer": "npm run ios --workspace=nilelink-customer",
+    "start:customer": "npm run start --workspace=nilelink-customer",
+    "android:driver": "npm run android --workspace=nilelink-driver",
+    "ios:driver": "npm run ios --workspace=nilelink-driver",
+    "start:driver": "npm run start --workspace=nilelink-driver"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"

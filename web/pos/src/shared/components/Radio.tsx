@@ -19,15 +19,15 @@ export const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
                         type="radio"
                         ref={ref}
                         className={cn(
-                            "peer h-4 w-4 cursor-pointer appearance-none rounded-full border border-black/20 bg-white transition-all checked:border-primary-dark checked:bg-primary-dark",
+                            "peer h-4 w-4 cursor-pointer appearance-none rounded-full border border-border-subtle bg-background-subtle transition-all checked:border-primary checked:bg-primary",
                             className
                         )}
                         {...props}
                     />
-                    <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
+                    <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-background-card opacity-0 peer-checked:opacity-100"></div>
                 </div>
                 {label && (
-                    <span className="ml-2 text-sm text-primary-dark/90 select-none">
+                    <span className="ml-2 text-sm text-text-main select-none">
                         {label}
                     </span>
                 )}

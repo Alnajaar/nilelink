@@ -1,0 +1,130 @@
+
+// ============================================================================
+// AGENTIC MARKETPLACE (Phase 2 & 3 extensions)
+// ============================================================================
+
+model MarketplaceLoan {
+  id              String         @id @default(cuid())
+  sellerId        String
+  seller          MarketplaceSeller @relation(fields: [sellerId], references: [id])
+  
+  amount          Decimal
+  interestRate    Decimal        // e.g. 0.05
+  durationDays    Int
+  status          LoanStatus     @default(OFFERED)
+  
+  disbursedAt     DateTime?
+  repaidAt        DateTime?
+  dueDate         DateTime?
+  
+  orderIds        String[]       // Collateral orders
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([sellerId])
+  @@index([status])
+}
+
+enum LoanStatus {
+  OFFERED
+  ACTIVE
+  REPAID
+  DEFAULTED
+}
+
+model NegotiationSession {
+  id              String         @id @default(cuid())
+  listingId       String
+  listing         MarketplaceListing @relation(fields: [listingId], references: [id])
+  
+  buyerId         String
+  buyer           User           @relation(fields: [buyerId], references: [id])
+  
+  initialOffer    Decimal
+  maxBudget       Decimal
+  status          NegotiationStatus @default(ACTIVE)
+  
+  rounds          NegotiationRound[]
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([listingId])
+  @@index([buyerId])
+  @@index([status])
+}
+
+enum NegotiationStatus {
+  ACTIVE
+  AGREED
+  FAILED
+  EXPIRED
+}
+
+model NegotiationRound {
+  id              String             @id @default(cuid())
+  sessionId       String
+  session         NegotiationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  roundNumber     Int
+  proposer        NegotiationProposer
+  amount          Decimal
+  reason          String?
+  
+  createdAt       DateTime           @default(now())
+}
+
+enum NegotiationProposer {
+  BUYER
+  SELLER
+}
+
+model JuryCase {
+  id              String        @id @default(cuid())
+  disputeId       String        @unique // Link to MarketplaceDispute if needed, or standalone
+  
+  // If linked directly to dispute:
+  // dispute         MarketplaceDispute @relation(fields: [disputeId], references: [id])
+  
+  status          JuryStatus    @default(VOTING_OPEN)
+  deadline        DateTime
+  
+  votesForBuyer   Int           @default(0)
+  votesForSeller  Int           @default(0)
+  
+  jurors          String[]      // List of User IDs selected to vote
+  votes           JuryVote[]
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([status])
+}
+
+enum JuryStatus {
+  VOTING_OPEN
+  RESOLVED
+  CANCELLED
+}
+
+model JuryVote {
+  id              String    @id @default(cuid())
+  caseId          String
+  case            JuryCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  
+  jurorId         String
+  juror           User      @relation(fields: [jurorId], references: [id])
+  
+  vote            VoteChoice
+  justification   String?
+  
+  createdAt       DateTime  @default(now())
+
+  @@unique([caseId, jurorId])
+}
+
+enum VoteChoice {
+  BUYER
+  SELLER
+}

@@ -131,4 +131,37 @@ export const settlementApi = {
         }),
 };
 
+// System API
+export const systemApi = {
+    getStats: () => apiRequest<{
+        revenue: number;
+        tps: number;
+        nodes: number;
+        merchants: number;
+        users: number;
+        orders: number;
+        status: string;
+    }>('/system/stats', { requireAuth: false }),
+    getHealth: () => apiRequest<{
+        status: 'healthy' | 'degraded' | 'critical';
+        components: any[];
+        recentPatches: any[];
+        predictions: any[];
+    }>('/system/health', { requireAuth: false }),
+    getConfig: () => apiRequest('/system/config', { requireAuth: false }),
+};
+
+export const api = {
+    get: <T>(endpoint: string, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, { ...options, method: 'GET' }),
+    post: <T>(endpoint: string, body?: any, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) }),
+    put: <T>(endpoint: string, body?: any, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) }),
+    patch: <T>(endpoint: string, body?: any, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
+    delete: <T>(endpoint: string, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, { ...options, method: 'DELETE' }),
+};
+
 export { ApiError };

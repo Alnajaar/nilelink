@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { WalletProvider } from "@shared/contexts/WalletContext";
-import { UniversalFooter } from "@/shared/components/UniversalFooter";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { AuthProvider } from "../../../shared/contexts/AuthContext";
+import { WalletProvider } from "../../../shared/contexts/WalletContext";
+import { DemoProvider } from '../../../shared/contexts/DemoContext';
+
+import { UniversalHeader } from '../../../shared/components/UniversalHeader';
+import { UniversalFooter } from '../../../shared/components/UniversalFooter';
+import { CurrencyProvider } from '../../../shared/contexts/CurrencyContext';
+
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
+    metadataBase: new URL('https://nilelink.app'),
     title: {
         default: "NileLink | Decentralized Economic OS",
         template: "%s | NileLink"
@@ -31,10 +37,10 @@ export const metadata: Metadata = {
         description: "Secure, trustless, and infinitely scalable infrastructure for the global economy.",
         images: [
             {
-                url: "https://nilelink.app/og-image.png",
+                url: "/shared/assets/logo/logo-square.png",
                 width: 1200,
-                height: 630,
-                alt: "NileLink Ecosystem Dashboard",
+                height: 1200,
+                alt: "NileLink Ecosystem Protocol",
             },
         ],
     },
@@ -46,22 +52,34 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({
-            children,
-        }: {
-            children: React.ReactNode;
-        }) {
-            return (
-                <html lang="en">
-                    <body className={`${inter.className} bg-background-light text-primary antialiased`}>
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    return (
+        <html lang="en">
+            <body className={`${inter.className} bg-background-light text-primary antialiased flex flex-col min-h-screen`}>
+                <AuthProvider>
+                    <DemoProvider>
                         <WalletProvider>
-                            <ThemeProvider>
-                                {children}
-                                <div className="mt-auto">
-                                    <UniversalFooter />
-                                </div>
-                            </ThemeProvider>
+                            <CurrencyProvider>
+                                <UniversalHeader
+                                    appName="Portal"
+                                    links={[
+                                        { href: '/demo', label: 'Protocol Demo' },
+                                        { href: '/#features', label: 'Nodes' },
+                                        { href: '/docs', label: 'Documentation' }
+                                    ]}
+                                />
+                                <main className="flex-grow">
+                                    {children}
+                                </main>
+                                <UniversalFooter />
+                            </CurrencyProvider>
                         </WalletProvider>
-                    </body>
-                </html>
-            );
+                    </DemoProvider>
+                </AuthProvider>
+            </body>
+        </html>
+    );
 }

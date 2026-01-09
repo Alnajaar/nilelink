@@ -1,0 +1,30 @@
+🔍 Starting Zero-Error Design Scan...
+----------------------------------------
+
+❌ VIOLATIONS in web\portal\src\app\admin\dashboard\page.tsx:
+   Line 99: #0f172a
+
+❌ VIOLATIONS in web\portal\src\app\for-developers\page.tsx:
+   Line 94: #0e1117
+   Line 95: #161b22
+
+❌ VIOLATIONS in web\portal\src\app\page.tsx:
+   Line 299: #842
+
+❌ VIOLATIONS in web\portal\src\components\NetworkMap.tsx:
+   Line 31: #3b82f6
+   Line 31: #fbbf24
+   Line 31: #ef4444
+
+❌ VIOLATIONS in web\pos\src\app\admin\products\page.tsx:
+   Line 126: #d2dad1
+   Line 127: #372c2d
+   Line 128: #f9f8f4
+
+❌ VIOLATIONS in web\pos\src\components\shared\Button.tsx:
+   Line 20: #0b2b21
+   Line 21: #c1cec0
+
+----------------------------------------
+🚨 FAILED: Found 12 forbidden hex codes.
+   Please replace these with design system tokens (e.g., colors.primary[900]).

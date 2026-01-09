@@ -2,7 +2,8 @@ import Cookies from 'js-cookie';
 
 const getApiUrl = () => {
     if (typeof window === 'undefined') {
-        return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+        // Server-side (SSR): prioritize internal Docker networking
+        return process.env.API_URL_INTERNAL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
     }
 
     const host = window.location.hostname;
@@ -14,7 +15,7 @@ const getApiUrl = () => {
     }
 
     // Fallback for local development or other environments
-    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3011/api';
 };
 
 const API_URL = getApiUrl();
@@ -84,6 +85,20 @@ export const authApi = {
         apiRequest('/auth/logout', {
             method: 'POST',
         }),
+
+    sendOtp: (email: string, purpose: string) =>
+        apiRequest('/auth/otp/send', {
+            method: 'POST',
+            body: JSON.stringify({ email, purpose }),
+            requireAuth: false,
+        }),
+
+    verifyOtp: (email: string, otp: string) =>
+        apiRequest('/auth/otp/verify', {
+            method: 'POST',
+            body: JSON.stringify({ email, otp }),
+            requireAuth: false,
+        }),
 };
 
 // Restaurant API
@@ -129,6 +144,71 @@ export const settlementApi = {
             method: 'POST',
             body: JSON.stringify(data),
         }),
+};
+
+// Generic API object for direct requests
+export const api = {
+    get: <T = any>(endpoint: string, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, { ...options, method: 'GET' }),
+
+    post: <T = any>(endpoint: string, data?: any, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, {
+            ...options,
+            method: 'POST',
+            body: data ? JSON.stringify(data) : undefined,
+        }),
+
+    put: <T = any>(endpoint: string, data?: any, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, {
+            ...options,
+            method: 'PUT',
+            body: data ? JSON.stringify(data) : undefined,
+        }),
+
+    patch: <T = any>(endpoint: string, data?: any, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, {
+            ...options,
+            method: 'PATCH',
+            body: data ? JSON.stringify(data) : undefined,
+        }),
+
+    delete: <T = any>(endpoint: string, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, { ...options, method: 'DELETE' }),
+};
+
+// Loyalty API
+export const loyaltyApi = {
+    getProfile: () => apiRequest('/loyalty/profile'),
+    getHistory: () => apiRequest('/loyalty/history'),
+    redeem: (amount: number, rewardType: string) =>
+        apiRequest('/loyalty/redeem', {
+            method: 'POST',
+            body: JSON.stringify({ amount, rewardType })
+        })
+};
+
+// Supplier API
+export const supplierApi = {
+    getInventory: () => apiRequest('/suppliers/inventory'),
+    restock: (data: any) =>
+        apiRequest('/suppliers/restock', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        }),
+    getCredit: () => apiRequest('/suppliers/credit'),
+    getRevenue: () => apiRequest('/suppliers/nilelink-revenue')
+};
+
+// Delivery API
+export const deliveryApi = {
+    getAvailable: () => apiRequest('/deliveries/available'),
+    claim: (id: string) => apiRequest(`/deliveries/${id}/accept`, { method: 'POST' }),
+    updateStatus: (id: string, status: string) =>
+        apiRequest(`/deliveries/${id}/status`, {
+            method: 'POST',
+            body: JSON.stringify({ status })
+        }),
+    getHistory: () => apiRequest('/deliveries/my-history')
 };
 
 export { ApiError };

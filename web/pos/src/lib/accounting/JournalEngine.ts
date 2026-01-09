@@ -13,11 +13,25 @@ export class JournalEngine {
         this.initializeAccounts();
     }
 
-    private initializeAccounts() {
+    private async initializeAccounts() {
+        // Load default COA
         DEFAULT_COA.forEach(acc => {
             this.accounts.set(acc.code, { ...acc });
         });
-        // TODO: Load balances from ledger if persistent
+
+        // Hydrate persistent balances (Phase 10)
+        try {
+            const savedBalances = await this.ledger.getAllAccountBalances();
+            Object.entries(savedBalances).forEach(([code, balance]) => {
+                const acc = this.accounts.get(code);
+                if (acc) {
+                    acc.balance = balance;
+                }
+            });
+            console.log('📈 Journal balances hydrated from persistent ledger');
+        } catch (err) {
+            console.error('Failed to hydrate journal balances:', err);
+        }
     }
 
     /**
@@ -217,6 +231,9 @@ export class JournalEngine {
                 } else {
                     acc.balance += (line.credit - line.debit);
                 }
+
+                // Persist updated balance (Phase 10)
+                this.ledger.upsertAccountBalance(acc.code, acc.balance);
             }
         });
 

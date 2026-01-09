@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, SafeAreaView, StatusBar, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, SafeAreaView, StatusBar, Dimensions, Alert, Linking, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
+import { GeoVerificationClient } from '../lib/GeoVerification';
+import { api } from '@nilelink/mobile-shared';
 
 const { height } = Dimensions.get('window');
 
@@ -10,11 +13,111 @@ export function ActiveDeliveryScreen() {
     const navigation = useNavigation();
     const route = useRoute();
     const { job }: any = route.params;
-    const [status, setStatus] = useState<'ACCEPTED' | 'PICKED_UP' | 'DELIVERED'>('ACCEPTED');
+    const [status, setStatus] = useState<'ACCEPTED' | 'IN_DELIVERY' | 'DELIVERED'>(
+        job.status === 'READY' ? 'ACCEPTED' : job.status
+    );
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
+    const [destinationCoords, setDestinationCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
-    const handleUpdate = () => {
-        if (status === 'ACCEPTED') setStatus('PICKED_UP');
-        else if (status === 'PICKED_UP') setStatus('DELIVERED');
+    // Initialize GPS tracking and destination coordinates
+    useEffect(() => {
+        requestLocationPermission();
+        geocodeDestinationAddress(job.address);
+    }, [job.address]);
+
+    // Real-time GPS tracking when in delivery
+    useEffect(() => {
+        if (status === 'IN_DELIVERY') {
+            startLocationTracking();
+        }
+    }, [status]);
+
+    const requestLocationPermission = async () => {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Location Permission', 'GPS access is required for delivery tracking.');
+        }
+    };
+
+    const geocodeDestinationAddress = async (address: string) => {
+        try {
+            const geocode = await Location.geocodeAsync(address);
+            if (geocode.length > 0) {
+                setDestinationCoords({
+                    latitude: geocode[0].latitude,
+                    longitude: geocode[0].longitude
+                });
+            }
+        } catch (error) {
+            console.log('Geocoding failed:', error);
+        }
+    };
+
+    const startLocationTracking = async () => {
+        const locationSubscription = await Location.watchPositionAsync(
+            {
+                accuracy: Location.Accuracy.High,
+                timeInterval: 5000, // Update every 5 seconds
+                distanceInterval: 10, // Update every 10 meters
+            },
+            (location) => {
+                setCurrentLocation(location);
+                // In real app, send location updates to backend for real-time tracking
+            }
+        );
+
+        return () => locationSubscription.remove();
+    };
+
+    const openNavigation = async () => {
+        if (!destinationCoords) {
+            Alert.alert('Navigation', 'Destination coordinates not available');
+            return;
+        }
+
+        const { latitude, longitude } = destinationCoords;
+        const url = Platform.select({
+            ios: `maps:0,0?saddr=&daddr=${latitude},${longitude}`,
+            android: `geo:0,0?q=${latitude},${longitude}`,
+        });
+
+        if (url && await Linking.canOpenURL(url)) {
+            await Linking.openURL(url);
+        } else {
+            Alert.alert('Navigation', 'Unable to open navigation app');
+        }
+    };
+
+    const handleUpdate = async () => {
+        try {
+            if (status === 'ACCEPTED') {
+                await api.patch(`/orders/${job.id}/status`, { status: 'IN_DELIVERY' });
+                setStatus('IN_DELIVERY');
+            } else if (status === 'IN_DELIVERY') {
+                // VERIFY LOCATION
+                setIsVerifying(true);
+                const proof = await GeoVerificationClient.captureProof(job.id);
+                setIsVerifying(false);
+
+                if (!proof) {
+                    Alert.alert("Verification Failed", "Could not verify your location. Please enable GPS.");
+                    return; // Block delivery if no GPS
+                }
+
+                console.log(`[Driver] Proof of Delivery Generated: ${proof.proofHash}`);
+
+                await api.patch(`/orders/${job.id}/status`, {
+                    status: 'DELIVERED',
+                    proof: proof
+                });
+
+                setStatus('DELIVERED');
+            }
+        } catch (error) {
+            console.error('[Driver] Status update failed:', error);
+            Alert.alert("Sync Error", "Failed to update status on Nile-Edge nodes. Check connection.");
+        }
     };
 
     return (
@@ -78,6 +181,20 @@ export function ActiveDeliveryScreen() {
                             </View>
                         </View>
                     </View>
+
+                    {/* Real-time GPS Status */}
+                    {status === 'IN_DELIVERY' && currentLocation && (
+                        <View style={styles.gpsCard}>
+                            <View style={styles.gpsRow}>
+                                <Ionicons name="navigate" size={16} color="#3b82f6" />
+                                <Text style={styles.gpsText}>GPS Active • Location Tracking</Text>
+                            </View>
+                            <Pressable style={styles.navButton} onPress={openNavigation}>
+                                <Ionicons name="map" size={16} color="#fff" />
+                                <Text style={styles.navButtonText}>Open Navigation</Text>
+                            </Pressable>
+                        </View>
+                    )}
 
                     {/* Action Hub */}
                     <View style={styles.actionHub}>
@@ -160,4 +277,9 @@ const styles = StyleSheet.create({
     finishText: { color: '#fff', fontSize: 14, fontWeight: '700' },
     techFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingBottom: 20 },
     techText: { color: 'rgba(255,255,255,0.15)', fontSize: 9, fontWeight: '600', marginLeft: 6, letterSpacing: 0.5 },
+    gpsCard: { backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.2)' },
+    gpsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    gpsText: { color: '#3b82f6', fontSize: 14, fontWeight: '600', marginLeft: 8 },
+    navButton: { backgroundColor: '#3b82f6', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
+    navButtonText: { color: '#fff', fontSize: 14, fontWeight: '700', marginLeft: 8 },
 });

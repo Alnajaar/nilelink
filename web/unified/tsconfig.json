@@ -40,7 +40,7 @@
         "./src/hooks/*"
       ],
       "@shared/*": [
-        "../../shared/*"
+        "../shared/*"
       ]
     }
   },

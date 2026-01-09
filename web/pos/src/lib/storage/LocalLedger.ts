@@ -21,6 +21,52 @@ export class LocalLedger {
      * Initialize SQLite database
      */
     private async initialize(): Promise<void> {
+        if (typeof process !== 'undefined' && process.env.TEST_MODE === 'true') {
+            console.log('🧪 [Test Mode] Using In-Memory Mock Ledger');
+            const _mockData: Record<string, any[]> = {};
+            this.db = {
+                run: (sql: string, params?: any[]) => {
+                    const table = sql.match(/INTO (\w+)/)?.[1] || sql.match(/TABLE (\w+)/)?.[1];
+                    if (table && params) {
+                        if (!_mockData[table]) _mockData[table] = [];
+                        _mockData[table].push(params);
+                    }
+                },
+                prepare: (sql: string) => {
+                    const table = sql.match(/FROM (\w+)/)?.[1] || 'events';
+                    const data = _mockData[table] || [];
+                    let index = 0;
+                    return {
+                        step: () => index < data.length,
+                        getAsObject: () => {
+                            const row = data[index++];
+                            if (table === 'events') {
+                                return {
+                                    id: row[0], type: row[1], timestamp: row[2],
+                                    deviceId: row[3], actorId: row[4], branchId: row[5],
+                                    hash: row[6], previousHash: row[7], offline: row[8],
+                                    syncedAt: row[9], version: row[10], payload: row[11]
+                                };
+                            }
+                            if (table === 'staff') {
+                                return {
+                                    id: row[0], uniqueCode: row[1], username: row[2],
+                                    phone: row[3], pinHash: row[4], roles: row[5],
+                                    permissions: row[6], profileImage: row[7],
+                                    branchId: row[8], status: row[9], createdAt: row[10]
+                                };
+                            }
+                            return row;
+                        },
+                        free: () => { }
+                    };
+                },
+                exec: () => [],
+                export: () => new Uint8Array()
+            } as any;
+            return;
+        }
+
         try {
             const SQL = await initSqlJs({
                 locateFile: (file) => `https://sql.js.org/dist/${file}`,
@@ -120,6 +166,43 @@ export class LocalLedger {
         predictedItems TEXT NOT NULL, -- JSON map of item -> qty
         confidenceScore REAL NOT NULL,
         generatedAt INTEGER NOT NULL
+      )
+    `);
+
+        // Staff Directory Table (Mission Critical)
+        this.db.run(`
+      CREATE TABLE staff (
+        id TEXT PRIMARY KEY,
+        uniqueCode TEXT UNIQUE NOT NULL, -- 8-digit unique ID
+        username TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        pinHash TEXT NOT NULL,
+        roles TEXT NOT NULL, -- JSON array
+        permissions TEXT NOT NULL, -- JSON array
+        profileImage TEXT,
+        branchId TEXT NOT NULL,
+        status TEXT DEFAULT 'active',
+        createdAt INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+        updatedAt INTEGER DEFAULT (strftime('%s', 'now') * 1000)
+      )
+    `);
+
+        // Staff Cash Balances (Mission Critical)
+        this.db.run(`
+      CREATE TABLE staff_cash_balances (
+        staffId TEXT PRIMARY KEY,
+        balance REAL NOT NULL DEFAULT 0,
+        currency TEXT NOT NULL,
+        lastUpdated INTEGER NOT NULL
+      )
+    `);
+
+        // Account Balances (Mission Critical)
+        this.db.run(`
+      CREATE TABLE account_balances (
+        code TEXT PRIMARY KEY,
+        balance REAL NOT NULL DEFAULT 0,
+        lastUpdated INTEGER NOT NULL
       )
     `);
 
@@ -503,5 +586,173 @@ export class LocalLedger {
         }
         stmt.free();
         return null;
+    }
+
+    // --- Staff Management Methods (Mission Critical) ---
+
+    async upsertStaff(staff: any): Promise<void> {
+        await this.ensureInitialized();
+        if (!this.db) return;
+
+        this.db.run(
+            `INSERT OR REPLACE INTO staff (
+        id, uniqueCode, username, phone, pinHash, roles, permissions, profileImage, branchId, status, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                staff.id,
+                staff.uniqueCode,
+                staff.username,
+                staff.phone,
+                staff.pinHash,
+                JSON.stringify(staff.roles),
+                JSON.stringify(staff.permissions),
+                staff.profileImage || null,
+                staff.branchId,
+                staff.status || 'active',
+                Date.now()
+            ]
+        );
+        this.persist();
+    }
+
+    async getStaffById(id: string): Promise<any | null> {
+        await this.ensureInitialized();
+        if (!this.db) return null;
+
+        const stmt = this.db.prepare('SELECT * FROM staff WHERE id = ?', [id]);
+        if (stmt.step()) {
+            const row = stmt.getAsObject();
+            stmt.free();
+            return {
+                ...row,
+                roles: JSON.parse(row.roles as string),
+                permissions: JSON.parse(row.permissions as string)
+            };
+        }
+        stmt.free();
+        return null;
+    }
+
+    async getStaffByUniqueCode(code: string): Promise<any | null> {
+        await this.ensureInitialized();
+        if (!this.db) return null;
+
+        const stmt = this.db.prepare('SELECT * FROM staff WHERE uniqueCode = ?', [code]);
+        if (stmt.step()) {
+            const row = stmt.getAsObject();
+            stmt.free();
+            return {
+                ...row,
+                roles: JSON.parse(row.roles as string),
+                permissions: JSON.parse(row.permissions as string)
+            };
+        }
+        stmt.free();
+        return null;
+    }
+
+    async getAllStaff(): Promise<any[]> {
+        await this.ensureInitialized();
+        if (!this.db) return [];
+
+        const stmt = this.db.prepare('SELECT * FROM staff WHERE status != "deleted" ORDER BY username ASC');
+        const staffList = [];
+        while (stmt.step()) {
+            const row = stmt.getAsObject();
+            staffList.push({
+                ...row,
+                roles: JSON.parse(row.roles as string),
+                permissions: JSON.parse(row.permissions as string)
+            });
+        }
+        stmt.free();
+        return staffList;
+    }
+
+    async deleteStaff(id: string): Promise<void> {
+        await this.ensureInitialized();
+        if (!this.db) return;
+
+        this.db.run('UPDATE staff SET status = "deleted", updatedAt = ? WHERE id = ?', [Date.now(), id]);
+        this.persist();
+    }
+
+    // --- Financial Persistence Methods (Mission Critical) ---
+
+    async upsertStaffCashBalance(staffId: string, balance: number, currency: string): Promise<void> {
+        await this.ensureInitialized();
+        if (!this.db) return;
+
+        this.db.run(
+            'INSERT OR REPLACE INTO staff_cash_balances (staffId, balance, currency, lastUpdated) VALUES (?, ?, ?, ?)',
+            [staffId, balance, currency, Date.now()]
+        );
+        this.persist();
+    }
+
+    async getStaffCashBalance(staffId: string): Promise<any | null> {
+        await this.ensureInitialized();
+        if (!this.db) return null;
+
+        const stmt = this.db.prepare('SELECT * FROM staff_cash_balances WHERE staffId = ?', [staffId]);
+        if (stmt.step()) {
+            const row = stmt.getAsObject();
+            stmt.free();
+            return row;
+        }
+        stmt.free();
+        return null;
+    }
+
+    async getAllStaffCashBalances(): Promise<any[]> {
+        await this.ensureInitialized();
+        if (!this.db) return [];
+
+        const stmt = this.db.prepare('SELECT * FROM staff_cash_balances');
+        const balances = [];
+        while (stmt.step()) {
+            balances.push(stmt.getAsObject());
+        }
+        stmt.free();
+        return balances;
+    }
+
+    async upsertAccountBalance(code: string, balance: number): Promise<void> {
+        await this.ensureInitialized();
+        if (!this.db) return;
+
+        this.db.run(
+            'INSERT OR REPLACE INTO account_balances (code, balance, lastUpdated) VALUES (?, ?, ?)',
+            [code, balance, Date.now()]
+        );
+        this.persist();
+    }
+
+    async getAccountBalance(code: string): Promise<number | null> {
+        await this.ensureInitialized();
+        if (!this.db) return null;
+
+        const stmt = this.db.prepare('SELECT balance FROM account_balances WHERE code = ?', [code]);
+        if (stmt.step()) {
+            const { balance } = stmt.getAsObject() as any;
+            stmt.free();
+            return balance;
+        }
+        stmt.free();
+        return null;
+    }
+
+    async getAllAccountBalances(): Promise<Record<string, number>> {
+        await this.ensureInitialized();
+        if (!this.db) return {};
+
+        const stmt = this.db.prepare('SELECT code, balance FROM account_balances');
+        const balances: Record<string, number> = {};
+        while (stmt.step()) {
+            const { code, balance } = stmt.getAsObject() as any;
+            balances[code] = balance;
+        }
+        stmt.free();
+        return balances;
     }
 }

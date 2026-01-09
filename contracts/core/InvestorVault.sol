@@ -25,6 +25,9 @@ contract InvestorVault is IInvestorVault, Ownable, Pausable, ReentrancyGuard {
     mapping(address => mapping(address => Investment)) public investments;
     mapping(address => RestaurantInvestment) public restaurantInvestments;
     mapping(address => mapping(address => uint256)) public dividendAccruals;
+
+    /// @notice Total USD amount invested across all restaurants
+    uint256 public totalInvestmentsUsd6;
     mapping(address => DividendPayment[]) public dividendHistory;
     
     struct Investment {
@@ -164,6 +167,8 @@ contract InvestorVault is IInvestorVault, Ownable, Pausable, ReentrancyGuard {
         
         // Transfer funds to restaurant
         usdc.safeTransfer(restaurant, amountUsd6);
+
+        totalInvestmentsUsd6 += amountUsd6;
         
         emit InvestmentDeposited(
             msg.sender,
@@ -209,6 +214,8 @@ contract InvestorVault is IInvestorVault, Ownable, Pausable, ReentrancyGuard {
             investorInvestment.dividendsAccrued += accruedDividends;
             usdc.safeTransfer(msg.sender, accruedDividends);
         }
+
+        totalInvestmentsUsd6 -= amountUsd6;
         
         emit InvestmentWithdrawn(
             msg.sender,

@@ -17,7 +17,7 @@ services:
     networks:
       - nilelink-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nilelink -d nilelink_dev"]
+      test: [ "CMD-SHELL", "pg_isready -U nilelink -d nilelink_dev" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -33,7 +33,7 @@ services:
     networks:
       - nilelink-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -71,7 +71,7 @@ services:
       dockerfile: Dockerfile.hardhat
     container_name: nilelink-hardhat
     ports:
-      - "8545:8545"  # Hardhat Network
+      - "8545:8545" # Hardhat Network
     volumes:
       - ./contracts:/app/contracts
       - ./scripts:/app/scripts
@@ -90,6 +90,7 @@ services:
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      API_URL_INTERNAL: http://backend:3001/api
     ports:
       - "3002:3000"
     volumes:
@@ -110,6 +111,7 @@ services:
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      API_URL_INTERNAL: http://backend:3001/api
     ports:
       - "3003:3000"
     volumes:
@@ -130,6 +132,7 @@ services:
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      API_URL_INTERNAL: http://backend:3001/api
     ports:
       - "3004:3000"
     volumes:
@@ -150,6 +153,7 @@ services:
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      API_URL_INTERNAL: http://backend:3001/api
     ports:
       - "3005:3000"
     volumes:
@@ -170,6 +174,7 @@ services:
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      API_URL_INTERNAL: http://backend:3001/api
     ports:
       - "3006:3000"
     volumes:
@@ -190,6 +195,7 @@ services:
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      API_URL_INTERNAL: http://backend:3001/api
     ports:
       - "3007:3000"
     volumes:
@@ -210,6 +216,7 @@ services:
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      API_URL_INTERNAL: http://backend:3001/api
     ports:
       - "3008:3000"
     volumes:
@@ -224,6 +231,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+
 
 networks:
   nilelink-network:

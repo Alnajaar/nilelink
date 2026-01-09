@@ -96,10 +96,15 @@ export const orderApi = {
         return apiRequest(`/orders${query ? `?${query}` : ''}`);
     },
 
+    getById: (id: string) => apiRequest(`/orders/${id}`),
+
     create: (data: {
         restaurantId: string;
         customerId?: string;
         items: { menuItemId: string; quantity: number; specialInstructions?: string }[];
+        deliveryAddress?: string;
+        specialInstructions?: string;
+        paymentMethod?: string;
     }) =>
         apiRequest('/orders', {
             method: 'POST',
@@ -110,6 +115,12 @@ export const orderApi = {
         apiRequest(`/orders/${id}/status`, {
             method: 'PATCH',
             body: JSON.stringify({ status }),
+        }),
+
+    addReview: (id: string, data: { rating: number; comment?: string }) =>
+        apiRequest(`/orders/${id}/review`, {
+            method: 'POST',
+            body: JSON.stringify(data),
         }),
 };
 

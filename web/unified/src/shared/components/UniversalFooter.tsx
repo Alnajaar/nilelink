@@ -34,8 +34,8 @@ export const UniversalFooter: React.FC = () => {
                     <div>
                         <h3 className="font-bold text-text-main mb-6 uppercase tracking-wider text-xs">Legal</h3>
                         <ul className="space-y-3 text-sm text-text-muted">
-                            <li><a href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</a></li>
-                            <li><a href="/terms" className="hover:text-primary transition-colors">Terms of Service</a></li>
+                            <li><a href="/legal/privacy" className="hover:text-primary transition-colors">Privacy Policy</a></li>
+                            <li><a href="/legal/terms" className="hover:text-primary transition-colors">Terms of Service</a></li>
                         </ul>
                     </div>
                 </div>

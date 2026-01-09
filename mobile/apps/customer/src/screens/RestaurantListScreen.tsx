@@ -13,48 +13,7 @@ const { width, height } = Dimensions.get('window');
 
 
 
-const mockRestaurants: Restaurant[] = [
-  {
-    id: 'rest_001',
-    name: 'Cairo Kitchen',
-    cuisine: 'Egyptian • Mediterranean',
-    rating: 4.7,
-    deliveryTime: '25-35 min',
-    deliveryFee: 2.99,
-    isOpen: true,
-    distance: '2.3 km'
-  },
-  {
-    id: 'rest_002',
-    name: 'Nile Grill',
-    cuisine: 'Grill • Fast Food',
-    rating: 4.5,
-    deliveryTime: '20-30 min',
-    deliveryFee: 1.99,
-    isOpen: true,
-    distance: '1.8 km'
-  },
-  {
-    id: 'rest_003',
-    name: 'Pyramid Bistro',
-    cuisine: 'Italian • Pizza',
-    rating: 4.8,
-    deliveryTime: '30-40 min',
-    deliveryFee: 3.49,
-    isOpen: true,
-    distance: '3.1 km'
-  },
-  {
-    id: 'rest_004',
-    name: 'Saffron Lounge',
-    cuisine: 'Indian • Asian',
-    rating: 4.6,
-    deliveryTime: '35-45 min',
-    deliveryFee: 2.49,
-    isOpen: false,
-    distance: '4.2 km'
-  }
-];
+import { api } from '@nilelink/mobile-shared';
 
 export function RestaurantListScreen() {
   const navigation = useNavigation();
@@ -66,14 +25,31 @@ export function RestaurantListScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Simulate fetching restaurants
-    setIsLoading(true);
-    // In a real app, this would be a dispatch key for a saga
-    // For now, we'll just populate the store directly to simulate the results
-    setTimeout(() => {
-      dispatch(customerActions.setRestaurants(mockRestaurants));
-      setIsLoading(false);
-    }, 1000);
+    const fetchRestaurants = async () => {
+      setIsLoading(true);
+      try {
+        const response = await api.get('/restaurants');
+        // Map backend response to UI model if fields are missing
+        const mappedRestaurants: Restaurant[] = response.data.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          cuisine: r.cuisine || 'International', // Fallback
+          rating: Number(r.rating) || 4.5,
+          deliveryTime: r.deliveryTime || '30-45 min',
+          deliveryFee: Number(r.deliveryFee) || 2.99,
+          isOpen: r.isOpen ?? true,
+          distance: r.distance || '2.5 km', // Mock distance for now if not calculated
+          image: r.imageUrl
+        }));
+        dispatch(customerActions.setRestaurants(mappedRestaurants));
+      } catch (error) {
+        console.error('Failed to fetch restaurants:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRestaurants();
   }, [dispatch]);
 
   const cuisines = ['all', 'Egyptian', 'Mediterranean', 'Grill', 'Fast Food', 'Italian', 'Pizza', 'Indian', 'Asian'];

@@ -20,21 +20,21 @@ export class CreditEngine {
         const data = this.ledger.getData();
         const record = data.credits.find((c: any) => c.clientId === clientId);
 
-        if (!record) return { record: undefined, riskLevel: 'LOW', color: '#10b981' };
+        if (!record) return { record: undefined, riskLevel: 'LOW', color: '#0FB9B1' };
 
         const utilization = record.balance / record.limit;
         let riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'LOW';
-        let color = '#10b981'; // Emerald
+        let color = '#0FB9B1'; // Success
 
         if (utilization > 0.9 || record.balance > record.limit) {
             riskLevel = 'CRITICAL';
-            color = '#ef4444'; // Red
+            color = '#D64545'; // Error
         } else if (utilization > 0.7) {
             riskLevel = 'HIGH';
-            color = '#f97316'; // Orange
+            color = '#F5A623'; // Warning
         } else if (utilization > 0.4) {
             riskLevel = 'MEDIUM';
-            color = '#eab308'; // Yellow
+            color = '#F5A623'; // Warning
         }
 
         return { record, riskLevel, color };

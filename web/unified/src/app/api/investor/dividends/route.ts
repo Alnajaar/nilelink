@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Database } from '@/lib/db';
 
+// Commented out for static export compatibility
+// export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const walletAddress = request.nextUrl.searchParams.get('walletAddress');

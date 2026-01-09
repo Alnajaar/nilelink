@@ -1,59 +1,72 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import {
-    Plus,
-    Minus,
-    Trash2,
-    CreditCard,
-    Banknote,
-    Zap,
-    Package,
-    History,
-    Grid,
-    Wifi,
-    WifiOff,
-    Database,
-    ArrowLeft
+    Plus, Search, Filter, CheckCircle2, Utensils, ShoppingBag,
+    Truck, Star, ChefHat, Flame, Clock, DollarSign, Users,
+    TrendingUp, AlertCircle, Zap, BarChart3, Package, Menu
 } from 'lucide-react';
 
+import { POSSideMenu } from '@/components/POSSideMenu';
 import { usePOS } from '@/contexts/POSContext';
-import { useAuth } from '@/shared/contexts/AuthContext';
-import { restaurantApi, orderApi } from '@/shared/utils/api';
-import { EventType, EconomicEvent } from '@/lib/events/types';
-import { UniversalHeader } from '@/shared/components/UniversalHeader';
+import { useAuth } from '@shared/contexts/AuthContext';
+import { POS_ROLE, PERMISSION, getRoleLabel, getRoleColor } from '@/utils/permissions';
+import { PermissionGuard, RoleGuard } from '@/components/PermissionGuard';
+import { restaurantApi } from '@/shared/utils/api';
 import { Button } from '@/shared/components/Button';
 import { Card } from '@/shared/components/Card';
 import { Badge } from '@/shared/components/Badge';
-import { LedgerBadge } from '@/shared/components/LedgerBadge';
+import { CurrencyDisplay } from '@/shared/components/CurrencyDisplay';
+import { OrderSummary } from '@/components/OrderSummary';
+import { OfflineIndicator } from '@/components/OfflineIndicator';
+import { useIntelligence } from '@/shared/hooks/useIntelligence';
+import { NeuralUpsellHUD } from '@/shared/components/NeuralUpsellHUD';
 
-export default function SalesTerminal() {
-    const {
-        eventEngine,
-        localLedger,
-        recipeEngine,
-        journalEngine,
-        reputationEngine,
-        isOnline,
-        unsyncedCount,
-        deviceId,
-        branchId
-    } = usePOS();
-
+export default function AdvancedTerminal() {
     const router = useRouter();
     const { user, isLoading: authLoading } = useAuth();
+    const { branchId, isOnline, currentRole, hasPermission } = usePOS();
+    const [mounted, setMounted] = useState(false);
+    const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // Redirect if no role set
+    useEffect(() => {
+        if (!authLoading && !currentRole) {
+            router.push('/auth/terminal-pin');
+        }
+    }, [currentRole, authLoading, router]);
+
+    // Sales State
     const [cart, setCart] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState('All');
+    const [searchQuery, setSearchQuery] = useState('');
     const [menu, setMenu] = useState<any[]>([]);
-    const [restaurant, setRestaurant] = useState<any>(null);
     const [isLoadingMenu, setIsLoadingMenu] = useState(true);
+    const [orderType, setOrderType] = useState<'dine-in' | 'takeaway' | 'delivery'>('dine-in');
 
-    // Fetch restaurant menu from backend
+    // Intelligence Integration
+    const { data: intelligence, isAnalyzing: isAIAnalyzing, analyze: runIntelligence, reportOutcome } = useIntelligence();
+    const lastAnalysisRef = useRef<number>(0);
+
+    // Role-specific dashboard stats
+    const [stats, setStats] = useState({
+        todaySales: 4250.50,
+        ordersToday: 42,
+        avgOrderValue: 101.20,
+        pendingOrders: 8,
+        activeKitchen: 5,
+        cashOnHand: 1250.00
+    });
+
+    // Fetch menu
     useEffect(() => {
         if (authLoading) return;
-
         if (!user) {
             router.push('/auth/login');
             return;
@@ -64,11 +77,18 @@ export default function SalesTerminal() {
                 const { restaurants } = (await restaurantApi.list() as any);
                 if (restaurants && restaurants.length > 0) {
                     const firstRestaurant = restaurants[0];
-                    setRestaurant(firstRestaurant);
                     setMenu(firstRestaurant.menuItems || []);
                 }
             } catch (error) {
                 console.error('Failed to fetch menu:', error);
+                // Fallback mock menu
+                setMenu([
+                    { id: 1, name: 'Margherita Pizza', category: 'Pizza', price: 12.99, image: '🍕' },
+                    { id: 2, name: 'Caesar Salad', category: 'Salads', price: 8.99, image: '🥗' },
+                    { id: 3, name: 'Beef Burger', category: 'Burgers', price: 14.99, image: '🍔' },
+                    { id: 4, name: 'Grilled Salmon', category: 'Seafood', price: 22.99, image: '🐟' },
+                    { id: 5, name: 'Pasta Carbonara', category: 'Pasta', price: 16.99, image: '🍝' },
+                ]);
             } finally {
                 setIsLoadingMenu(false);
             }
@@ -79,292 +99,354 @@ export default function SalesTerminal() {
 
     const categories = ['All', ...Array.from(new Set(menu.map((m: any) => m.category)))];
 
+    const filteredMenu = menu.filter(item => {
+        const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
+        const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesCategory && matchesSearch;
+    });
+
     const addToCart = (item: any) => {
-        const existing = cart.find(i => i.id === item.id);
-        if (existing) {
-            setCart(cart.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i));
-        } else {
-            setCart([...cart, { ...item, qty: 1 }]);
-        }
-    };
-
-    const removeFromCart = (itemId: number) => {
-        const existing = cart.find(i => i.id === itemId);
-        if (existing && existing.qty > 1) {
-            setCart(cart.map(i => i.id === itemId ? { ...i, qty: i.qty - 1 } : i));
-        } else {
-            setCart(cart.filter(i => i.id !== itemId));
-        }
-    };
-
-    const total = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
-
-    const handleCheckout = async (paymentMethod: 'cash' | 'card') => {
-        if (cart.length === 0 || !eventEngine || !localLedger) return;
-
-        try {
-            const orderId = `ord-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-            const actorId = 'staff-default';
-
-            // 1. Anchor Order Created
-            const orderCreated = await eventEngine.createEvent(
-                EventType.ORDER_CREATED,
-                actorId,
-                { orderId, orderType: 'dine-in' }
-            );
-            await localLedger.insertEvent(orderCreated);
-            if (journalEngine) await journalEngine.processEvent(orderCreated);
-
-            // 2. Process Items (Add + Inventory Deduction)
-            for (const item of cart) {
-                const itemAdded = await eventEngine.createEvent(
-                    EventType.ORDER_ITEM_ADDED,
-                    actorId,
-                    {
-                        orderId,
-                        menuItemId: item.id.toString(),
-                        menuItemName: item.name,
-                        quantity: item.qty,
-                        unitPrice: item.price,
-                    }
-                );
-                await localLedger.insertEvent(itemAdded);
-
-                if (recipeEngine) {
-                    try {
-                        const deductions = recipeEngine.deductForSale(item.id.toString(), item.qty, branchId);
-                        for (const d of deductions) {
-                            const invEvent = await eventEngine.createEvent(
-                                EventType.INVENTORY_DEDUCTED,
-                                actorId,
-                                {
-                                    ingredientId: d.ingredientId,
-                                    ingredientName: d.ingredientName,
-                                    quantity: d.deducted,
-                                    unit: d.unit as any,
-                                    reason: 'sale',
-                                    relatedOrderId: orderId
-                                }
-                            );
-                            await localLedger.insertEvent(invEvent);
-                            if (journalEngine) await journalEngine.processEvent(invEvent);
-                        }
-                    } catch (e) {
-                        console.warn(`No recipe found for ${item.name}, skipping inventory anchor.`);
-                    }
-                }
+        setCart(prev => {
+            const existing = prev.find(i => i.id === item.id);
+            if (existing) {
+                return prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
             }
+            return [...prev, { ...item, qty: 1 }];
+        });
+    };
 
-            // 3. Anchor Payment
-            const finalEventType = paymentMethod === 'cash' ? EventType.PAYMENT_COLLECTED_CASH : EventType.PAYMENT_COLLECTED_CARD;
-            const paymentPayload: any = {
-                orderId,
+    // Trigger AI Intelligence on cart changes (debounced)
+    useEffect(() => {
+        if (cart.length === 0) return;
+
+        const timer = setTimeout(() => {
+            const total = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
+            runIntelligence({
                 amount: total,
                 currency: 'USD',
-            };
+                userId: user?.id || 'anonymous',
+                userAgeDays: 0,
+                txnHistoryCount: 0,
+                ipCountry: 'Local',
+                billingCountry: 'Local',
+                items: cart
+            }, {
+                role: 'vendor',
+                system_state: 'pos',
+                urgency_level: 8,
+                emotional_signals: hardwareStatus.paperLevel === 'LOW' ? ['operational_stress'] : [],
+            } as any);
+        }, 1000);
 
-            if (paymentMethod === 'cash') {
-                paymentPayload.amountTendered = total;
-                paymentPayload.changeGiven = 0;
-                paymentPayload.cashierId = actorId;
-            } else {
-                paymentPayload.cardType = 'visa';
-                paymentPayload.last4Digits = '4242';
-                paymentPayload.transactionId = `tx-${Date.now()}`;
-                paymentPayload.providerFee = total * 0.02;
-            }
+        return () => clearTimeout(timer);
+    }, [cart, user, runIntelligence, hardwareStatus]);
 
-            const paymentEvent = await eventEngine.createEvent(
-                finalEventType,
-                actorId,
-                paymentPayload
-            );
-            await localLedger.insertEvent(paymentEvent);
-            if (journalEngine) await journalEngine.processEvent(paymentEvent);
+    // Handle high-risk transaction guard
+    const executeSecurePayment = async (method: string) => {
+        if (intelligence?.data?.decision === 'REJECT') {
+            alert(`🚨 SECURITY PROTOCOL: This transaction has been REJECTED by the Risk Agent. Reason: ${intelligence.data.concerns[0]}`);
+            return;
+        }
 
-            setCart([]);
-            alert('Protocol Anchored: Order Settlement Complete');
-        } catch (error) {
-            console.error('Checkout failed', error);
-            alert('Protocol Error: Could not anchor event.');
+        if (intelligence?.data?.risk_level === 'HIGH') {
+            const confirmed = window.confirm(`⚠️ HIGH RISK DETECTED: ${intelligence.data.concerns[0]}. Proceed with Manager Override?`);
+            if (!confirmed) return;
+        }
+
+        handleCheckout(method);
+        if (intelligence?.request_id) {
+            reportOutcome(intelligence.request_id, 'SUCCESS');
         }
     };
+    const updateCartQty = (itemId: number | string, delta: number) => {
+        setCart(prev => prev.map(item => {
+            if (item.id === itemId) {
+                const newQty = Math.max(0, item.qty + delta);
+                return { ...item, qty: newQty };
+            }
+            return item;
+        }).filter(item => item.qty > 0));
+    };
+
+    const clearCart = () => setCart([]);
+
+    const handleCheckout = (method: string) => {
+        router.push('/terminal/payment');
+    };
+
+    if (!mounted || !currentRole) {
+        return null;
+    }
 
     return (
-        <div className="h-screen flex flex-col bg-background-light">
-            {/* Trust Header */}
-            <UniversalHeader
-                appName="POS"
-                user={{ name: 'Staff Member', role: 'Cashier' }}
-                status={isOnline ? 'online' : 'offline'}
-                onLogout={() => console.log('Logout')}
-            />
+        <div className="h-screen flex flex-col bg-neutral text-text-primary overflow-hidden relative selection:bg-primary/20">
+            {/* Background Effects */}
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/5 blur-[120px] rounded-full" />
+            </div>
 
-            <main className="flex-1 flex overflow-hidden">
-                {/* Product Area */}
-                <div className="flex-1 flex flex-col p-6 overflow-hidden">
-                    {/* Categories */}
-                    <div className="flex gap-3 mb-6 overflow-x-auto pb-2">
-                        {categories.map((cat) => (
-                            <Button
-                                key={cat}
-                                onClick={() => setSelectedCategory(cat)}
-                                variant={selectedCategory === cat ? 'primary' : 'outline'}
-                                size="sm"
-                                className="whitespace-nowrap"
-                            >
-                                {cat}
-                            </Button>
-                        ))}
-                    </div>
-
-                    {/* Menu Grid */}
-                    <div className="flex-1 overflow-y-auto">
-                        <motion.div
-                            layout
-                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            {/* Ultra-Premium Header */}
+            <div className="h-20 bg-white/40 backdrop-blur-2xl border-b border-border-subtle flex items-center justify-between px-8 shrink-0 relative z-30">
+                <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4">
+                        <motion.button
+                            whileHover={{ scale: 1.1, rotate: 5 }}
+                            onClick={() => setIsSideMenuOpen(true)}
+                            className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-background shadow-2xl shadow-primary/20 cursor-pointer"
                         >
-                            {menu.filter(m => selectedCategory === 'All' || m.category === selectedCategory).map((item, i) => (
-                                <motion.div
-                                    key={item.id}
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: i * 0.05 }}
-                                    onClick={() => addToCart(item)}
-                                    className="cursor-pointer group transition-all hover:-translate-y-1"
-                                >
-                                    <Card className="h-full border-border-light group-hover:border-primary-dark group-hover:shadow-lg transition-all">
-                                        <div className="w-12 h-12 rounded-lg bg-primary-dark bg-opacity-10 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
-                                            {item.icon}
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-primary-dark group-hover:text-primary-light transition-colors">{item.name}</h3>
-                                            <p className="text-xs text-text-secondary uppercase tracking-wide mt-1">{item.category}</p>
-                                        </div>
-                                        <div className="mt-4 flex justify-between items-center">
-                                            <span className="text-lg font-bold text-primary-dark">${item.price.toFixed(2)}</span>
-                                            <div className="w-8 h-8 rounded-lg bg-primary-dark bg-opacity-10 flex items-center justify-center text-primary-dark opacity-0 group-hover:opacity-100 transition-all">
-                                                <Plus size={16} />
-                                            </div>
-                                        </div>
-                                    </Card>
-                                </motion.div>
-                            ))}
-                        </motion.div>
+                            <Menu size={24} />
+                        </motion.button>
+                        <div>
+                            <h1 className="text-xl font-black text-text-primary leading-none tracking-tighter uppercase italic">Institutional Terminal</h1>
+                            <p className="text-[9px] font-black text-text-secondary uppercase tracking-[0.3em] mt-1.5 opacity-60">
+                                Operator: {sessionStorage.getItem('pos_current_user') || 'Authorized User'}
+                            </p>
+                        </div>
                     </div>
+                    <Badge className={`${getRoleColor(currentRole)} px-4 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] rounded-full border-none shadow-lg shadow-current/10`}>
+                        {getRoleLabel(currentRole)}
+                    </Badge>
                 </div>
 
-                {/* Cart Area */}
-                <div className="w-96 bg-background-white border-l border-border-light flex flex-col overflow-hidden">
-                    <div className="p-6 flex flex-col h-full">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-primary-dark">Current Order</h2>
-                            <Button
-                                onClick={() => setCart([])}
-                                variant="ghost"
-                                size="sm"
-                                className="text-text-secondary hover:text-error-default h-auto p-0"
-                            >
-                                Clear
-                            </Button>
+                {/* Quick Stats Bar */}
+                <div className="flex items-center gap-8">
+                    <PermissionGuard require={PERMISSION.ANALYTICS_VIEW}>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[8px] font-black text-text-secondary uppercase tracking-widest opacity-40 mb-1">Session Volume</span>
+                            <div className="flex items-center gap-2">
+                                <TrendingUp size={14} className="text-success" />
+                                <span className="font-black text-text-primary text-sm tracking-tight">${stats.todaySales.toLocaleString()}</span>
+                            </div>
+                        </div>
+                    </PermissionGuard>
+
+                    <PermissionGuard require={PERMISSION.KITCHEN_VIEW_ORDERS}>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[8px] font-black text-text-secondary uppercase tracking-widest opacity-40 mb-1">Kitchen Load</span>
+                            <div className="flex items-center gap-2">
+                                <Flame size={14} className="text-secondary" />
+                                <span className="font-black text-text-primary text-sm tracking-tight">{stats.activeKitchen} Ops</span>
+                            </div>
+                        </div>
+                    </PermissionGuard>
+
+                    <div className="h-10 w-[1px] bg-border-subtle" />
+                    <OfflineIndicator />
+                </div>
+            </div>
+
+            {/* Main Content Area - Role-Adaptive Layout */}
+            <div className="flex-1 flex overflow-hidden">
+
+                {/* Product Grid - Only for roles with sales permission */}
+                <PermissionGuard
+                    require={PERMISSION.SALES_CREATE}
+                    fallback={
+                        <div className="flex-1 flex items-center justify-center bg-background-subtle">
+                            <Card className="p-8 text-center max-w-md bg-background-card border border-border-subtle">
+                                <AlertCircle size={48} className="text-text-muted mx-auto mb-4 opacity-50" />
+                                <h3 className="text-xl font-black text-text-main mb-2">Sales Access Required</h3>
+                                <p className="text-sm text-text-muted">
+                                    Your role ({getRoleLabel(currentRole)}) does not have permission to create sales.
+                                </p>
+                                <div className="mt-6 grid grid-cols-2 gap-3">
+                                    <PermissionGuard require={PERMISSION.KITCHEN_VIEW_ORDERS}>
+                                        <Button onClick={() => router.push('/terminal/kitchen')} variant="outline">
+                                            Kitchen Orders
+                                        </Button>
+                                    </PermissionGuard>
+                                    <PermissionGuard require={PERMISSION.LEDGER_VIEW}>
+                                        <Button onClick={() => router.push('/terminal/ledger')} variant="outline">
+                                            View Ledger
+                                        </Button>
+                                    </PermissionGuard>
+                                </div>
+                            </Card>
+                        </div>
+                    }
+                >
+                    <div className="flex-1 flex flex-col overflow-hidden bg-neutral/10 relative z-10">
+                        {/* Search & Filter Bar */}
+                        <div className="px-8 py-6 bg-white/40 backdrop-blur-xl border-b border-border-subtle shrink-0">
+                            <div className="flex gap-4 mb-6">
+                                <div className="flex-1 relative">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary opacity-40" size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Identify resource..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full h-14 pl-12 pr-6 bg-white border border-border-subtle rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm font-black uppercase tracking-widest placeholder:text-text-muted/50 shadow-sm"
+                                    />
+                                </div>
+                                <Button className="w-14 h-14 p-0 rounded-2xl bg-white border border-border-subtle hover:bg-neutral text-text-primary shadow-sm">
+                                    <Filter size={20} />
+                                </Button>
+                            </div>
+
+                            {/* Category Pills */}
+                            <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                                {categories.map((cat) => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => setSelectedCategory(cat)}
+                                        className={`px-6 py-2.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] whitespace-nowrap transition-all shadow-sm ${selectedCategory === cat
+                                            ? 'bg-primary text-background shadow-primary/20'
+                                            : 'bg-white text-text-secondary hover:bg-neutral border border-border-subtle'
+                                            }`}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto space-y-4">
+                        {/* Product Grid */}
+                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+                                {filteredMenu.map((item) => (
+                                    <motion.button
+                                        key={item.id}
+                                        onClick={() => addToCart(item)}
+                                        whileHover={{ y: -5, scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="bg-white border border-border-subtle rounded-[2rem] p-5 text-left hover:shadow-2xl hover:shadow-primary/5 transition-all group min-h-[160px] flex flex-col justify-between hover:border-primary/50 relative overflow-hidden"
+                                    >
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 blur-3xl rounded-full -mr-12 -mt-12 group-hover:bg-primary/10 transition-colors" />
+                                        <div className="text-4xl mb-4 flex-shrink-0 relative z-10">{item.image || '🍽️'}</div>
+                                        <div className="relative z-10">
+                                            <h4 className="font-black text-text-primary mb-2 text-[10px] uppercase tracking-widest leading-tight line-clamp-2">{item.name}</h4>
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-black text-primary text-sm italic tracking-tighter">${item.price}</span>
+                                                <div className="w-8 h-8 rounded-xl bg-neutral group-hover:bg-primary group-hover:text-background transition-colors flex items-center justify-center">
+                                                    <Plus size={16} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </PermissionGuard>
+
+                {/* Cart Panel */}
+                <PermissionGuard require={PERMISSION.SALES_CREATE}>
+                    <div className="w-[450px] bg-white border-l border-border-subtle flex flex-col shadow-2xl relative z-20">
+                        <div className="p-8 border-b border-border-subtle bg-white/50 backdrop-blur-xl">
+                            <div className="flex items-center justify-between mb-8">
+                                <h3 className="text-xl font-black text-text-primary uppercase tracking-tighter italic">Active Manifest</h3>
+                                <Badge className="bg-neutral text-text-secondary text-[8px] font-black uppercase tracking-widest px-3 py-1">Order #8492</Badge>
+                            </div>
+                            <div className="flex gap-2">
+                                {(['dine-in', 'takeaway', 'delivery'] as const).map((type) => (
+                                    <button
+                                        key={type}
+                                        onClick={() => setOrderType(type)}
+                                        className={`flex-1 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] transition-all border ${orderType === type
+                                            ? 'bg-primary text-background border-primary shadow-lg shadow-primary/20'
+                                            : 'bg-white text-text-secondary border-border-subtle hover:bg-neutral'
+                                            }`}
+                                    >
+                                        {type.replace('-', ' ')}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Cart Items */}
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-neutral/10">
                             {cart.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-center py-12">
-                                    <Package className="text-text-disabled mb-4" size={48} />
-                                    <p className="text-text-secondary">No items in cart</p>
+                                <div className="h-full flex flex-col items-center justify-center text-center">
+                                    <div className="w-20 h-20 bg-neutral rounded-full flex items-center justify-center mb-6 opacity-40">
+                                        <ShoppingBag size={32} className="text-text-secondary" />
+                                    </div>
+                                    <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.4em] opacity-40">Manifest Empty</p>
                                 </div>
                             ) : (
-                                cart.map((item, i) => (
-                                    <motion.div
-                                        key={item.id}
-                                        initial={{ x: 20, opacity: 0 }}
-                                        animate={{ x: 0, opacity: 1 }}
-                                        className="flex items-center gap-4 p-4 bg-background-light rounded-lg border border-border-light"
-                                    >
-                                        <div className="w-10 h-10 rounded-lg bg-primary-dark bg-opacity-10 flex items-center justify-center text-xl">
-                                            {item.icon}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-medium text-primary-dark truncate">{item.name}</h4>
-                                            <p className="text-sm text-text-secondary">${item.price.toFixed(2)}</p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                onClick={() => removeFromCart(item.id)}
-                                                variant="outline"
-                                                size="sm"
-                                                className="w-8 h-8 p-0 hover:bg-error-default hover:text-background-light hover:border-error-default"
+                                <div className="space-y-4">
+                                    <AnimatePresence>
+                                        {cart.map((item) => (
+                                            <motion.div
+                                                key={item.id}
+                                                initial={{ opacity: 0, x: 20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                className="flex items-center gap-4 p-5 bg-white rounded-[1.5rem] border border-border-subtle shadow-sm hover:shadow-md transition-all group"
                                             >
-                                                <Minus size={12} />
-                                            </Button>
-                                            <span className="w-6 text-center font-medium">{item.qty}</span>
-                                            <Button
-                                                onClick={() => addToCart(item)}
-                                                variant="outline"
-                                                size="sm"
-                                                className="w-8 h-8 p-0 hover:bg-success-default hover:text-background-light hover:border-success-default"
-                                            >
-                                                <Plus size={12} />
-                                            </Button>
-                                        </div>
-                                    </motion.div>
-                                ))
+                                                <div className="text-3xl grayscale group-hover:grayscale-0 transition-all">{item.image || '🍽️'}</div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h5 className="font-black text-text-primary text-[10px] uppercase tracking-widest truncate mb-1">{item.name}</h5>
+                                                    <p className="font-black text-primary text-xs italic tracking-tighter">${item.price}</p>
+                                                </div>
+                                                <div className="flex items-center gap-3 bg-neutral p-1 rounded-xl">
+                                                    <button
+                                                        onClick={() => updateCartQty(item.id, -1)}
+                                                        className="w-8 h-8 rounded-lg bg-white border border-border-subtle flex items-center justify-center text-text-primary hover:bg-neutral-dark hover:text-white transition-all"
+                                                    >
+                                                        -
+                                                    </button>
+                                                    <span className="w-6 text-center text-[10px] font-black text-text-primary">{item.qty}</span>
+                                                    <button
+                                                        onClick={() => updateCartQty(item.id, 1)}
+                                                        className="w-8 h-8 rounded-lg bg-primary text-background flex items-center justify-center hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all"
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
+                                </div>
                             )}
                         </div>
 
-                        <div className="mt-6 space-y-4">
-                            <div className="space-y-2 pt-4 border-t border-border-light">
-                                <div className="flex justify-between text-sm text-text-secondary">
-                                    <span>Subtotal</span>
-                                    <span>${total.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-em text-text-secondary items-center">
-                                    <span>Protocol Fee</span>
-                                    <div className="flex items-center gap-2">
-                                        <LedgerBadge verified={true} />
-                                        <span>$0.00</span>
+                        {/* Cart Summary & Checkout */}
+                        {cart.length > 0 && (
+                            <div className="p-8 border-t border-border-subtle space-y-6 bg-white shrink-0">
+                                {/* Neural Intelligence HUD */}
+                                <NeuralUpsellHUD data={intelligence} isAnalyzing={isAIAnalyzing} />
+
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center px-2">
+                                        <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.3em]">Protocol Fee</span>
+                                        <span className="font-black text-text-primary text-xs italic">$0.00</span>
+                                    </div>
+                                    <div className="flex justify-between items-center bg-neutral/30 p-6 rounded-3xl">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.4em] mb-1">Settlement Asset</span>
+                                            <span className="text-2xl font-black text-text-primary uppercase tracking-tighter italic">Total Value</span>
+                                        </div>
+                                        <span className="font-black text-primary text-4xl italic tracking-tighter">
+                                            ${cart.reduce((acc, item) => acc + item.price * item.qty, 0).toFixed(2)}
+                                        </span>
                                     </div>
                                 </div>
-                                <div className="flex justify-between text-xl font-bold text-primary-dark pt-2">
-                                    <span>Total</span>
-                                    <span>${total.toFixed(2)}</span>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Button
+                                        onClick={clearCart}
+                                        variant="outline"
+                                        className="h-16 rounded-2xl border-border-subtle hover:bg-neutral text-[10px] font-black uppercase tracking-[0.2em] opacity-60 hover:opacity-100"
+                                    >
+                                        Void Manifest
+                                    </Button>
+                                    <Button
+                                        onClick={() => executeSecurePayment('cash')}
+                                        className="h-16 bg-primary hover:scale-[1.02] active:scale-[0.98] text-background font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/20"
+                                    >
+                                        Execute Payment
+                                    </Button>
                                 </div>
                             </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <Button
-                                    onClick={() => handleCheckout('cash')}
-                                    disabled={cart.length === 0}
-                                    className="h-16 flex-col gap-1"
-                                >
-                                    <Banknote size={20} />
-                                    <span className="text-xs">Cash</span>
-                                </Button>
-                                <Button
-                                    onClick={() => handleCheckout('card')}
-                                    disabled={cart.length === 0}
-                                    variant="outline"
-                                    className="h-16 flex-col gap-1 border-2"
-                                >
-                                    <CreditCard size={20} />
-                                    <span className="text-xs">Card</span>
-                                </Button>
-                            </div>
-
-                            <Button
-                                onClick={() => handleCheckout('card')}
-                                disabled={cart.length === 0}
-                                className="w-full h-12 bg-success-default hover:bg-success-light"
-                            >
-                                <Zap size={16} />
-                                Complete Transaction
-                            </Button>
-                        </div>
+                        )}
                     </div>
-                </div>
-            </main>
+                </PermissionGuard>
+            </div>
+            <POSSideMenu
+                isOpen={isSideMenuOpen}
+                onClose={() => setIsSideMenuOpen(false)}
+            />
         </div>
     );
 }

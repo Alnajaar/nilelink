@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../services/DatabasePoolService';
+import { logger } from '../utils/logger';
 
 /**
  * Tenant Context Middleware
@@ -74,7 +73,7 @@ export async function extractTenant(
 
         next();
     } catch (error) {
-        console.error('Tenant extraction error:', error);
+        logger.error('Tenant extraction error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to process tenant context'

@@ -1,12 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../services/DatabasePoolService';
 import { authenticate } from '../../middleware/authenticate';
 import { extractTenant } from '../../middleware/tenantContext';
 import { requirePermission } from '../../middleware/authorize';
+import { logger } from '../../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // ============================================================================
 // SHIFT MANAGEMENT ROUTES
@@ -32,7 +32,7 @@ router.post('/open',
             // Check if user has open shift
             const existingShift = await prisma.shift.findFirst({
                 where: {
-                    userId: req.user.id,
+                    userId: req.user!.id,
                     closedAt: null,
                 }
             });
@@ -46,7 +46,7 @@ router.post('/open',
 
             const shift = await prisma.shift.create({
                 data: {
-                    userId: req.user.id,
+                    userId: req.user!.id,
                     restaurantId: data.restaurantId,
                     openingCash: data.openingCash,
                 }
@@ -57,7 +57,14 @@ router.post('/open',
                 data: shift
             });
         } catch (error: any) {
-            console.error('Open shift error:', error);
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Validation failed',
+                    details: error.errors
+                });
+            }
+            logger.error('Open shift error:', error);
             res.status(500).json({
                 success: false,
                 error: 'Failed to open shift'
@@ -95,7 +102,7 @@ router.put('/:id/close',
                 });
             }
 
-            if (shift.userId !== req.user.id) {
+            if (shift.userId !== req.user!.id) {
                 return res.status(403).json({
                     success: false,
                     error: 'Can only close your own shift'
@@ -145,7 +152,14 @@ router.put('/:id/close',
                 needsApproval: Math.abs(variance) > 5 // Flag if variance > $5
             });
         } catch (error: any) {
-            console.error('Close shift error:', error);
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Validation failed',
+                    details: error.errors
+                });
+            }
+            logger.error('Close shift error:', error);
             res.status(500).json({
                 success: false,
                 error: 'Failed to close shift'
@@ -169,7 +183,7 @@ router.put('/:id/approve',
             const shift = await prisma.shift.update({
                 where: { id },
                 data: {
-                    approvedBy: req.user.id,
+                    approvedBy: req.user!.id,
                     approvedAt: new Date(),
                 }
             });
@@ -179,7 +193,7 @@ router.put('/:id/approve',
                 data: shift
             });
         } catch (error: any) {
-            console.error('Approve shift error:', error);
+            logger.error('Approve shift error:', error);
             res.status(500).json({
                 success: false,
                 error: 'Failed to approve shift'
@@ -231,10 +245,63 @@ router.get('/',
                 data: shifts
             });
         } catch (error) {
-            console.error('List shifts error:', error);
+            logger.error('List shifts error:', error);
             res.status(500).json({
                 success: false,
                 error: 'Failed to fetch shifts'
+            });
+        }
+    }
+);
+
+/**
+ * GET /api/shifts/:id
+ * Get shift by ID
+ */
+router.get('/:id',
+    extractTenant,
+    authenticate,
+    requirePermission('SHIFT', 'READ'),
+    async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            const shift = await prisma.shift.findUnique({
+                where: { id },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true,
+                            email: true,
+                        }
+                    },
+                    restaurant: {
+                        select: {
+                            id: true,
+                            name: true,
+                        }
+                    }
+                }
+            });
+
+            if (!shift) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Shift not found'
+                });
+            }
+
+            res.json({
+                success: true,
+                data: shift
+            });
+        } catch (error) {
+            logger.error('Get shift error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to fetch shift'
             });
         }
     }

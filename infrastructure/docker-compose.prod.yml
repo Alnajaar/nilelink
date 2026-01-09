@@ -1,0 +1,305 @@
+# NileLink Production Infrastructure
+# Complete production stack with load balancing, caching, and monitoring
+
+version: '3.9'
+
+services:
+  # API Gateway & Load Balancer
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nilelink-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/sites-available:/etc/nginx/sites-available:ro
+      - ./nginx/ssl:/etc/ssl:ro
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - backend1
+      - backend2
+      - backend3
+    networks:
+      - nilelink_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend Instances (Load Balanced)
+  backend1:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.production
+    container_name: nilelink-backend-1
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - MAGIC_SECRET_KEY=${MAGIC_SECRET_KEY}
+      - POLYGON_RPC_URL=${POLYGON_RPC_URL}
+      - EVENT_ENCRYPTION_KEY=${EVENT_ENCRYPTION_KEY}
+      - INTEGRITY_KEY=${INTEGRITY_KEY}
+      - DATA_ENCRYPTION_KEY=${DATA_ENCRYPTION_KEY}
+    depends_on:
+      - postgres
+      - redis-cluster
+    networks:
+      - nilelink_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - ../../backend/logs:/app/logs
+
+  backend2:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.production
+    container_name: nilelink-backend-2
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - MAGIC_SECRET_KEY=${MAGIC_SECRET_KEY}
+      - POLYGON_RPC_URL=${POLYGON_RPC_URL}
+      - EVENT_ENCRYPTION_KEY=${EVENT_ENCRYPTION_KEY}
+      - INTEGRITY_KEY=${INTEGRITY_KEY}
+      - DATA_ENCRYPTION_KEY=${DATA_ENCRYPTION_KEY}
+    depends_on:
+      - postgres
+      - redis-cluster
+    networks:
+      - nilelink_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - ../../backend/logs:/app/logs
+
+  backend3:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.production
+    container_name: nilelink-backend-3
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - MAGIC_SECRET_KEY=${MAGIC_SECRET_KEY}
+      - POLYGON_RPC_URL=${POLYGON_RPC_URL}
+      - EVENT_ENCRYPTION_KEY=${EVENT_ENCRYPTION_KEY}
+      - INTEGRITY_KEY=${INTEGRITY_KEY}
+      - DATA_ENCRYPTION_KEY=${DATA_ENCRYPTION_KEY}
+    depends_on:
+      - postgres
+      - redis-cluster
+    networks:
+      - nilelink_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - ../../backend/logs:/app/logs
+
+  # PostgreSQL Database with High Availability
+  postgres:
+    image: postgres:15-alpine
+    container_name: nilelink-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=nilelink
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups/database:/backups/database
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - nilelink_network
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d nilelink"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command: >
+      postgres
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+
+  # Redis Cluster for Distributed Caching
+  redis-cluster:
+    image: redis:7-alpine
+    container_name: nilelink-redis
+    restart: unless-stopped
+    command: redis-server /etc/redis/redis.conf
+    volumes:
+      - ./redis/redis.conf:/etc/redis/redis.conf:ro
+      - redis_data:/data
+      - ./backups/redis:/backups/redis
+    networks:
+      - nilelink_network
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backup Service
+  backup-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.production
+    container_name: nilelink-backup
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - BACKUP_MODE=true
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}
+    volumes:
+      - ./backups:/app/backups
+      - ../../backend/logs:/app/logs
+    networks:
+      - nilelink_network
+    command: ["npm", "run", "backup:start"]
+    depends_on:
+      - postgres
+      - redis-cluster
+
+  # Monitoring Service (Prometheus + Grafana)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: nilelink-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - nilelink_network
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: nilelink-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - nilelink_network
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  # Log Aggregation (ELK Stack)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: nilelink-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - xpack.monitoring.enabled=false
+      - xpack.graph.enabled=false
+      - xpack.watcher.enabled=false
+      - xpack.ml.enabled=false
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - nilelink_network
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: nilelink-logstash
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/logstash/pipeline:/usr/share/logstash/pipeline:ro
+    networks:
+      - nilelink_network
+    ports:
+      - "5044:5044"
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: nilelink-kibana
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - nilelink_network
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+
+networks:
+  nilelink_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

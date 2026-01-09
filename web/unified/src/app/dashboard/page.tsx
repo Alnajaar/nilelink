@@ -1,128 +1,65 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import {
     Activity,
     BarChart3,
     Globe,
-    LayoutDashboard,
-    PieChart,
-    Settings,
-    ShieldCheck,
     TrendingUp,
     Zap,
     ArrowUpRight,
-    Database,
-    Search,
+    ShieldCheck,
     ChevronRight
 } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { DashboardLayout } from '@/components/DashboardLayout';
+import { analyticsApi } from '@/shared/utils/api';
 
 export default function Dashboard() {
-    const [activeTab, setActiveTab] = useState('overview');
+    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
-    const stats = [
+    const [stats, setStats] = useState([
         { label: 'Total Revenue', value: '$1.24M', trend: '+12.5%', icon: TrendingUp, color: 'text-blue-400', glow: 'bg-blue-500/10' },
         { label: 'Active Orders', value: '4,892', trend: '+5.2%', icon: Activity, color: 'text-purple-400', glow: 'bg-purple-500/10' },
         { label: 'Edge Latency', value: '14ms', trend: '-2.1%', icon: Zap, color: 'text-cyan-400', glow: 'bg-cyan-500/10' },
         { label: 'Nodes Sync', value: '100%', trend: 'Verified', icon: ShieldCheck, color: 'text-emerald-400', glow: 'bg-emerald-500/10' },
-    ];
+    ]);
+
+    const [liveNodes, setLiveNodes] = useState([
+        { node: 'Cairo-North-1', load: '42%', status: 'active' },
+        { node: 'Alex-Dist-2', load: '18%', status: 'idle' },
+        { node: 'Dubai-Main-Gateway', load: '76%', status: 'high' },
+        { node: 'Casablanca-Edge', load: '31%', status: 'active' },
+    ]);
+
+    useEffect(() => {
+        if (!isDemoMode) {
+            // Fetch real data
+            analyticsApi.getDashboard()
+                .then((data: any) => {
+                    setStats([
+                        { label: 'Total Revenue', value: `${data.totalRevenue?.toLocaleString() || '0'}`, trend: '+12.5%', icon: TrendingUp, color: 'text-blue-400', glow: 'bg-blue-500/10' },
+                        { label: 'Active Orders', value: data.totalOrders?.toString() || '0', trend: '+5.2%', icon: Activity, color: 'text-purple-400', glow: 'bg-purple-500/10' },
+                        { label: 'Edge Latency', value: '14ms', trend: '-2.1%', icon: Zap, color: 'text-cyan-400', glow: 'bg-cyan-500/10' },
+                        { label: 'Nodes Sync', value: '100%', trend: 'Verified', icon: ShieldCheck, color: 'text-emerald-400', glow: 'bg-emerald-500/10' },
+                    ]);
+                })
+                .catch(err => console.error('Failed to fetch analytics:', err));
+
+            // Fetch live nodes - assuming there's an API for that
+            // For now, keep demo data or add mock
+        }
+    }, [isDemoMode]);
 
     return (
-        <div className="flex h-screen bg-[#050505] text-white selection:bg-blue-500/30 overflow-hidden">
-            {/* Background Orbs */}
-            <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
-            <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full" />
+        <DashboardLayout>
+            <div className="max-w-[1600px] mx-auto">
+                {/* Background Orbs */}
+                <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
+                <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full" />
 
-            {/* Sidebar */}
-            <aside className="w-72 border-r border-white/5 p-8 hidden lg:flex flex-col relative z-20 bg-black/20 backdrop-blur-xl">
-                <div className="flex items-center gap-4 mb-12">
-                    <motion.div
-                        whileHover={{ scale: 1.1, rotate: 5 }}
-                        className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20"
-                    >
-                        <Zap size={22} fill="white" />
-                    </motion.div>
-                    <span className="text-2xl font-bold tracking-tighter bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-                        NileLink
-                    </span>
-                </div>
-
-                <nav className="space-y-2 flex-1">
-                    {[
-                        { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-                        { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-                        { id: 'investments', label: 'Portfolio', icon: PieChart },
-                        { id: 'nodes', label: 'Edge Nodes', icon: Globe },
-                        { id: 'ledger', label: 'Protocol Ledger', icon: Database },
-                        { id: 'governance', label: 'Governance', icon: ShieldCheck },
-                    ].map((item, i) => (
-                        <motion.button
-                            key={item.id}
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: i * 0.1 }}
-                            onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center gap-4 px-5 py-3 rounded-2xl transition-all duration-300 group ${activeTab === item.id
-                                    ? 'bg-gradient-to-r from-blue-600/20 to-transparent text-blue-400 border border-blue-500/20'
-                                    : 'text-zinc-500 hover:text-white hover:bg-white/5'
-                                }`}
-                        >
-                            <item.icon size={20} className={activeTab === item.id ? 'text-blue-400' : 'group-hover:text-white transition-colors'} />
-                            <span className="font-semibold text-sm">{item.label}</span>
-                            {activeTab === item.id && (
-                                <motion.div layoutId="active" className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
-                            )}
-                        </motion.button>
-                    ))}
-                </nav>
-
-                <div className="pt-8 border-t border-white/5">
-                    <button className="flex items-center gap-4 px-5 py-3 text-zinc-500 hover:text-zinc-200 w-full transition-all group">
-                        <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center group-hover:bg-zinc-800">
-                            <Settings size={18} />
-                        </div>
-                        <span className="font-medium text-sm">Protocol Settings</span>
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto relative z-10 custom-scrollbar">
-                <header className="px-10 py-8 border-b border-white/5 flex items-center justify-between sticky top-0 bg-[#050505]/60 backdrop-blur-2xl z-30">
-                    <div className="flex items-center gap-8">
-                        <div>
-                            <motion.h1
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white via-white to-zinc-500 bg-clip-text text-transparent"
-                            >
-                                Welcome, NileLink Partner
-                            </motion.h1>
-                            <p className="text-zinc-500 text-sm mt-1 font-medium">Monitoring the decentralized economic engine.</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-6">
-                        <div className="hidden lg:flex items-center gap-3 px-4 py-2 rounded-2xl bg-zinc-900/50 border border-white/5 focus-within:border-blue-500/50 transition-all">
-                            <Search size={18} className="text-zinc-500" />
-                            <input type="text" placeholder="Search events..." className="bg-transparent border-none focus:outline-none text-sm w-48 placeholder:text-zinc-600" />
-                        </div>
-                        <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-emerald-400 text-[10px] font-bold tracking-widest uppercase">Protocol Live</span>
-                        </div>
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            className="w-11 h-11 rounded-2xl bg-zinc-800 border border-white/10 p-0.5 overflow-hidden cursor-pointer"
-                        >
-                            <div className="w-full h-full rounded-[14px] bg-gradient-to-br from-zinc-700 to-zinc-900" />
-                        </motion.div>
-                    </div>
-                </header>
-
-                <section className="p-10 max-w-[1600px] mx-auto">
+                <section className="p-10">
                     {/* Stats Bar */}
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-12">
                         {stats.map((stat, i) => (
@@ -212,12 +149,7 @@ export default function Dashboard() {
                                     <span className="text-[10px] font-bold text-zinc-500">SYNCED</span>
                                 </div>
                                 <div className="space-y-4">
-                                    {[
-                                        { node: 'Cairo-North-1', load: '42%', status: 'active' },
-                                        { node: 'Alex-Dist-2', load: '18%', status: 'idle' },
-                                        { node: 'Dubai-Main-Gateway', load: '76%', status: 'high' },
-                                        { node: 'Casablanca-Edge', load: '31%', status: 'active' },
-                                    ].map((node, i) => (
+                                    {liveNodes.map((node, i) => (
                                         <motion.div
                                             key={i}
                                             whileHover={{ x: 5 }}
@@ -262,25 +194,7 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </section>
-            </main>
-
-            <style jsx global>{`
-        .glass {
-          background: rgba(255, 255, 255, 0.02);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 5px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
-        }
-      `}</style>
-        </div>
+            </div>
+        </DashboardLayout>
     );
 }

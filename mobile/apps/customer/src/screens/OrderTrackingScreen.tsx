@@ -8,16 +8,24 @@ import {
   Dimensions,
   Animated,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { io, Socket } from 'socket.io-client';
+import { api } from '@nilelink/mobile-shared';
 
 // Import Types
 import { RootState, AppDispatch } from '../store';
 
 // Import Actions
-import { updateOrderStatus, rateOrder, reorderItems } from '../store/slices/orderSlice';
+// import { updateOrderStatus, rateOrder, reorderItems } from '../store/slices/orderSlice';
+
+const SOCKET_URL = Platform.OS === 'android'
+  ? 'http://10.0.2.2:3010'
+  : 'http://localhost:3010';
 
 interface OrderStatus {
   id: string;
@@ -55,166 +63,113 @@ interface DeliveryDriver {
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
+// Mock data for demonstration
+const mockOrder = {
+  restaurant: {
+    name: 'Bella Italia',
+    phone: '+1-555-0123',
+  },
+  estimatedDelivery: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
+};
+
+const mockDriver = {
+  name: 'Ahmed Hassan',
+  phone: '+1-555-0456',
+  rating: 4.8,
+  vehicleType: 'bike' as const,
+  licensePlate: 'BK-1234',
+};
+
 const OrderTrackingScreen: React.FC<{ route: any }> = ({ route }) => {
   const { orderId } = route.params;
-  const dispatch = useDispatch<AppDispatch>();
-  const order = useSelector((state: RootState) => state.order.currentOrder);
+  const navigation = useNavigation();
+  // const dispatch = useDispatch<AppDispatch>();
+  // const order = useSelector((state: RootState) => state.order.currentOrder);
 
+  const [currentOrder, setCurrentOrder] = useState<any>(null);
   const [currentStatusIndex, setCurrentStatusIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
-  const [driverRating, setDriverRating] = useState(0);
-  const [foodRating, setFoodRating] = useState(0);
+  const [driverRating, setDriverRating] = useState(5);
+  const [foodRating, setFoodRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
   const [isReordering, setIsReordering] = useState(false);
 
   const progressAnimation = useRef(new Animated.Value(0)).current;
   const statusAnimation = useRef(new Animated.Value(0)).current;
 
-  // Mock order data
-  const mockOrder = {
-    id: orderId,
-    orderNumber: '#NL-2024-001',
-    status: 'in_progress',
-    placedAt: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
-    estimatedDelivery: new Date(Date.now() + 20 * 60 * 1000), // 20 minutes from now
-    restaurant: {
-      id: '1',
-      name: 'Bella Italia',
-      address: '123 Main St, New York, NY 10001',
-      phone: '+1 (555) 123-4567',
-    },
-    deliveryAddress: {
-      street: '456 Oak Avenue',
-      city: 'New York',
-      zipCode: '10002',
-      coordinates: {
-        latitude: 40.7589,
-        longitude: -73.9851,
-      },
-    },
-    items: [
-      {
-        id: '1',
-        name: 'Margherita Pizza (Large)',
-        quantity: 1,
-        price: 22.99,
-        image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=100',
-        customizations: ['Thick Crust', 'Extra Pepperoni', 'Mushrooms'],
-      },
-      {
-        id: '2',
-        name: 'Truffle Risotto',
-        quantity: 2,
-        price: 24.99,
-        image: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=100',
-      },
-    ],
-    subtotal: 72.97,
-    deliveryFee: 2.99,
-    tax: 6.39,
-    tip: 10.95,
-    total: 93.30,
-    paymentMethod: 'NileLink Wallet',
-  };
-
   const orderStatuses: OrderStatus[] = [
     {
-      id: 'confirmed',
-      name: 'Order Confirmed',
-      description: 'Your order has been confirmed by the restaurant',
-      icon: 'checkmark-circle',
-      color: '#10b981',
-      completed: true,
-      timestamp: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+      id: 'PENDING',
+      name: currentOrder?.paymentMethod === 'CRYPTO' && currentOrder?.paymentStatus === 'PENDING' ? 'Waiting for Payment' : 'Order Placed',
+      description: currentOrder?.paymentMethod === 'CRYPTO' && currentOrder?.paymentStatus === 'PENDING' ? 'Waiting for blockchain verification' : 'Your order is being reviewed',
+      icon: 'time-outline',
+      color: '#6c757d',
+      completed: true
     },
-    {
-      id: 'preparing',
-      name: 'Preparing',
-      description: 'Chef is preparing your delicious meal',
-      icon: 'restaurant',
-      color: '#f59e0b',
-      completed: true,
-      timestamp: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
-      estimatedTime: '5-10 min',
-    },
-    {
-      id: 'ready',
-      name: 'Ready for Pickup',
-      description: 'Your order is ready and waiting for the driver',
-      icon: 'checkmark-done-circle',
-      color: '#3b82f6',
-      completed: true,
-      timestamp: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'picked_up',
-      name: 'On the Way',
-      description: 'Your order is with the delivery driver',
-      icon: 'bicycle',
-      color: '#8b5cf6',
-      completed: true,
-      timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
-      estimatedTime: '15-20 min',
-    },
-    {
-      id: 'delivered',
-      name: 'Delivered',
-      description: 'Enjoy your meal!',
-      icon: 'home',
-      color: '#10b981',
-      completed: false,
-    },
+    { id: 'CONFIRMED', name: 'Confirmed', description: 'Restaurant has accepted your order', icon: 'checkmark-circle', color: '#10b981', completed: true },
+    { id: 'PREPARING', name: 'Preparing', description: 'Chef is preparing your meal', icon: 'restaurant', color: '#f59e0b', completed: false },
+    { id: 'READY', name: 'Ready', description: 'Order is ready for pickup', icon: 'checkmark-done-circle', color: '#3b82f6', completed: false },
+    { id: 'IN_DELIVERY', name: 'On the Way', description: 'Driver is delivering your order', icon: 'bicycle', color: '#8b5cf6', completed: false },
+    { id: 'DELIVERED', name: 'Delivered', description: 'Enjoy your meal!', icon: 'home', color: '#10b981', completed: false },
   ];
 
-  const mockDriver: DeliveryDriver = {
-    id: '1',
-    name: 'Alex Rodriguez',
-    phone: '+1 (555) 987-6543',
-    rating: 4.9,
-    vehicleType: 'bike',
-    licensePlate: 'NYC-2024',
-    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
-    currentLocation: {
-      latitude: 40.7505,
-      longitude: -73.9934,
-    },
+  useEffect(() => {
+    fetchOrder();
+
+    const newSocket = io(SOCKET_URL);
+    newSocket.on('connect', () => {
+      newSocket.emit('join', `order_${orderId}`);
+    });
+
+    newSocket.on('order:updated', (updatedOrder: any) => {
+      if (updatedOrder.id === orderId) {
+        setCurrentOrder(updatedOrder);
+        updateStatusIndex(updatedOrder.status);
+      }
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [orderId]);
+
+  const fetchOrder = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get(`/orders/${orderId}`);
+      if (response.data.success) {
+        const o = response.data.data.order;
+        setCurrentOrder(o);
+        updateStatusIndex(o.status);
+      }
+    } catch (error) {
+      console.error('Failed to fetch order:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  useEffect(() => {
-    // Simulate real-time status updates
-    const statusTimer = setInterval(() => {
-      setCurrentStatusIndex(prev => {
-        if (prev < orderStatuses.length - 1) {
-          const newIndex = prev + 1;
-          // Animate progress bar
-          Animated.timing(progressAnimation, {
-            toValue: (newIndex + 1) / orderStatuses.length,
-            duration: 1000,
-            useNativeDriver: false,
-          }).start();
+  const updateStatusIndex = (status: string) => {
+    const idx = orderStatuses.findIndex(s => s.id === status);
+    if (idx !== -1) {
+      setCurrentStatusIndex(idx);
 
-          // Animate status change
-          Animated.sequence([
-            Animated.timing(statusAnimation, {
-              toValue: 1,
-              duration: 300,
-              useNativeDriver: false,
-            }),
-            Animated.timing(statusAnimation, {
-              toValue: 0,
-              duration: 300,
-              useNativeDriver: false,
-            }),
-          ]).start();
+      Animated.timing(progressAnimation, {
+        toValue: (idx + 1) / orderStatuses.length,
+        duration: 1000,
+        useNativeDriver: false,
+      }).start();
 
-          return newIndex;
-        }
-        return prev;
-      });
-    }, 30000); // Update every 30 seconds
-
-    return () => clearInterval(statusTimer);
-  }, [progressAnimation, statusAnimation]);
+      Animated.sequence([
+        Animated.timing(statusAnimation, { toValue: 1, duration: 300, useNativeDriver: false }),
+        Animated.timing(statusAnimation, { toValue: 0, duration: 300, useNativeDriver: false }),
+      ]).start();
+    }
+  };
 
   const handleCallRestaurant = () => {
     Alert.alert(
@@ -245,12 +200,12 @@ const OrderTrackingScreen: React.FC<{ route: any }> = ({ route }) => {
   };
 
   const submitRating = () => {
-    dispatch(rateOrder({
-      orderId,
-      driverRating,
-      foodRating,
-      review: reviewText,
-    }));
+    // dispatch(rateOrder({
+    //   orderId,
+    //   driverRating,
+    //   foodRating,
+    //   review: reviewText,
+    // }));
     setShowRatingModal(false);
     Alert.alert('Thank you!', 'Your feedback helps us improve our service.');
   };
@@ -258,7 +213,7 @@ const OrderTrackingScreen: React.FC<{ route: any }> = ({ route }) => {
   const handleReorder = async () => {
     setIsReordering(true);
     try {
-      await dispatch(reorderItems(mockOrder.items));
+      // await dispatch(reorderItems(mockOrder.items));
       Alert.alert('Success', 'Items added to your cart!');
       // Navigate to checkout
     } catch (error) {
@@ -280,6 +235,15 @@ const OrderTrackingScreen: React.FC<{ route: any }> = ({ route }) => {
 
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
+
+  if (isLoading || !currentOrder) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#f9f8f4', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0e372b" />
+        <Text style={{ marginTop: 12, color: '#6b7280' }}>Fetching Order Status...</Text>
+      </View>
+    );
+  }
 
   const currentStatus = orderStatuses[currentStatusIndex];
   const isDelivered = currentStatusIndex === orderStatuses.length - 1;
@@ -304,7 +268,7 @@ const OrderTrackingScreen: React.FC<{ route: any }> = ({ route }) => {
             borderRadius: 20,
             padding: 8,
           }}
-          onPress={() => {/* Navigate back */ }}
+          onPress={() => navigation.goBack()}
         >
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
@@ -322,7 +286,7 @@ const OrderTrackingScreen: React.FC<{ route: any }> = ({ route }) => {
             fontSize: 14,
             color: 'rgba(255,255,255,0.9)',
           }}>
-            {mockOrder.orderNumber}
+            {currentOrder.orderNumber}
           </Text>
         </View>
       </LinearGradient>
@@ -590,12 +554,12 @@ const OrderTrackingScreen: React.FC<{ route: any }> = ({ route }) => {
             Order Details
           </Text>
 
-          {mockOrder.items.map((item) => (
+          {currentOrder.items?.map((item: any) => (
             <View key={item.id} style={{
               flexDirection: 'row',
               marginBottom: 12,
               paddingBottom: 12,
-              borderBottomWidth: item.id !== mockOrder.items[mockOrder.items.length - 1].id ? 1 : 0,
+              borderBottomWidth: 1,
               borderBottomColor: '#e5e7eb',
             }}>
               <View style={{
@@ -617,21 +581,11 @@ const OrderTrackingScreen: React.FC<{ route: any }> = ({ route }) => {
                   color: '#1f2937',
                   marginBottom: 4,
                 }}>
-                  {item.name}
+                  {item.menuItem?.name || 'Item'}
                 </Text>
 
-                {item.customizations && item.customizations.length > 0 && (
-                  <Text style={{
-                    fontSize: 12,
-                    color: '#6b7280',
-                    marginBottom: 4,
-                  }}>
-                    {item.customizations.join(' • ')}
-                  </Text>
-                )}
-
                 <Text style={{ fontSize: 14, color: '#6b7280' }}>
-                  Qty: {item.quantity} • ${item.price.toFixed(2)}
+                  Qty: {item.quantity} • ${Number(item.totalPrice).toFixed(2)}
                 </Text>
               </View>
             </View>
@@ -645,24 +599,12 @@ const OrderTrackingScreen: React.FC<{ route: any }> = ({ route }) => {
           }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
               <Text style={{ fontSize: 14, color: '#6b7280' }}>Subtotal</Text>
-              <Text style={{ fontSize: 14, color: '#1f2937' }}>${mockOrder.subtotal.toFixed(2)}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Text style={{ fontSize: 14, color: '#6b7280' }}>Delivery Fee</Text>
-              <Text style={{ fontSize: 14, color: '#1f2937' }}>${mockOrder.deliveryFee.toFixed(2)}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Text style={{ fontSize: 14, color: '#6b7280' }}>Tax</Text>
-              <Text style={{ fontSize: 14, color: '#1f2937' }}>${mockOrder.tax.toFixed(2)}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Text style={{ fontSize: 14, color: '#6b7280' }}>Tip</Text>
-              <Text style={{ fontSize: 14, color: '#1f2937' }}>${mockOrder.tip.toFixed(2)}</Text>
+              <Text style={{ fontSize: 14, color: '#1f2937' }}>${Number(currentOrder.totalAmount).toFixed(2)}</Text>
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
               <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1f2937' }}>Total</Text>
               <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0e372b' }}>
-                ${mockOrder.total.toFixed(2)}
+                ${Number(currentOrder.totalAmount).toFixed(2)}
               </Text>
             </View>
           </View>
@@ -698,10 +640,7 @@ const OrderTrackingScreen: React.FC<{ route: any }> = ({ route }) => {
                 color: '#1f2937',
                 marginBottom: 4,
               }}>
-                {mockOrder.deliveryAddress.street}
-              </Text>
-              <Text style={{ fontSize: 14, color: '#6b7280' }}>
-                {mockOrder.deliveryAddress.city}, {mockOrder.deliveryAddress.zipCode}
+                {currentOrder.deliveryAddress}
               </Text>
             </View>
           </View>

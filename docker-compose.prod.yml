@@ -1,0 +1,151 @@
+version: '3.8'
+
+# ============================================================================
+# NileLink v1.0.0 Production Docker Compose
+# Backend services only - Frontends deployed to Cloudflare Pages
+# ============================================================================
+
+services:
+  # ========================================
+  # PostgreSQL Database
+  # ========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: nilelink-postgres-v1
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nilelink_prod}
+      POSTGRES_USER: ${POSTGRES_USER:-nilelink}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data_v1:/var/lib/postgresql/data
+
+    networks:
+      - nilelink-prod
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nilelink} -d ${POSTGRES_DB:-nilelink_prod}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ========================================
+  # Redis Cache & Session Store
+  # ========================================
+  redis:
+    image: redis:7-alpine
+    container_name: nilelink-redis-v1
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis_data_v1:/data
+
+    networks:
+      - nilelink-prod
+
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+  # ========================================
+  # Backend API Server
+  # ========================================
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      tags:
+        - nilelink/api:v1.0.0
+        - nilelink/api:production
+
+    image: nilelink/api:v1.0.0
+    container_name: nilelink-api-v1
+    restart: unless-stopped
+
+    environment:
+      # Core
+      NODE_ENV: production
+      PORT: 4000
+
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nilelink}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-nilelink_prod}
+
+      # Redis
+      REDIS_URL: redis://redis:6379
+
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+
+      # Frontend URLs (for CORS and email links)
+      FRONTEND_URL: https://nilelink.app
+
+      # CORS Origins
+      CORS_ORIGINS: https://nilelink.app,https://pos.nilelink.app,https://delivery.nilelink.app,https://supplier.nilelink.app,https://portal.nilelink.app,https://dashboard.nilelink.app,https://admin.nilelink.app
+
+      # Email (optional, configure if needed)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+
+      # Blockchain (optional, for smart contracts)
+      BLOCKCHAIN_RPC_URL: ${BLOCKCHAIN_RPC_URL:-http://localhost:8545}
+
+      # Stripe (optional, for payments)
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+
+    ports:
+      - "4000:4000"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    networks:
+      - nilelink-prod
+
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:4000/api/system/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) })" ]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+
+# ========================================
+# Named Volumes (v1 versioned)
+# ========================================
+volumes:
+  postgres_data_v1:
+    name: nilelink_postgres_v1
+    driver: local
+
+  redis_data_v1:
+    name: nilelink_redis_v1
+    driver: local
+
+# ========================================
+# Networks
+# ========================================
+networks:
+  nilelink-prod:
+    name: nilelink_production_network
+    driver: bridge

@@ -16,6 +16,11 @@ import { CashEngine } from '@/lib/cash/CashEngine';
 import { JournalEngine } from '@/lib/accounting/JournalEngine';
 import { ReputationEngine } from '@/lib/trust/ReputationEngine';
 import { IntelligenceEngine } from '@/lib/intelligence/IntelligenceEngine';
+import { StaffEngine, StaffMember } from '@/lib/staff/StaffEngine';
+import { hardwareMonitor } from '@/lib/hardware/HardwareMonitor';
+import { stockSync } from '@shared/engines/StockSyncEngine';
+
+import { POS_ROLE, PERMISSION, hasPermission } from '@/utils/permissions';
 
 interface POSContextType {
     eventEngine: EventEngine | null;
@@ -26,11 +31,20 @@ interface POSContextType {
     journalEngine: JournalEngine | null;
     reputationEngine: ReputationEngine | null;
     intelligenceEngine: IntelligenceEngine | null;
+    staffEngine: StaffEngine | null;
     isInitialized: boolean;
     isOnline: boolean;
     unsyncedCount: number;
     deviceId: string;
     branchId: string;
+    currentRole: POS_ROLE | null;
+    currentStaff: StaffMember | null;
+    setCurrentRole: (role: POS_ROLE | null) => void;
+    loginWithPin: (code: string, pin: string) => Promise<boolean>;
+    logout: () => void;
+    hasPermission: (permission: PERMISSION) => boolean;
+    demoMode: boolean;
+    setDemoMode: (mode: boolean) => void;
 }
 
 const POSContext = createContext<POSContextType | undefined>(undefined);
@@ -47,26 +61,43 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     const [isInitialized, setIsInitialized] = useState(false);
     const [isOnline, setIsOnline] = useState(true);
     const [unsyncedCount, setUnsyncedCount] = useState(0);
+    const [currentRole, setCurrentRole] = useState<POS_ROLE | null>(null);
+    const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null);
+    const [demoMode, setDemoMode] = useState(true);
+    const [deviceId, setDeviceId] = useState('device-initializing');
+    const [branchId, setBranchId] = useState('branch-initializing');
+    const [mounted, setMounted] = useState(false);
 
-    // Device and branch identification
-    const [deviceId] = useState(() => {
+    // Initial load from local storage after mount
+    useEffect(() => {
+        setMounted(true);
         if (typeof window !== 'undefined') {
-            let id = localStorage.getItem('nilelink_device_id');
-            if (!id) {
-                id = `device-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                localStorage.setItem('nilelink_device_id', id);
+            const savedDemo = localStorage.getItem('nilelink_demo_mode');
+            if (savedDemo === 'false') setDemoMode(false);
+
+            let savedId = localStorage.getItem('nilelink_device_id');
+            if (!savedId) {
+                savedId = `device-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                localStorage.setItem('nilelink_device_id', savedId);
             }
-            return id;
-        }
-        return 'device-unknown';
-    });
+            setDeviceId(savedId);
 
-    const [branchId] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('nilelink_branch_id') || 'branch-cairo-grill';
+            const savedBranch = localStorage.getItem('nilelink_branch_id') || 'branch-cairo-grill';
+            setBranchId(savedBranch);
+
+            // Staff session hydration (Phase 10)
+            const savedStaffId = sessionStorage.getItem('pos_staff_id');
+            if (savedStaffId && engines.staffEngine) {
+                engines.localLedger?.getStaffById(savedStaffId).then(staff => {
+                    if (staff) {
+                        setCurrentStaff(staff);
+                        setCurrentRole(staff.roles[0]);
+                        engines.eventEngine?.setDefaultActor(staff.id);
+                    }
+                });
+            }
         }
-        return 'branch-unknown';
-    });
+    }, [engines.staffEngine, engines.localLedger]);
 
     // Initialize engines
     const [engines, setEngines] = useState<{
@@ -78,6 +109,8 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         journalEngine: JournalEngine | null;
         reputationEngine: ReputationEngine | null;
         intelligenceEngine: IntelligenceEngine | null;
+        staffEngine: StaffEngine | null;
+        hardwareMonitor: HardwareMonitor | null;
     }>({
         eventEngine: null,
         localLedger: null,
@@ -87,6 +120,8 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         journalEngine: null,
         reputationEngine: null,
         intelligenceEngine: null,
+        staffEngine: null,
+        hardwareMonitor: null,
     });
 
     useEffect(() => {
@@ -97,7 +132,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
 
                 // Initialize EventEngine
                 const lastHash = await ledger.getLastEventHash();
-                const eventEngine = new EventEngine(deviceId, branchId);
+                const eventEngine = new EventEngine(deviceId, branchId, ledger);
                 if (lastHash) {
                     eventEngine.setLastEventHash(lastHash);
                 }
@@ -111,7 +146,10 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
                 recipeEngine.seed();
 
                 // Initialize CashEngine
-                const cashEngine = new CashEngine(eventEngine);
+                const cashEngine = new CashEngine(eventEngine, ledger);
+
+                // Subscribe StockSyncEngine (Phase 12 Ecosystem Intelligence)
+                eventEngine.onEvent((event) => stockSync.processEvent(event));
 
                 // Initialize JournalEngine
                 const journalEngine = new JournalEngine(ledger);
@@ -122,6 +160,13 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
                 // Initialize IntelligenceEngine
                 const intelligenceEngine = new IntelligenceEngine(ledger);
 
+                // Initialize StaffEngine
+                const staffEngine = new StaffEngine(ledger);
+                await staffEngine.seedDefaultAdmin(branchId);
+
+                // Initialize HardwareMonitor
+                const hwMonitor = hardwareMonitor;
+
                 setEngines({
                     eventEngine,
                     localLedger: ledger,
@@ -131,6 +176,8 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
                     journalEngine,
                     reputationEngine,
                     intelligenceEngine,
+                    staffEngine,
+                    hardwareMonitor: hwMonitor,
                 });
 
                 // Start sync worker
@@ -183,6 +230,45 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         return () => clearInterval(interval);
     }, [engines.localLedger]);
 
+    const checkPermission = (permission: PERMISSION): boolean => {
+        // If we have a current staff member, check their granular permissions
+        if (currentStaff) {
+            return currentStaff.permissions.includes(permission);
+        }
+
+        // Fallback to role-based check
+        if (!currentRole) return false;
+        return hasPermission(currentRole, permission);
+    };
+
+    const loginWithPin = async (code: string, pin: string): Promise<boolean> => {
+        if (!engines.staffEngine) return false;
+
+        const staff = await engines.staffEngine.verifyPin(code, pin);
+        if (staff) {
+            setCurrentStaff(staff);
+            setCurrentRole(staff.roles[0]); // Primary role
+
+            // Set actor in event engine (Phase 10)
+            engines.eventEngine?.setDefaultActor(staff.id);
+
+            // Persist session locally
+            sessionStorage.setItem('pos_staff_id', staff.id);
+            sessionStorage.setItem('pos_current_role', staff.roles[0]);
+
+            return true;
+        }
+        return false;
+    };
+
+    const logout = () => {
+        setCurrentStaff(null);
+        setCurrentRole(null);
+        engines.eventEngine?.setDefaultActor('system');
+        sessionStorage.removeItem('pos_staff_id');
+        sessionStorage.removeItem('pos_current_role');
+    };
+
     return (
         <POSContext.Provider
             value={{
@@ -192,6 +278,14 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
                 unsyncedCount,
                 deviceId,
                 branchId,
+                currentRole,
+                currentStaff,
+                setCurrentRole,
+                loginWithPin,
+                logout,
+                hasPermission: checkPermission,
+                demoMode,
+                setDemoMode,
             }}
         >
             {children}

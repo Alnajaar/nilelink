@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, Pressable, ScrollView, StyleSheet, SafeAreaView,
-  StatusBar, TextInput, Image, Dimensions, Modal
+  StatusBar, TextInput, Image, Dimensions, Modal, ActivityIndicator
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { customerActions, CustomerState, CartItem } from '../store/customerSlice';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { api } from '@nilelink/mobile-shared';
 
 const { width, height } = Dimensions.get('window');
 
@@ -37,74 +38,39 @@ export function MenuScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock menu items - in real app, would come from API/database
-  const mockMenuItems: MenuItem[] = [
-    {
-      id: 'item_001',
-      name: 'Classic Burger',
-      name_ar: 'برجر كلاسيكي',
-      description: 'Juicy beef patty with fresh lettuce, tomato, and our special sauce on a toasted bun',
-      price: 8.99,
-      category: 'Main Course',
-      popular: true,
-      rating: 4.7,
-      preparationTime: '15-20 min'
-    },
-    {
-      id: 'item_002',
-      name: 'Margherita Pizza',
-      name_ar: 'بيتزا مارغريتا',
-      description: 'Fresh mozzarella, basil, and tomato sauce on crispy handmade dough',
-      price: 12.99,
-      category: 'Main Course',
-      popular: true,
-      rating: 4.8,
-      preparationTime: '20-25 min'
-    },
-    {
-      id: 'item_003',
-      name: 'Caesar Salad',
-      name_ar: 'سلطة قيصر',
-      description: 'Crisp romaine lettuce, parmesan cheese, croutons, and Caesar dressing',
-      price: 7.99,
-      category: 'Appetizers',
-      rating: 4.5,
-      preparationTime: '10-15 min'
-    },
-    {
-      id: 'item_004',
-      name: 'Falafel Plate',
-      name_ar: 'صحن فلافل',
-      description: 'Traditional Egyptian falafel served with tahini sauce and fresh vegetables',
-      price: 6.99,
-      category: 'Appetizers',
-      preparationTime: '10-15 min'
-    },
-    {
-      id: 'item_005',
-      name: 'Chocolate Brownie',
-      name_ar: 'براوني شوكولاتة',
-      description: 'Warm chocolate brownie topped with vanilla ice cream',
-      price: 5.99,
-      category: 'Desserts',
-      rating: 4.9,
-      preparationTime: '5-10 min'
-    },
-    {
-      id: 'item_006',
-      name: 'Fresh Orange Juice',
-      name_ar: 'عصير برتقال طازج',
-      description: 'Freshly squeezed orange juice',
-      price: 3.99,
-      category: 'Beverages',
-      preparationTime: '5 min'
+  useEffect(() => {
+    fetchMenu();
+  }, [restaurantId]);
+
+  const fetchMenu = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get(`/restaurants/${restaurantId}`);
+      if (response.data.success && response.data.data.restaurant.menuItems) {
+        const items = response.data.data.restaurant.menuItems.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          price: Number(item.price),
+          category: item.category,
+          popular: item.popular || false,
+          preparationTime: `${item.preparationTime || 20} min`
+        }));
+        setMenuItems(items);
+      }
+    } catch (error) {
+      console.error('Failed to fetch menu:', error);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
 
-  const categories = ['All', 'Main Course', 'Appetizers', 'Desserts', 'Beverages'];
+  const categories = ['All', ...new Set(menuItems.map(item => item.category))];
 
-  const filteredItems = mockMenuItems.filter(item => {
+  const filteredItems = menuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
@@ -134,7 +100,7 @@ export function MenuScreen() {
   };
 
   const handleCheckout = () => {
-    navigation.navigate('Checkout' as never);
+    navigation.navigate('Checkout' as never, { restaurantId, restaurantName } as any);
   };
 
   const handleItemPress = (item: MenuItem) => {
@@ -143,6 +109,17 @@ export function MenuScreen() {
   };
 
   const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#0d6efd" />
+          <Text style={{ marginTop: 12, color: '#6c757d' }}>Loading Nile-Edge Menu...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -205,7 +182,7 @@ export function MenuScreen() {
       </ScrollView>
 
       {/* Popular Items Section */}
-      {selectedCategory === 'All' && searchQuery === '' && (
+      {selectedCategory === 'All' && searchQuery === '' && menuItems.some(i => i.popular) && (
         <View style={styles.popularSection}>
           <Text style={styles.sectionTitle}>Popular Items</Text>
           <ScrollView
@@ -214,7 +191,7 @@ export function MenuScreen() {
             style={styles.popularItems}
             contentContainerStyle={styles.popularContent}
           >
-            {mockMenuItems.filter(item => item.popular).map((item) => (
+            {menuItems.filter(item => item.popular).map((item) => (
               <Pressable
                 key={item.id}
                 style={styles.popularItemCard}
@@ -274,13 +251,13 @@ export function MenuScreen() {
 
       {/* Cart Floating Button */}
       {cartCount > 0 && (
-        <Pressable style={styles.cartButton} onPress={() => console.log('Open cart modal')}>
+        <Pressable style={styles.cartButton} onPress={handleCheckout}>
           <View style={styles.cartBadge}>
             <Text style={styles.cartCount}>{cartCount}</Text>
           </View>
           <Ionicons name="cart-outline" size={24} color="#fff" />
           <View style={styles.cartInfo}>
-            <Text style={styles.cartButtonText}>Cart</Text>
+            <Text style={styles.cartButtonText}>View Cart</Text>
             <Text style={styles.cartButtonTotal}>{formatCurrency(cartTotal)}</Text>
           </View>
         </Pressable>

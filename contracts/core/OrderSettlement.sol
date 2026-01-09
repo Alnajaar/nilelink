@@ -30,6 +30,10 @@ contract OrderSettlement is IOrderSettlement, Ownable, Pausable, ReentrancyGuard
     mapping(bytes16 => bytes32) public orderRefunds;
     mapping(address => uint256) public dailyOrderCount;
     mapping(address => uint64) public lastOrderCountReset;
+
+    // Protocol metrics
+    uint256 public totalOrders;
+    uint256 public totalVolumeUsd6;
     
     struct OrderData {
         address restaurant;
@@ -167,6 +171,8 @@ contract OrderSettlement is IOrderSettlement, Ownable, Pausable, ReentrancyGuard
             settledAt: 0,
             items: ""
         });
+
+        totalOrders++;
         
         emit PaymentIntentCreated(
             orderId,
@@ -224,6 +230,8 @@ contract OrderSettlement is IOrderSettlement, Ownable, Pausable, ReentrancyGuard
             amountUsd6,
             uint64(block.timestamp)
         );
+
+        totalVolumeUsd6 += amountUsd6;
         
         // Automatically settle the payment
         _settlePayment(orderId);

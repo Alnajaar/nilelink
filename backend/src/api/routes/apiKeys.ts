@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import crypto from 'crypto';
-import { PrismaClient } from '@prisma/client';
-import { authenticate } from '../middleware/authenticate';
-import { extractTenant } from '../middleware/tenantContext';
-import { requireRole } from '../middleware/authorize';
+import { prisma } from '../../services/DatabasePoolService';
+import { authenticate } from '../../middleware/authenticate';
+import { extractTenant } from '../../middleware/tenantContext';
+import { requireRole } from '../../middleware/authorize';
+import { logger } from '../../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // ============================================================================
 // API KEY MANAGEMENT (For external integrations)
@@ -58,7 +58,14 @@ router.post('/',
                 }
             });
         } catch (error: any) {
-            console.error('Create API key error:', error);
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Validation failed',
+                    details: error.errors
+                });
+            }
+            logger.error('Create API key error:', error);
             res.status(500).json({
                 success: false,
                 error: 'Failed to create API key'
@@ -78,7 +85,7 @@ router.get('/',
     async (req: Request, res: Response) => {
         try {
             const keys = await prisma.apiKey.findMany({
-                where: { tenantId: req.tenantId },
+                where: { tenantId: req.tenantId! },
                 select: {
                     id: true,
                     name: true,
@@ -98,7 +105,7 @@ router.get('/',
                 data: keys
             });
         } catch (error) {
-            console.error('List API keys error:', error);
+            logger.error('List API keys error:', error);
             res.status(500).json({
                 success: false,
                 error: 'Failed to fetch API keys'
@@ -122,7 +129,7 @@ router.delete('/:id',
             await prisma.apiKey.update({
                 where: {
                     id,
-                    tenantId: req.tenantId,
+                    tenantId: req.tenantId!,
                 },
                 data: {
                     isActive: false
@@ -134,10 +141,61 @@ router.delete('/:id',
                 message: 'API key revoked'
             });
         } catch (error) {
-            console.error('Revoke API key error:', error);
+            logger.error('Revoke API key error:', error);
             res.status(500).json({
                 success: false,
                 error: 'Failed to revoke API key'
+            });
+        }
+    }
+);
+
+/**
+ * GET /api/api-keys/:id
+ * Get API key by ID (without secret)
+ */
+router.get('/:id',
+    extractTenant,
+    authenticate,
+    requireRole('Owner'),
+    async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            const apiKey = await prisma.apiKey.findFirst({
+                where: {
+                    id,
+                    tenantId: req.tenantId
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    key: true,
+                    permissions: true,
+                    isActive: true,
+                    lastUsedAt: true,
+                    expiresAt: true,
+                    createdAt: true,
+                    // Don't return secret
+                }
+            });
+
+            if (!apiKey) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'API key not found'
+                });
+            }
+
+            res.json({
+                success: true,
+                data: apiKey
+            });
+        } catch (error) {
+            logger.error('Get API key error:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to fetch API key'
             });
         }
     }

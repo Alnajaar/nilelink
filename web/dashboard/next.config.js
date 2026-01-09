@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    output: 'export', // For static deployment to Cloudflare Pages
+    output: 'export',
     images: {
         unoptimized: true,
     },

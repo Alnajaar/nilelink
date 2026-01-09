@@ -8,10 +8,12 @@ import {
   Alert,
   Platform,
   KeyboardAvoidingView,
+  Modal,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 
 // Import Types
 import { RootState, AppDispatch } from '../store';
@@ -22,9 +24,14 @@ import {
   removePromoCode,
   updateDeliveryAddress,
   selectPaymentMethod,
-  placeOrder,
-  clearCart,
-} from '../store/slices/checkoutSlice';
+  clearCheckout,
+} from '../store/checkoutSlice';
+import { customerActions } from '../store/customerSlice';
+import { clearCart } from '../store/cartSlice';
+import { api } from '@nilelink/mobile-shared';
+
+// Import sync engine for offline support
+// import { syncActions } from '@nilelink/mobile-sync-engine';
 
 interface CartItem {
   id: string;
@@ -52,7 +59,7 @@ interface PromoCode {
 
 interface PaymentMethod {
   id: string;
-  type: 'wallet' | 'card' | 'cash';
+  type: 'wallet' | 'card' | 'cash' | 'crypto';
   name: string;
   lastFour?: string;
   balance?: number;
@@ -61,7 +68,8 @@ interface PaymentMethod {
 
 const CheckoutScreen: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const cart = useSelector((state: RootState) => state.cart.items);
+  const navigation = useNavigation();
+  const cart = useSelector((state: RootState) => state.customer.cart);
   const checkout = useSelector((state: RootState) => state.checkout);
   const user = useSelector((state: RootState) => state.auth.user);
 
@@ -69,35 +77,26 @@ const CheckoutScreen: React.FC = () => {
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [selectedTip, setSelectedTip] = useState(0);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [systemConfig, setSystemConfig] = useState<any>(null);
+  const [showCryptoModal, setShowCryptoModal] = useState(false);
+  const [createdOrder, setCreatedOrder] = useState<any>(null);
 
-  // Mock data for demonstration
-  const mockCartItems: CartItem[] = [
-    {
-      id: '1',
-      menuItem: {
-        id: '1',
-        name: 'Margherita Pizza (Large)',
-        image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=100',
-        category: 'Pizza',
-      },
-      quantity: 1,
-      customizations: { crust: ['thick'], extra_toppings: ['pepperoni', 'mushrooms'] },
-      specialInstructions: 'Extra cheese please',
-      totalPrice: 22.99,
-    },
-    {
-      id: '2',
-      menuItem: {
-        id: '2',
-        name: 'Truffle Risotto',
-        image: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=100',
-        category: 'Pasta & Risotto',
-      },
-      quantity: 2,
-      customizations: {},
-      totalPrice: 49.98,
-    },
-  ];
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const response = await api.get('/system/config');
+        if (response.data.success) {
+          setSystemConfig(response.data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch system config:', error);
+      }
+    };
+    fetchConfig();
+  }, []);
+
+  // Use real cart items from Redux
+  const cartItems = cart.items;
 
   const mockRestaurant = {
     id: '1',
@@ -129,9 +128,8 @@ const CheckoutScreen: React.FC = () => {
   const mockPaymentMethods: PaymentMethod[] = [
     {
       id: '1',
-      type: 'wallet',
-      name: 'NileLink Wallet',
-      balance: 45.67,
+      type: 'crypto',
+      name: 'Crypto (USDC)',
       isDefault: true,
     },
     {
@@ -158,7 +156,7 @@ const CheckoutScreen: React.FC = () => {
   const selectedPaymentMethod = checkout.selectedPaymentMethod || mockPaymentMethods[0];
 
   const calculateSubtotal = () => {
-    return mockCartItems.reduce((sum, item) => sum + item.totalPrice, 0);
+    return cartItems.reduce((sum: number, item: any) => sum + item.totalPrice, 0);
   };
 
   const calculateDiscount = () => {
@@ -215,7 +213,7 @@ const CheckoutScreen: React.FC = () => {
 
     // Validate minimum order
     if (subtotal < mockRestaurant.minimumOrder) {
-      Alert.alert('Minimum Order', `Minimum order is $${mockRestaurant.minimumOrder}`);
+      Alert.alert('Minimum Order', `Minimum order is ${mockRestaurant.minimumOrder}`);
       return;
     }
 
@@ -228,25 +226,64 @@ const CheckoutScreen: React.FC = () => {
     setIsPlacingOrder(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const orderData = {
+        restaurantId: cart.restaurantId,
+        customerId: user?.id,
+        items: cartItems.map((item: any) => ({
+          menuItemId: item.id,
+          quantity: item.quantity,
+          specialInstructions: item.specialInstructions || ''
+        })),
+        totalAmount: total,
+        deliveryAddress: `${deliveryAddress.street}, ${deliveryAddress.city}`,
+        specialInstructions: specialInstructions,
+        paymentMethod: selectedPaymentMethod.type.toUpperCase()
+      };
 
-      dispatch(placeOrder({
-        items: mockCartItems,
-        restaurant: mockRestaurant,
-        deliveryAddress,
-        paymentMethod: selectedPaymentMethod,
-        promoCode: appliedPromoCode,
-        tip: selectedTip,
-        specialInstructions,
-        total: calculateTotal(),
-      }));
+      const response = await api.post('/orders', orderData);
 
-      dispatch(clearCart());
-      Alert.alert('Order Placed!', 'Your order has been placed successfully. Track it in real-time!');
-      // Navigate to order tracking screen
-    } catch (error) {
-      Alert.alert('Order Failed', 'There was an error placing your order. Please try again.');
+      if (response.data.success) {
+        const order = response.data.data.order;
+        setCreatedOrder(order);
+
+        // Create local order in Redux store
+        dispatch(customerActions.createOrder({
+          id: order.id,
+          restaurantId: order.restaurantId,
+          items: cartItems,
+          total: total,
+          status: 'confirmed',
+          date: new Date().toISOString(),
+        }));
+
+        // Clear cart and checkout
+        dispatch(clearCart());
+        dispatch(clearCheckout());
+
+        if (selectedPaymentMethod.type === 'crypto') {
+          setShowCryptoModal(true);
+        } else {
+          Alert.alert(
+            'Order Placed!',
+            `Your order ${order.orderNumber} has been placed successfully.`,
+            [
+              {
+                text: 'Track Order',
+                onPress: () => {
+                  navigation.navigate('OrderTracking' as never, { orderId: order.id } as any);
+                }
+              },
+              { text: 'OK' }
+            ]
+          );
+        }
+      } else {
+        throw new Error(response.data.error || 'Server rejected order');
+      }
+
+    } catch (error: any) {
+      console.error('Order creation failed:', error);
+      Alert.alert('Order Failed', error.message || 'There was an error placing your order. Please try again.');
     } finally {
       setIsPlacingOrder(false);
     }
@@ -415,7 +452,7 @@ const CheckoutScreen: React.FC = () => {
             }}>
               Your Order
             </Text>
-            {mockCartItems.map(renderCartItem)}
+            {cartItems.map(renderCartItem)}
           </View>
 
           {/* Special Instructions */}
@@ -640,8 +677,8 @@ const CheckoutScreen: React.FC = () => {
                 onPress={() => dispatch(selectPaymentMethod(method))}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  {method.type === 'wallet' && (
-                    <MaterialCommunityIcons name="wallet" size={20} color="#0e372b" />
+                  {method.type === 'crypto' && (
+                    <Ionicons name="logo-bitcoin" size={20} color="#0e372b" />
                   )}
                   {method.type === 'card' && (
                     <Ionicons name="card" size={20} color="#0e372b" />
@@ -781,6 +818,109 @@ const CheckoutScreen: React.FC = () => {
             )}
           </TouchableOpacity>
         </View>
+
+        <Modal
+          visible={showCryptoModal}
+          transparent={true}
+          animationType="fade"
+        >
+          <View style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 20
+          }}>
+            <View style={{
+              backgroundColor: 'white',
+              borderRadius: 20,
+              padding: 24,
+              width: '100%',
+              maxWidth: 400,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.25,
+              shadowRadius: 10,
+              elevation: 5,
+            }}>
+              <View style={{ alignItems: 'center', marginBottom: 20 }}>
+                <View style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: 30,
+                  backgroundColor: '#f0f9f4',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginBottom: 12
+                }}>
+                  <Ionicons name="logo-bitcoin" size={40} color="#0e372b" />
+                </View>
+                <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#1f2937' }}>
+                  Crypto Payment
+                </Text>
+                <Text style={{ fontSize: 14, color: '#6b7280', textAlign: 'center', marginTop: 8 }}>
+                  To process your order, please send USDC to our settlement contract.
+                </Text>
+              </View>
+
+              <View style={{ marginBottom: 20 }}>
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', marginBottom: 4 }}>
+                  Order Number
+                </Text>
+                <View style={{ backgroundColor: '#f9fafb', padding: 12, borderRadius: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 16, color: '#1f2937', fontWeight: 'bold' }}>
+                    {createdOrder?.orderNumber}
+                  </Text>
+                  <TouchableOpacity onPress={() => {/* Copy to clipboard */ }}>
+                    <Ionicons name="copy-outline" size={20} color="#0e372b" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={{ marginBottom: 24 }}>
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', marginBottom: 4 }}>
+                  Contract Address
+                </Text>
+                <View style={{ backgroundColor: '#f9fafb', padding: 12, borderRadius: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 12, color: '#1f2937', flex: 1 }} numberOfLines={1} ellipsizeMode="middle">
+                    {systemConfig?.blockchain?.contractAddresses?.orderSettlement || '0x...'}
+                  </Text>
+                  <TouchableOpacity onPress={() => {/* Copy to clipboard */ }}>
+                    <Ionicons name="copy-outline" size={20} color="#0e372b" />
+                  </TouchableOpacity>
+                </View>
+                <Text style={{ fontSize: 11, color: '#ef4444', marginTop: 4 }}>
+                  * Use bytes16 format for the Order ID in the transaction.
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#0e372b',
+                  borderRadius: 12,
+                  paddingVertical: 16,
+                  alignItems: 'center',
+                  marginBottom: 12
+                }}
+                onPress={() => {
+                  setShowCryptoModal(false);
+                  navigation.navigate('OrderTracking' as never, { orderId: createdOrder?.id } as any);
+                }}
+              >
+                <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>
+                  I've Sent Payment
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setShowCryptoModal(false)}
+                style={{ alignItems: 'center' }}
+              >
+                <Text style={{ color: '#6b7280', fontSize: 14 }}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </KeyboardAvoidingView>
   );

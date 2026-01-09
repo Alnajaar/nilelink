@@ -2,10 +2,10 @@
 "use client";
 
 import React from 'react';
-import { UniversalNavbar } from '@/shared/components/UniversalNavbar';
-import { UniversalFooter } from '@/shared/components/UniversalFooter';
-import { Button } from "@/shared/components/Button";
-import { Card } from "@/shared/components/Card";
+import { UniversalNavbar } from '@shared/components/UniversalNavbar';
+import { UniversalFooter } from '@shared/components/UniversalFooter';
+import { Button } from "@shared/components/Button";
+import { Card } from "@shared/components/Card";
 
 export default function DocsPage() {
     return (

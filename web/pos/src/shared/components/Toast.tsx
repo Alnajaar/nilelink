@@ -18,9 +18,9 @@ export const Toast: React.FC<ToastProps> = ({ type = 'info', title, message, isV
     if (!isVisible) return null;
 
     const types = {
-        success: 'bg-primary-surface border-primary/20 text-primary',
-        error: 'bg-red-50 border-danger/20 text-danger',
-        info: 'bg-background-subtle border-border text-text-main',
+        success: 'bg-secondary/10 border-secondary/20 text-secondary',
+        error: 'bg-error/10 border-error/20 text-error',
+        info: 'bg-background-subtle border-border-subtle text-text-main',
     };
 
     const icons = {
@@ -32,11 +32,11 @@ export const Toast: React.FC<ToastProps> = ({ type = 'info', title, message, isV
     return (
         <div className="fixed bottom-6 right-6 z-[100] animate-in slide-in-from-bottom-5 fade-in duration-300">
             <div className={cn(
-                "flex items-start p-4 rounded-xl border shadow-lg shadow-black/5 max-w-sm backdrop-blur-xl",
+                "flex items-start p-4 rounded-xl border shadow-lg shadow-black/20 max-w-sm backdrop-blur-xl bg-background-card/90",
                 types[type]
             )}>
                 <div className="flex-shrink-0 mr-3 mt-0.5">
-                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white/50 text-xs font-bold ring-1 ring-black/5">
+                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-background/20 text-xs font-bold ring-1 ring-white/10">
                         {icons[type]}
                     </span>
                 </div>
@@ -56,4 +56,17 @@ export const Toast: React.FC<ToastProps> = ({ type = 'info', title, message, isV
             </div>
         </div>
     );
+};
+
+export const toast = {
+    success: (message: string, title: string = 'Success') => {
+        // This is a placeholder for build compatibility
+        console.log(`Toast Success: ${title} - ${message}`);
+    },
+    error: (message: string, title: string = 'Error') => {
+        console.error(`Toast Error: ${title} - ${message}`);
+    },
+    info: (message: string, title: string = 'Info') => {
+        console.info(`Toast Info: ${title} - ${message}`);
+    }
 };

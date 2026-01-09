@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-type ResourceType = 'ORDER' | 'MENU' | 'INVENTORY' | 'CUSTOMER' | 'EMPLOYEE' | 'REPORT' | 'FINANCIAL' | 'SETTINGS' | 'SHIFT' | 'DELIVERY';
+type ResourceType = 'ORDER' | 'MENU' | 'INVENTORY' | 'CUSTOMER' | 'EMPLOYEE' | 'REPORT' | 'FINANCIAL' | 'SETTINGS' | 'SHIFT' | 'DELIVERY' | 'ADMIN';
 type ActionType = 'CREATE' | 'READ' | 'UPDATE' | 'DELETE' | 'EXPORT' | 'APPROVE' | 'MANAGE';
 
 /**

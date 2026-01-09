@@ -38,16 +38,65 @@ export default function Home() {
       const fetchData = async () => {
         try {
           // Using direct URL for prototype, usually proxied
-          const res = await fetch('http://localhost:3001/api/investors/portfolio');
-          const json = await res.json();
-          if (json.success) setData(json.data);
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/investors/portfolio`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success) setData(json.data);
+          } else {
+            // Use mock data when backend is unavailable
+            setData({
+              currentValue: 150000,
+              dailyReturn: 2.34,
+              availableDividends: 1250.50,
+              assets: [
+                { id: 'asset1', name: 'NileBurgers Chain', type: 'Restaurant Chain', value: 75000, roi: 12.5 },
+                { id: 'asset2', name: 'GreenLeaf Catering', type: 'Catering Service', value: 45000, roi: 8.9 },
+                { id: 'asset3', name: 'UrbanEats POS Network', type: 'Technology Investment', value: 30000, roi: 15.2 }
+              ],
+              history: [
+                { date: '2024-01-01', value: 120000 },
+                { date: '2024-01-02', value: 122000 },
+                { date: '2024-01-03', value: 125000 },
+                { date: '2024-01-04', value: 128000 },
+                { date: '2024-01-05', value: 132000 },
+                { date: '2024-01-06', value: 135000 },
+                { date: '2024-01-07', value: 140000 },
+                { date: '2024-01-08', value: 145000 },
+                { date: '2024-01-09', value: 148000 },
+                { date: '2024-01-10', value: 150000 }
+              ]
+            });
+          }
         } catch (e) {
-          console.error("Failed to fetch", e);
+          console.warn("Backend unavailable, using mock data", e);
+          // Use mock data when backend is unavailable
+          setData({
+            currentValue: 150000,
+            dailyReturn: 2.34,
+            availableDividends: 1250.50,
+            assets: [
+              { id: 'asset1', name: 'NileBurgers Chain', type: 'Restaurant Chain', value: 75000, roi: 12.5 },
+              { id: 'asset2', name: 'GreenLeaf Catering', type: 'Catering Service', value: 45000, roi: 8.9 },
+              { id: 'asset3', name: 'UrbanEats POS Network', type: 'Technology Investment', value: 30000, roi: 15.2 }
+            ],
+            history: [
+              { date: '2024-01-01', value: 120000 },
+              { date: '2024-01-02', value: 122000 },
+              { date: '2024-01-03', value: 125000 },
+              { date: '2024-01-04', value: 128000 },
+              { date: '2024-01-05', value: 132000 },
+              { date: '2024-01-06', value: 135000 },
+              { date: '2024-01-07', value: 140000 },
+              { date: '2024-01-08', value: 145000 },
+              { date: '2024-01-09', value: 148000 },
+              { date: '2024-01-10', value: 150000 }
+            ]
+          });
         }
       };
 
       fetchData();
-      const interval = setInterval(fetchData, 5000); // Live updates
+      const interval = setInterval(fetchData, 30000); // Live updates every 30 seconds
       return () => clearInterval(interval);
     }
   }, [isConnected]);

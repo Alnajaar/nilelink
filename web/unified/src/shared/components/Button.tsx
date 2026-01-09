@@ -18,11 +18,22 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant = 'primary', size = 'md', fullWidth, isLoading, leftIcon, rightIcon, children, disabled, ...props }, ref) => {
-        const variants: Record<string, string> = {
-            primary: 'bg-primary text-text-inverse hover:brightness-110 shadow-md active:scale-[0.98]',
-            secondary: 'bg-secondary text-primary-dark hover:bg-secondary-dark/80 active:bg-secondary-dark',
-            ghost: 'bg-transparent text-text-main hover:bg-black/5 active:bg-black/10',
-            danger: 'bg-danger text-white hover:bg-danger/90 shadow-sm',
+        // 🎨 STRICT DESIGN SYSTEM MAPPING
+        const variants = {
+            // Primary CTA -> Emerald Green with Visible Text
+            // Using 'text-primary' (Navy) on 'bg-secondary' (Emerald) provides good contrast
+            primary: 'bg-secondary text-primary hover:bg-secondary-dark shadow-md active:scale-[0.98] font-bold',
+
+            // Secondary -> Transparent with Emerald Border
+            secondary: 'bg-transparent border-2 border-secondary text-secondary hover:bg-secondary/10',
+
+            // Ghost -> Subtle hover effect
+            ghost: 'bg-transparent text-text-primary hover:bg-black/5 active:bg-black/10',
+
+            // Danger -> Red with White text
+            danger: 'bg-error text-white hover:bg-error/90 shadow-sm',
+
+            // Outline -> Border with Primary color
             outline: 'border border-primary text-primary hover:bg-primary/5',
         };
 
@@ -36,7 +47,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             <button
                 ref={ref}
                 className={cn(
-                    'inline-flex items-center justify-center rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:pointer-events-none disabled:opacity-50',
+                    'inline-flex items-center justify-center rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:pointer-events-none disabled:opacity-50 select-none',
                     fullWidth && 'w-full',
                     variants[variant],
                     sizes[size],

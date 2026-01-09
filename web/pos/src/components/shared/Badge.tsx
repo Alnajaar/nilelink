@@ -13,11 +13,11 @@ interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
     ({ className, variant = 'neutral', size = 'sm', children, ...props }, ref) => {
-        const variants = {
-            success: 'bg-[#dcfce7] text-[#14532d] border border-[#bbf7d0]',
-            warning: 'bg-[#fef9c3] text-[#713f12] border border-[#fde047]',
-            error: 'bg-[#fee2e2] text-[#7f1d1d] border border-[#fca5a5]',
-            info: 'bg-[#e0f2fe] text-[#0c4a6e] border border-[#bae6fd]',
+        const variants: Record<string, string> = {
+            success: 'bg-success/10 text-success border-success/20',
+            warning: 'bg-warning/10 text-warning border-warning/20',
+            error: 'bg-error/10 text-error border-error/20',
+            info: 'bg-info/10 text-info border-info/20',
             neutral: 'bg-secondary-soft text-primary-dark border border-black/5',
         };
 

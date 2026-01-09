@@ -1,6 +1,9 @@
+```
 "use client";
 
 import React, { useState } from 'react';
+import YieldEngine from './YieldEngine';
+import ForecastHUD from './ForecastHUD';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     BarChart3,
@@ -36,7 +39,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex h-screen bg-[#020a08] text-nile-silver overflow-hidden">
             {/* Sidebar */}
-            <aside className={`fixed inset-y-0 left-0 z-50 w-80 bg-nile-dark/40 backdrop-blur-3xl border-r border-white/5 transition-transform duration-500 lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed inset - y - 0 left - 0 z - 50 w - 80 bg - nile - dark / 40 backdrop - blur - 3xl border - r border - white / 5 transition - transform duration - 500 lg:relative lg: translate - x - 0 ${ isSidebarOpen ? 'translate-x-0' : '-translate-x-full' } `}>
                 <div className="flex flex-col h-full p-10">
                     <Link href="/" className="flex items-center gap-4 mb-20 group">
                         <div className="w-12 h-12 rounded-[1.25rem] bg-nile-silver flex items-center justify-center text-nile-dark shadow-2xl group-hover:rotate-12 transition-transform">
@@ -50,7 +53,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                             <Link
                                 key={item.id}
                                 href={item.href}
-                                className={`flex items-center gap-5 px-8 py-5 rounded-[2rem] font-bold text-sm transition-all relative overflow-hidden group ${pathname === item.href ? 'bg-nile-silver text-nile-dark' : 'text-nile-silver/30 hover:text-white hover:bg-white/5'}`}
+                                className={`flex items - center gap - 5 px - 8 py - 5 rounded - [2rem] font - bold text - sm transition - all relative overflow - hidden group ${ pathname === item.href ? 'bg-nile-silver text-nile-dark' : 'text-nile-silver/30 hover:text-white hover:bg-white/5' } `}
                             >
                                 <item.icon size={22} strokeWidth={pathname === item.href ? 2.5 : 2} />
                                 {item.label}
@@ -72,6 +75,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                                 <Database size={14} />
                                 Verified Sequence #1024
                             </div>
+                            <ForecastHUD />
+                            <YieldEngine />
                         </div>
                     </div>
                 </div>

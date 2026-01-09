@@ -1,4 +1,6 @@
-import ShopClient from './ShopClient';
+import dynamic from 'next/dynamic';
+
+const ShopClient = dynamic(() => import('./ShopClient'), { ssr: false });
 
 export function generateStaticParams() {
     return [{ id: '1' }];

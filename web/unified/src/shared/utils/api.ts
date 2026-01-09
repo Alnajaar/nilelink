@@ -131,4 +131,39 @@ export const settlementApi = {
         }),
 };
 
+// Analytics API
+export const analyticsApi = {
+    getDashboard: () => apiRequest('/analytics/dashboard'),
+};
+
+// Generic API object for direct requests
+export const api = {
+    get: <T = any>(endpoint: string, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, { ...options, method: 'GET' }),
+
+    post: <T = any>(endpoint: string, data?: any, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, {
+            ...options,
+            method: 'POST',
+            body: data ? JSON.stringify(data) : undefined,
+        }),
+
+    put: <T = any>(endpoint: string, data?: any, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, {
+            ...options,
+            method: 'PUT',
+            body: data ? JSON.stringify(data) : undefined,
+        }),
+
+    patch: <T = any>(endpoint: string, data?: any, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, {
+            ...options,
+            method: 'PATCH',
+            body: data ? JSON.stringify(data) : undefined,
+        }),
+
+    delete: <T = any>(endpoint: string, options?: RequestOptions) =>
+        apiRequest<T>(endpoint, { ...options, method: 'DELETE' }),
+};
+
 export { ApiError };

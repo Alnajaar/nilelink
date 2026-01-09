@@ -1,6 +1,6 @@
 /**
  * Shared Tailwind Configuration for NileLink Ecosystem
- * 
+ *
  * This configuration is imported by all NileLink applications to ensure
  * consistent styling across the entire platform.
  */
@@ -11,26 +11,47 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                // Primary colors
-                primary: designTokens.colors.primary,
-                secondary: designTokens.colors.secondary,
-                background: designTokens.colors.background,
-                accent: designTokens.colors.accent,
+                // 🟦 Brand Palette - LOCKED COLORS
+                primary: {
+                    DEFAULT: '#0A2540',  // Deep Navy Blue
+                    dark: '#071A2E',
+                    light: '#0D2F52',
+                },
+                secondary: {
+                    DEFAULT: '#00C389',  // Emerald Teal
+                    dark: '#009B6E',
+                    light: '#00E4A4',
+                },
+                accent: '#F5B301',  // Soft Gold - CTA ONLY
+                neutral: '#F7F9FC', // Off-White
 
-                // Semantic colors
-                success: designTokens.colors.success,
-                warning: designTokens.colors.warning,
-                error: designTokens.colors.error,
-                info: designTokens.colors.info,
+                // 🟩 Semantics - Tied to locked colors
+                success: '#00C389',  // Emerald Teal
+                warning: '#F5B301',  // Soft Gold
+                error: '#4A1C1C',   // Dark red derived from navy
+                info: '#0A2540',     // Deep Navy Blue
 
-                // Text colors
-                text: designTokens.colors.text,
+                // 🔵 Backgrounds
+                background: {
+                    DEFAULT: '#0A2540',   // Main app background
+                    card: '#F7F9FC',      // Cards / panels
+                    light: '#F7F9FC',     // Light sections
+                },
 
-                // Border colors
-                border: designTokens.colors.border,
+                // 📝 Typography
+                text: {
+                    primary: '#0A2540',   // Text on light
+                    secondary: 'rgba(10, 37, 64, 0.7)', // Secondary
+                    muted: 'rgba(10, 37, 64, 0.5)',     // Muted
+                    inverse: '#F7F9FC',   // Text on dark
+                },
 
-                // State colors
-                state: designTokens.colors.state,
+                // 🔳 Borders
+                border: {
+                    DEFAULT: 'rgba(10, 37, 64, 0.2)',   // Subtle
+                    subtle: 'rgba(10, 37, 64, 0.1)',    // Subtle
+                    strong: 'rgba(10, 37, 64, 0.4)',    // Strong
+                },
             },
 
             fontFamily: designTokens.typography.fontFamily,

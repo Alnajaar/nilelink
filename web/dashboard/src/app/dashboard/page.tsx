@@ -1,286 +1,223 @@
 "use client";
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import {
-    Activity,
-    BarChart3,
-    Globe,
-    LayoutDashboard,
-    PieChart,
-    Settings,
-    ShieldCheck,
-    TrendingUp,
-    Zap,
-    ArrowUpRight,
-    Database,
-    Search,
-    ChevronRight
+    Zap, TrendingUp, DollarSign, PieChart, Activity,
+    LayoutDashboard, ShoppingBag, Vote, Users,
+    ArrowUpRight, ArrowDownRight, ChevronRight, Bell, Search, Clock
 } from 'lucide-react';
-import { GlassCard } from '@/components/ui/GlassCard';
 
-export default function Dashboard() {
-    const [activeTab, setActiveTab] = useState('overview');
+import { UniversalHeader } from '@shared/components/UniversalHeader';
+import { UniversalFooter } from '@shared/components/UniversalFooter';
+import { Button } from '@shared/components/Button';
+import { Card } from '@shared/components/Card';
+import { Badge } from '@shared/components/Badge';
+import AuthGuard from '@shared/components/AuthGuard';
+import dynamic from 'next/dynamic';
 
-    const stats = [
-        { label: 'Total Revenue', value: '$1.24M', trend: '+12.5%', icon: TrendingUp, color: 'text-blue-400', glow: 'bg-blue-500/10' },
-        { label: 'Active Orders', value: '4,892', trend: '+5.2%', icon: Activity, color: 'text-purple-400', glow: 'bg-purple-500/10' },
-        { label: 'Edge Latency', value: '14ms', trend: '-2.1%', icon: Zap, color: 'text-cyan-400', glow: 'bg-cyan-500/10' },
-        { label: 'Nodes Sync', value: '100%', trend: 'Verified', icon: ShieldCheck, color: 'text-emerald-400', glow: 'bg-emerald-500/10' },
-    ];
+const NeuralMesh = dynamic(() => import('@shared/components/NeuralMesh').then(mod => mod.NeuralMesh), { ssr: false });
+const PredictiveAnalytics = dynamic(() => import('@/components/PredictiveAnalytics'), { ssr: false });
+const YieldEngine = dynamic(() => import('@/components/YieldEngine'), { ssr: false });
+
+export default function DashboardPage() {
+    return (
+        <AuthGuard appName="NileLink Dashboard" useWeb3Auth={false}>
+            <DashboardContent />
+        </AuthGuard>
+    );
+}
+
+function DashboardContent() {
+    const router = useRouter();
+
+    const [stats] = useState([
+        { label: 'Total Portfolio', value: '$14,245.50', trend: '+12.4%', up: true, icon: PieChart },
+        { label: 'Unclaimed Dividends', value: '$285.20', trend: 'Ready', up: true, icon: DollarSign },
+        { label: 'Open Trades', value: '3', trend: 'Active', up: true, icon: Activity },
+        { label: 'Yield Rate', value: '11.8%', trend: '+0.5%', up: true, icon: TrendingUp }
+    ]);
+
+    const [recentActivity] = useState([
+        { type: 'Dividend', venue: 'Cairo Grill Prime', amount: '+$12.40', time: '2h ago', status: 'Confirmed' },
+        { type: 'Trade', venue: 'Delta Kitchen', amount: '-$500.00', time: '5h ago', status: 'Buy Order' },
+        { type: 'Governance', venue: 'Nile Bistro', amount: 'Vote', time: '1d ago', status: 'Participation' }
+    ]);
 
     return (
-        <div className="flex h-screen bg-[#050505] text-white selection:bg-blue-500/30 overflow-hidden">
-            {/* Background Orbs */}
-            <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
-            <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full" />
-
-            {/* Sidebar */}
-            <aside className="w-72 border-r border-white/5 p-8 hidden lg:flex flex-col relative z-20 bg-black/20 backdrop-blur-xl">
-                <div className="flex items-center gap-4 mb-12">
-                    <motion.div
-                        whileHover={{ scale: 1.1, rotate: 5 }}
-                        className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20"
-                    >
-                        <Zap size={22} fill="white" />
-                    </motion.div>
-                    <span className="text-2xl font-bold tracking-tighter bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-                        NileLink
-                    </span>
-                </div>
-
-                <nav className="space-y-2 flex-1">
-                    {[
-                        { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-                        { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-                        { id: 'investments', label: 'Portfolio', icon: PieChart },
-                        { id: 'nodes', label: 'Edge Nodes', icon: Globe },
-                        { id: 'ledger', label: 'Protocol Ledger', icon: Database },
-                        { id: 'governance', label: 'Governance', icon: ShieldCheck },
-                    ].map((item, i) => (
-                        <motion.button
-                            key={item.id}
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: i * 0.1 }}
-                            onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center gap-4 px-5 py-3 rounded-2xl transition-all duration-300 group ${activeTab === item.id
-                                    ? 'bg-gradient-to-r from-blue-600/20 to-transparent text-blue-400 border border-blue-500/20'
-                                    : 'text-zinc-500 hover:text-white hover:bg-white/5'
-                                }`}
-                        >
-                            <item.icon size={20} className={activeTab === item.id ? 'text-blue-400' : 'group-hover:text-white transition-colors'} />
-                            <span className="font-semibold text-sm">{item.label}</span>
-                            {activeTab === item.id && (
-                                <motion.div layoutId="active" className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
-                            )}
-                        </motion.button>
-                    ))}
-                </nav>
-
-                <div className="pt-8 border-t border-white/5">
-                    <button className="flex items-center gap-4 px-5 py-3 text-zinc-500 hover:text-zinc-200 w-full transition-all group">
-                        <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center group-hover:bg-zinc-800">
-                            <Settings size={18} />
-                        </div>
-                        <span className="font-medium text-sm">Protocol Settings</span>
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto relative z-10 custom-scrollbar">
-                <header className="px-10 py-8 border-b border-white/5 flex items-center justify-between sticky top-0 bg-[#050505]/60 backdrop-blur-2xl z-30">
-                    <div className="flex items-center gap-8">
+        <div className="min-h-screen bg-neutral text-text-primary flex flex-col antialiased relative overflow-hidden mesh-bg selection:bg-primary/20">
+            <NeuralMesh />
+            <UniversalHeader
+                appName="Investor Dash"
+                user={{ name: "Investor #892", role: "Venture Partner" }}
+            />
+            <main className="flex-1 max-w-[1600px] mx-auto p-8">
+                {/* Hero / Pulse */}
+                <header className="mb-12">
+                    <div className="flex items-end justify-between mb-8">
                         <div>
-                            <motion.h1
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white via-white to-zinc-500 bg-clip-text text-transparent"
+                            <h1 className="text-6xl font-black text-white tracking-tighter mb-2 uppercase">Systems Control</h1>
+                            <p className="text-white/40 font-black uppercase tracking-widest text-xs">Investor Node #892 • High-Frequency Portfolio Monitoring</p>
+                        </div>
+                        <div className="flex gap-4">
+                            <Button
+                                onClick={() => router.push('/list-restaurant')}
+                                variant="outline"
+                                className="h-14 px-8 border-2 border-text hover:bg-text hover:text-background rounded-2xl font-black uppercase tracking-widest transition-all"
                             >
-                                Welcome, NileLink Partner
-                            </motion.h1>
-                            <p className="text-zinc-500 text-sm mt-1 font-medium">Monitoring the decentralized economic engine.</p>
+                                List Asset
+                            </Button>
+                            <Button
+                                onClick={() => router.push('/trade')}
+                                className="h-14 px-10 bg-primary hover:scale-105 rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-primary/20"
+                            >
+                                Instant Trade
+                            </Button>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        <div className="hidden lg:flex items-center gap-3 px-4 py-2 rounded-2xl bg-zinc-900/50 border border-white/5 focus-within:border-blue-500/50 transition-all">
-                            <Search size={18} className="text-zinc-500" />
-                            <input type="text" placeholder="Search events..." className="bg-transparent border-none focus:outline-none text-sm w-48 placeholder:text-zinc-600" />
-                        </div>
-                        <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-emerald-400 text-[10px] font-bold tracking-widest uppercase">Protocol Live</span>
-                        </div>
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            className="w-11 h-11 rounded-2xl bg-zinc-800 border border-white/10 p-0.5 overflow-hidden cursor-pointer"
-                        >
-                            <div className="w-full h-full rounded-[14px] bg-gradient-to-br from-zinc-700 to-zinc-900" />
-                        </motion.div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+                        {stats.map((stat, i) => (
+                            <Card key={i} className="p-8 glass-v2 border-white/5 hover:border-primary/20 transition-all group cursor-pointer rounded-[2rem] shadow-xl">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-white/5 group-hover:bg-primary group-hover:text-white transition-all flex items-center justify-center shadow-inner">
+                                        <stat.icon size={24} />
+                                    </div>
+                                    <Badge className="bg-emerald-500/10 text-emerald-500 border-0 font-black px-3 py-1 text-[10px] tracking-widest uppercase">
+                                        {stat.trend}
+                                    </Badge>
+                                </div>
+                                <p className="text-[10px] uppercase font-black tracking-widest text-white/30 mb-1">{stat.label}</p>
+                                <p className="text-3xl font-black font-mono tracking-tighter text-white">{stat.value}</p>
+                            </Card>
+                        ))}
                     </div>
                 </header>
 
-                <section className="p-10 max-w-[1600px] mx-auto">
-                    {/* Stats Bar */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-12">
-                        {stats.map((stat, i) => (
-                            <GlassCard key={i} delay={i * 0.1}>
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className={`p-3 rounded-2xl ${stat.glow} border border-white/5`}>
-                                        <stat.icon size={22} className={stat.color} />
-                                    </div>
-                                    <motion.div
-                                        whileHover={{ scale: 1.2, rotate: 45 }}
-                                        className="p-1.5 rounded-full bg-white/5 text-zinc-500 hover:text-white cursor-pointer transition-colors"
-                                    >
-                                        <ArrowUpRight size={16} />
-                                    </motion.div>
-                                </div>
-                                <div>
-                                    <p className="text-zinc-500 text-sm font-semibold mb-2">{stat.label}</p>
-                                    <div className="flex items-end justify-between">
-                                        <h3 className="text-3xl font-bold tracking-tighter">{stat.value}</h3>
-                                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold ${stat.trend.startsWith('+') ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-500/10 text-zinc-400'}`}>
-                                            {stat.trend}
-                                        </div>
-                                    </div>
-                                </div>
-                                {/* Micro-chart simulation */}
-                                <div className="mt-6 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: i % 2 === 0 ? '70%' : '45%' }}
-                                        transition={{ duration: 1, delay: 0.5 + (i * 0.1) }}
-                                        className={`h-full bg-gradient-to-r ${stat.color.replace('text', 'from')} to-white/20`}
-                                    />
-                                </div>
-                            </GlassCard>
-                        ))}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Market Trends */}
+                    <div className="lg:col-span-2 space-y-8">
+                        <PredictiveAnalytics />
+                        <YieldEngine />
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                        {/* Real-time Growth Chart */}
-                        <GlassCard className="lg:col-span-8 p-10" delay={0.4}>
-                            <div className="flex items-center justify-between mb-12">
-                                <div>
-                                    <h2 className="text-2xl font-bold tracking-tight">Ecosystem Growth</h2>
-                                    <p className="text-zinc-500 text-sm mt-1 font-medium italic">Consolidated revenue across global edge nodes.</p>
-                                </div>
-                                <div className="flex p-1 rounded-2xl bg-zinc-900 border border-white/5">
-                                    {['7D', '30D', '1Y'].map(d => (
-                                        <button key={d} className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${d === '30D' ? 'bg-white text-black shadow-lg shadow-white/10' : 'text-zinc-500 hover:text-white'}`}>
-                                            {d}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="h-80 flex items-end gap-2 w-full group/chart">
-                                {[45, 65, 55, 85, 75, 95, 110, 80, 70, 100, 120, 115, 130, 150, 140, 160, 170, 155, 180, 200, 190, 210, 230].map((h, i) => (
-                                    <motion.div
-                                        key={i}
-                                        initial={{ height: 0 }}
-                                        animate={{ height: `${(h / 230) * 100}%` }}
-                                        transition={{ duration: 1, delay: 0.8 + (i * 0.03) }}
-                                        className="flex-1 bg-gradient-to-t from-blue-600/40 via-blue-500/20 to-blue-400 rounded-t-lg transition-all duration-300 hover:scale-x-110 hover:from-blue-400 hover:to-white relative group"
-                                    >
-                                        <div className="absolute top-[-30px] left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-black text-[10px] font-bold px-2 py-1 rounded-md pointer-events-none">
-                                            ${h}k
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Card className="p-6 border border-surface bg-white">
+                            <h3 className="text-lg font-black uppercase mb-6 flex items-center justify-between">
+                                Top Yielders
+                                <ArrowUpRight className="text-primary" size={20} />
+                            </h3>
+                            <div className="space-y-4">
+                                {[
+                                    { venue: 'Cairo Grill', yield: '15.2%', price: '$125.50' },
+                                    { venue: 'Nile Bistro', yield: '13.8%', price: '$89.00' },
+                                    { venue: 'Delta Kitchen', yield: '11.5%', price: '$52.25' }
+                                ].map((v, i) => (
+                                    <div key={i} className="flex items-center justify-between p-3 bg-surface/50 rounded-xl">
+                                        <div>
+                                            <p className="font-black text-sm">{v.venue}</p>
+                                            <p className="text-[10px] font-bold text-text/40 font-mono">{v.price}</p>
                                         </div>
-                                    </motion.div>
+                                        <p className="font-black text-primary">{v.yield}</p>
+                                    </div>
                                 ))}
                             </div>
-                            <div className="flex justify-between mt-6 px-2">
-                                {['Oct 23', 'Nov 04', 'Nov 16', 'Nov 28', 'Dec 10', 'Dec 22'].map(date => (
-                                    <span key={date} className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">{date}</span>
+                        </Card>
+
+                        <Card className="p-6 border border-surface bg-white">
+                            <h3 className="text-lg font-black uppercase mb-6 flex items-center justify-between">
+                                Hot Deals
+                                <Zap className="text-primary" size={20} />
+                            </h3>
+                            <div className="space-y-4">
+                                {[
+                                    { venue: 'Spice Route', cap: '$1.4M', status: '85% Fulfilled' },
+                                    { venue: 'Urban Brew', cap: '$850k', status: 'New Listing' },
+                                    { venue: 'Suez Seafood', cap: '$2.1M', status: 'Trending' }
+                                ].map((v, i) => (
+                                    <div key={i} className="flex items-center justify-between p-3 bg-surface/50 rounded-xl">
+                                        <div>
+                                            <p className="font-black text-sm">{v.venue}</p>
+                                            <p className="text-[10px] font-bold text-text/40 font-mono">{v.cap}</p>
+                                        </div>
+                                        <Badge className="bg-text text-background font-black text-[9px] px-2 py-0.5">{v.status}</Badge>
+                                    </div>
                                 ))}
                             </div>
-                        </GlassCard>
+                        </Card>
+                    </div>
+                </div>
 
-                        {/* Health & Verification Sidebar */}
-                        <div className="lg:col-span-4 space-y-8">
-                            <GlassCard className="bg-gradient-to-br from-indigo-600/20 via-transparent to-transparent border-indigo-500/10" delay={0.5}>
-                                <div className="flex items-center justify-between mb-8">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400">
-                                            <Globe size={18} />
-                                        </div>
-                                        <h3 className="font-bold text-lg">Live Nodes</h3>
-                                    </div>
-                                    <span className="text-[10px] font-bold text-zinc-500">SYNCED</span>
-                                </div>
-                                <div className="space-y-4">
-                                    {[
-                                        { node: 'Cairo-North-1', load: '42%', status: 'active' },
-                                        { node: 'Alex-Dist-2', load: '18%', status: 'idle' },
-                                        { node: 'Dubai-Main-Gateway', load: '76%', status: 'high' },
-                                        { node: 'Casablanca-Edge', load: '31%', status: 'active' },
-                                    ].map((node, i) => (
-                                        <motion.div
-                                            key={i}
-                                            whileHover={{ x: 5 }}
-                                            className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/[0.08]"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-1.5 h-1.5 rounded-full ${node.status === 'high' ? 'bg-orange-500' : 'bg-emerald-500'}`} />
-                                                <span className="text-sm font-semibold text-zinc-200">{node.node}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-mono text-indigo-400 font-bold">{node.load}</span>
-                                                <ChevronRight size={14} className="text-zinc-600" />
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            </GlassCard>
-
-                            <GlassCard className="border-dashed border-zinc-700 bg-transparent flex flex-col items-center justify-center py-12" delay={0.6}>
-                                <div className="relative mb-6">
-                                    <motion.div
-                                        animate={{ rotate: 360 }}
-                                        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                                        className="w-20 h-20 rounded-full border border-zinc-800 border-t-blue-500 border-r-purple-500"
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <ShieldCheck size={32} className="text-blue-400" />
-                                    </div>
-                                </div>
-                                <h4 className="font-bold text-xl mb-2">Immutable Ledger</h4>
-                                <p className="text-xs text-zinc-500 text-center leading-relaxed px-10">
-                                    NileLink Protocol ensures every event is hashed, salted, and anchored for 100% financial transparency.
-                                </p>
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className="mt-8 px-6 py-3 rounded-2xl bg-white text-black text-xs font-bold shadow-xl shadow-white/5"
-                                >
-                                    Verify Contract
-                                </motion.button>
-                            </GlassCard>
+                {/* Sidebar / Terminal Activity */}
+                <div className="space-y-8">
+                    <Card className="p-6 border border-surface bg-white">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-sm font-black uppercase tracking-widest text-text">Live Ledger</h2>
+                            <button className="text-[10px] font-black uppercase text-primary">View All</button>
                         </div>
-                    </div>
-                </section>
-            </main>
+                        <div className="space-y-4">
+                            {recentActivity.map((act, i) => (
+                                <div key={i} className="border-l-2 border-surface pl-4 relative">
+                                    <div className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-surface" />
+                                    <div className="flex items-center justify-between mb-1">
+                                        <p className="text-[10px] font-black uppercase text-text/40">{act.type}</p>
+                                        <p className="text-[10px] font-bold text-text/30 font-mono">{act.time}</p>
+                                    </div>
+                                    <p className="font-black text-xs text-text mb-1 truncate">{act.venue}</p>
+                                    <div className="flex items-center justify-between">
+                                        <p className="font-mono font-bold text-[11px] text-primary">{act.amount}</p>
+                                        <p className="text-[9px] font-black uppercase px-1 bg-surface rounded text-text/50">{act.status}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
 
-            <style jsx global>{`
-        .glass {
-          background: rgba(255, 255, 255, 0.02);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 5px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
-        }
-      `}</style>
+                    <Card className="p-6 border border-surface bg-text text-background relative overflow-hidden group">
+                        <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-all duration-700">
+                            <Vote size={120} />
+                        </div>
+                        <div className="relative">
+                            <Badge className="bg-primary text-background border-0 font-black text-[10px] px-2 py-1 mb-4">GOVERNANCE ALERT</Badge>
+                            <h3 className="text-xl font-black uppercase mb-2">North Coast Extension</h3>
+                            <p className="text-xs text-background/60 leading-relaxed mb-6">Cairo Grill is proposing a summer expansion. Your vote counts for 1,250 weight.</p>
+                            <Button
+                                onClick={() => window.open('http://localhost:3000/governance', '_blank')}
+                                className="w-full bg-background text-text hover:bg-primary hover:text-background h-10 rounded-xl font-black uppercase tracking-widest text-[10px]"
+                            >
+                                Review Proposal
+                            </Button>
+                        </div>
+                    </Card>
+
+                    <Card className="p-0 border border-surface bg-surface/30 overflow-hidden">
+                        <div className="p-6">
+                            <h3 className="text-xs font-black uppercase tracking-widest mb-4">Portfolio Diversity</h3>
+                            <div className="h-4 w-full bg-surface rounded-full flex overflow-hidden">
+                                <div className="h-full bg-primary w-[45%]" />
+                                <div className="h-full bg-text w-[25%]" />
+                                <div className="h-full bg-text/20 w-[30%]" />
+                            </div>
+                            <div className="mt-4 grid grid-cols-2 gap-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-primary" />
+                                    <span className="text-[10px] font-black uppercase text-text/60">Med (45%)</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-text" />
+                                    <span className="text-[10px] font-black uppercase text-text/60">Asian (25%)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button className="w-full py-4 bg-surface hover:bg-text hover:text-background transition-all text-[10px] font-black uppercase tracking-widest">
+                            Optimize Assets
+                        </button>
+                    </Card>
+                </div>
         </div>
+            </main >
+        <UniversalFooter />
+        </div >
     );
 }

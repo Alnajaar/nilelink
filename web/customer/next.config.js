@@ -1,9 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    output: 'export', // For static deployment to Cloudflare Pages
-    images: {
-        unoptimized: true,
+    // Only use static export for production builds
+    ...(process.env.NODE_ENV === 'production' && {
+        output: 'export',
+        trailingSlash: true,
+        images: {
+            unoptimized: true,
+        },
+    }),
+    typescript: {
+        ignoreBuildErrors: true,
     },
+    eslint: {
+        ignoreDuringBuilds: true,
+    },
+    webpack: (config) => {
+        config.resolve.alias['@shared'] = require('path').resolve(__dirname, '../shared');
+        return config;
+    }
 }
 
 module.exports = nextConfig

@@ -1,4 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import { api } from '@nilelink/mobile-shared';
 
 interface Restaurant {
     id: string;
@@ -111,6 +112,79 @@ const restaurantsSlice = createSlice({
         },
     },
 });
+
+export const loadNearbyRestaurants = createAsyncThunk(
+    'restaurants/loadNearby',
+    async (_, { dispatch }) => {
+        dispatch(loadNearbyRestaurantsStart());
+        try {
+            const response = await api.get('/restaurants');
+            if (response.data.success) {
+                dispatch(loadNearbyRestaurantsSuccess(response.data.data.restaurants));
+                return response.data.data.restaurants;
+            }
+            throw new Error(response.data.error || 'Failed to fetch restaurants');
+        } catch (error: any) {
+            dispatch(loadNearbyRestaurantsFailure(error.message));
+            throw error;
+        }
+    }
+);
+
+export const loadRecommendedRestaurants = createAsyncThunk(
+    'restaurants/loadRecommended',
+    async (_, { dispatch }) => {
+        dispatch(loadRecommendedRestaurantsStart());
+        try {
+            const response = await api.get('/restaurants'); // Using same endpoint for now
+            if (response.data.success) {
+                dispatch(loadRecommendedRestaurantsSuccess(response.data.data.restaurants));
+                return response.data.data.restaurants;
+            }
+            throw new Error(response.data.error || 'Failed to fetch recommended restaurants');
+        } catch (error: any) {
+            dispatch(loadRecommendedRestaurantsFailure(error.message));
+            throw error;
+        }
+    }
+);
+
+export const loadRestaurantDetails = createAsyncThunk(
+    'restaurants/loadDetails',
+    async (id: string, { dispatch }) => {
+        dispatch(loadRestaurantDetailsStart());
+        try {
+            const response = await api.get(`/restaurants/${id}`);
+            if (response.data.success) {
+                dispatch(loadRestaurantDetailsSuccess(response.data.data.restaurant));
+                return response.data.data.restaurant;
+            }
+            throw new Error(response.data.error || 'Failed to fetch restaurant details');
+        } catch (error: any) {
+            dispatch(loadRestaurantDetailsFailure(error.message));
+            throw error;
+        }
+    }
+);
+
+export const loadMenuItems = createAsyncThunk(
+    'restaurants/loadMenuItems',
+    async (id: string, { dispatch }) => {
+        dispatch(loadMenuItemsStart());
+        try {
+            const response = await api.get(`/restaurants/${id}`);
+            if (response.data.success) {
+                const items = response.data.data.restaurant.menuItems || [];
+                dispatch(loadMenuItemsSuccess(items));
+                return items;
+            }
+            throw new Error(response.data.error || 'Failed to fetch menu items');
+        } catch (error: any) {
+            dispatch(loadMenuItemsFailure(error.message));
+            throw error;
+        }
+    }
+);
 
 export const {
     loadNearbyRestaurantsStart,

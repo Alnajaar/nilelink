@@ -1,120 +1,177 @@
 "use client";
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Zap, Store, User, ArrowRight, Building2, Globe } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Eye, EyeOff, Plus, AlertCircle, CheckCircle } from 'lucide-react';
+import { authService } from '@shared/services/AuthService';
 
 export default function RegisterPage() {
-    const [step, setStep] = useState(1);
+    const router = useRouter();
+    const [formData, setFormData] = useState({ email: '', password: '', firstName: '', lastName: '' });
+    const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+        setLoading(true);
+
+        try {
+            const result = await authService.register(formData);
+
+            if (!result.success) {
+                setError(result.error || 'Registration failed');
+                return;
+            }
+
+            if (result.requiresEmailVerification) {
+                setSuccess('Registration successful! Check your email to verify your account.');
+                setTimeout(() => router.push('/auth/verify-email'), 3000);
+            } else {
+                setSuccess('Registration successful! Redirecting...');
+                setTimeout(() => router.push('/'), 2000);
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
-        <div className="min-h-screen bg-background-light flex items-center justify-center p-6">
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="w-full max-w-2xl"
-            >
+        <div className="min-h-screen bg-neutral text-text-primary flex items-center justify-center p-4 relative overflow-hidden">
+            {/* Background Effects */}
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/5 blur-[120px] rounded-full animate-pulse" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-secondary/5 blur-[120px] rounded-full animate-pulse-slow" />
+            </div>
+
+            <div className="w-full max-w-md relative z-10">
+                {/* Header */}
                 <div className="text-center mb-12">
-                    <div className="w-16 h-16 bg-primary-dark rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
-                        <Zap size={32} className="text-background-light" fill="currentColor" />
+                    <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-3xl mb-8 shadow-2xl border border-border-subtle group hover:border-primary/50 transition-all duration-500">
+                        <Plus className="w-10 h-10 text-primary group-hover:scale-110 transition-transform" />
                     </div>
-                    <h1 className="text-4xl font-bold text-primary-dark mb-4">Provision Branch</h1>
-                    <p className="text-text-secondary text-sm">Onboard your business to the NileLink Protocol</p>
+                    <h1 className="text-4xl font-black text-text-primary mb-4 tracking-tighter uppercase italic">
+                        New Entity
+                    </h1>
+                    <p className="text-text-secondary font-medium tracking-tight opacity-60 uppercase text-xs">
+                        Register your business on the NileLink Protocol
+                    </p>
                 </div>
 
-                <div className="bg-background-white p-12 rounded-2xl border border-border-light shadow-lg">
-                    <div className="flex gap-4 mb-12">
-                        {[1, 2, 3].map((s) => (
-                            <div key={s} className="flex-1 h-2 rounded-full overflow-hidden bg-background-light">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: step >= s ? '100%' : '0%' }}
-                                    className="h-full bg-primary-dark transition-all duration-500"
+                {error && (
+                    <div className="mb-8 p-5 bg-red-500/5 border-2 border-red-500/20 rounded-2xl flex items-start gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                        <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
+                        <div className="flex-1">
+                            <p className="text-sm font-black text-red-900 uppercase tracking-widest mb-1">Registration Failure</p>
+                            <p className="text-xs font-bold text-red-700/80 uppercase tracking-tight">{error}</p>
+                        </div>
+                    </div>
+                )}
+
+                {success && (
+                    <div className="mb-8 p-5 bg-green-500/5 border-2 border-green-500/20 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                        <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0" />
+                        <p className="text-xs font-black text-green-900 uppercase tracking-widest">{success}</p>
+                    </div>
+                )}
+
+                <div className="bg-white rounded-[2.5rem] shadow-2xl border border-border-subtle p-10">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-text-secondary mb-3">First Name</label>
+                                <input
+                                    type="text"
+                                    name="firstName"
+                                    value={formData.firstName}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full px-5 py-4 bg-neutral border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm font-bold placeholder:text-text-muted/50"
+                                    placeholder="John"
                                 />
                             </div>
-                        ))}
-                    </div>
-
-                    {step === 1 && (
-                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-primary-dark">Restaurant / Business Name</label>
-                                    <div className="relative">
-                                        <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={20} />
-                                        <input type="text" placeholder="The Grand Cairo Grill" className="w-full pl-12 pr-4 py-3 border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-dark focus:border-transparent" />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-primary-dark">Business Category</label>
-                                    <div className="relative">
-                                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={20} />
-                                        <select className="w-full pl-12 pr-4 py-3 border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-dark focus:border-transparent appearance-none bg-background-light">
-                                            <option>Food & Beverage (F&B)</option>
-                                            <option>Retail & Grocery</option>
-                                            <option>Pharmacy & Health</option>
-                                            <option>General Services</option>
-                                        </select>
-                                    </div>
-                                </div>
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-text-secondary mb-3">Last Name</label>
+                                <input
+                                    type="text"
+                                    name="lastName"
+                                    value={formData.lastName}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full px-5 py-4 bg-neutral border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm font-bold placeholder:text-text-muted/50"
+                                    placeholder="Doe"
+                                />
                             </div>
-                            <button onClick={() => setStep(2)} className="w-full h-12 bg-primary-dark text-background-light rounded-lg font-semibold hover:bg-primary-light transition-colors flex items-center justify-center gap-2">
-                                Continue
-                                <ArrowRight size={16} />
-                            </button>
-                        </motion.div>
-                    )}
+                        </div>
 
-                    {step === 2 && (
-                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-nile-silver/30 uppercase tracking-[0.3em] ml-2">Primary Region</label>
-                                    <div className="relative group">
-                                        <Globe className="absolute left-6 top-1/2 -translate-y-1/2 text-nile-silver/20 group-focus-within:text-white transition-colors" size={20} />
-                                        <input type="text" placeholder="Dubai, UAE" className="w-full nile-input pl-16 py-5" />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-nile-silver/30 uppercase tracking-[0.3em] ml-2">Admin Email</label>
-                                    <div className="relative group">
-                                        <User className="absolute left-6 top-1/2 -translate-y-1/2 text-nile-silver/20 group-focus-within:text-white transition-colors" size={20} />
-                                        <input type="email" placeholder="admin@business.com" className="w-full nile-input pl-16 py-5" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex gap-4">
-                                <button onClick={() => setStep(1)} className="flex-1 h-20 btn-secondary">Back</button>
-                                <button onClick={() => setStep(3)} className="flex-[2] h-20 btn-primary flex items-center justify-center gap-4">
-                                    Deploy Branch
-                                    <ArrowRight size={20} />
+                        <div>
+                            <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-text-secondary mb-3">Email Address</label>
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                required
+                                className="w-full px-5 py-4 bg-neutral border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm font-bold placeholder:text-text-muted/50"
+                                placeholder="your@email.com"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-text-secondary mb-3">Security Token</label>
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full px-5 py-4 bg-neutral border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm font-bold placeholder:text-text-muted/50"
+                                    placeholder="••••••••"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
                             </div>
-                        </motion.div>
-                    )}
+                        </div>
 
-                    {step === 3 && (
-                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-12">
-                            <div className="w-24 h-24 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-8">
-                                <Zap size={48} className="text-emerald-500" fill="currentColor" />
-                            </div>
-                            <h2 className="text-3xl font-black text-white mb-4">Branch Ready</h2>
-                            <p className="text-nile-silver/40 font-bold max-w-sm mx-auto mb-12">Your business node has been provisioned on the NileLink Protocol. Identity hash secured.</p>
-                            <Link href="/auth/login" className="btn-primary inline-flex items-center gap-4">
-                                Launch Terminal
-                                <ArrowRight size={20} />
-                            </Link>
-                        </motion.div>
-                    )}
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full h-16 bg-primary hover:scale-[1.02] active:scale-[0.98] disabled:bg-text-muted text-background font-black uppercase tracking-[0.3em] text-xs rounded-2xl transition-all duration-300 shadow-xl shadow-primary/20 flex items-center justify-center gap-3 mt-4"
+                        >
+                            {loading ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-background border-t-transparent rounded-full animate-spin"></div>
+                                    <span>Syncing...</span>
+                                </>
+                            ) : (
+                                <span>Initialize Credentials</span>
+                            )}
+                        </button>
+                    </form>
 
-                    <div className="mt-12 pt-12 border-t border-white/5 text-center">
-                        <p className="text-xs font-bold text-nile-silver/30">
-                            Already have a terminal? <Link href="/auth/login" className="text-white hover:underline">Sign In</Link>
+                    <div className="mt-8 text-center">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary opacity-60">
+                            Existing entity? <Link href="/auth/login" className="text-primary hover:underline font-black">Identify</Link>
                         </p>
                     </div>
                 </div>
-            </motion.div>
+            </div>
         </div>
     );
 }

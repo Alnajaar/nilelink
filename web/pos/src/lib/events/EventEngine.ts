@@ -7,15 +7,20 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { EconomicEvent, BaseEvent, EventType, EventMetadata } from './types';
+import { LocalLedger } from '../storage/LocalLedger';
 
 export class EventEngine {
     private deviceId: string;
     private branchId: string;
     private lastEventHash: string | null = null;
+    private ledger: LocalLedger;
+    private defaultActorId: string = 'system';
+    private listeners: ((event: EconomicEvent) => void)[] = [];
 
-    constructor(deviceId: string, branchId: string) {
+    constructor(deviceId: string, branchId: string, ledger: LocalLedger) {
         this.deviceId = deviceId;
         this.branchId = branchId;
+        this.ledger = ledger;
     }
 
     /**
@@ -23,18 +28,19 @@ export class EventEngine {
      */
     async createEvent<T extends EconomicEvent>(
         type: EventType,
-        actorId: string,
+        actorId: string | null,
         payload: T['payload']
     ): Promise<T> {
         const timestamp = Date.now();
         const id = uuidv4();
+        const finalActorId = actorId || this.defaultActorId;
 
         const baseEvent: BaseEvent = {
             id,
             type,
             timestamp,
             deviceId: this.deviceId,
-            actorId,
+            actorId: finalActorId,
             branchId: this.branchId,
             hash: '', // Will be calculated
             previousHash: this.lastEventHash,
@@ -53,7 +59,33 @@ export class EventEngine {
         // Update chain
         this.lastEventHash = event.hash;
 
+        // Persist to local ledger
+        await this.ledger.insertEvent(event);
+
+        // Notify listeners (Phase 12 Ecosystem Intelligence)
+        this.notifyListeners(event);
+
         return event;
+    }
+
+    private notifyListeners(event: EconomicEvent): void {
+        this.listeners.forEach(listener => {
+            try {
+                listener(event);
+            } catch (err) {
+                console.error('Error in event listener:', err);
+            }
+        });
+    }
+
+    /**
+     * Subscribe to events
+     */
+    onEvent(listener: (event: EconomicEvent) => void): () => void {
+        this.listeners.push(listener);
+        return () => {
+            this.listeners = this.listeners.filter(l => l !== listener);
+        };
     }
 
     /**
@@ -128,6 +160,13 @@ export class EventEngine {
      */
     setLastEventHash(hash: string | null): void {
         this.lastEventHash = hash;
+    }
+
+    /**
+     * Set default actor for auto-injecting into events
+     */
+    setDefaultActor(actorId: string): void {
+        this.defaultActorId = actorId;
     }
 
     /**

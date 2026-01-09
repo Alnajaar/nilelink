@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './Button';
 import { Card } from './Card';
 import { Badge } from './Badge';
-import { URLS } from '@/shared/utils/urls';
+import { URLS } from '@shared/utils/urls';
 
 const APPS = [
     { name: 'Portal', url: URLS.portal, description: 'Ecosystem Home' },

@@ -13,13 +13,14 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 
 // Import Types
 import { RootState, AppDispatch } from '../store';
 
 // Import Actions
 import { addToCart, updateCartItem, removeFromCart } from '../store/slices/cartSlice';
-import { loadMenuItems, loadRestaurantDetails } from '../store/slices/restaurantsSlice';
+import { loadMenuItems, loadRestaurantDetails } from '../store/restaurantsSlice';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -70,6 +71,7 @@ interface CartItem {
 const RestaurantDetailScreen: React.FC<{ route: any }> = ({ route }) => {
     const { restaurantId } = route.params;
     const dispatch = useDispatch<AppDispatch>();
+    const navigation = useNavigation();
     const restaurant = useSelector((state: RootState) => state.restaurants.currentRestaurant);
     const menuItems = useSelector((state: RootState) => state.restaurants.menuItems);
     const cart = useSelector((state: RootState) => state.cart.items);
@@ -207,7 +209,10 @@ const RestaurantDetailScreen: React.FC<{ route: any }> = ({ route }) => {
         },
     ];
 
-    const categories = ['All', ...Array.from(new Set(mockMenuItems.map(item => item.category)))];
+    const currentRestaurant = restaurant || mockRestaurant;
+    const currentMenuItems = (menuItems && menuItems.length > 0) ? menuItems : mockMenuItems;
+
+    const categories = ['All', ...Array.from(new Set(currentMenuItems.map(item => item.category)))];
 
     useEffect(() => {
         // Load restaurant details and menu
@@ -215,7 +220,7 @@ const RestaurantDetailScreen: React.FC<{ route: any }> = ({ route }) => {
         dispatch(loadMenuItems(restaurantId));
     }, [dispatch, restaurantId]);
 
-    const filteredItems = mockMenuItems.filter(item =>
+    const filteredItems = currentMenuItems.filter(item =>
         selectedCategory === 'All' || item.category === selectedCategory
     );
 
@@ -410,7 +415,7 @@ const RestaurantDetailScreen: React.FC<{ route: any }> = ({ route }) => {
             {/* Restaurant Header */}
             <View style={{ position: 'relative' }}>
                 <Image
-                    source={{ uri: mockRestaurant.image }}
+                    source={{ uri: currentRestaurant.image }}
                     style={{
                         width: screenWidth,
                         height: 200,
@@ -434,16 +439,16 @@ const RestaurantDetailScreen: React.FC<{ route: any }> = ({ route }) => {
                         color: 'white',
                         marginBottom: 4,
                     }}>
-                        {mockRestaurant.name}
+                        {currentRestaurant.name}
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Ionicons name="star" size={16} color="#fbbf24" />
                         <Text style={{ color: 'white', marginLeft: 4, marginRight: 12 }}>
-                            {mockRestaurant.rating} ({mockRestaurant.reviews} reviews)
+                            {currentRestaurant.rating} ({currentRestaurant.reviews} reviews)
                         </Text>
                         <Ionicons name="time-outline" size={16} color="white" />
                         <Text style={{ color: 'white', marginLeft: 4 }}>
-                            {mockRestaurant.deliveryTime}
+                            {currentRestaurant.deliveryTime}
                         </Text>
                     </View>
                 </LinearGradient>
@@ -458,7 +463,7 @@ const RestaurantDetailScreen: React.FC<{ route: any }> = ({ route }) => {
                         borderRadius: 20,
                         padding: 8,
                     }}
-                    onPress={() => {/* Navigate back */ }}
+                    onPress={() => navigation.goBack()}
                 >
                     <Ionicons name="arrow-back" size={24} color="white" />
                 </TouchableOpacity>
@@ -476,11 +481,11 @@ const RestaurantDetailScreen: React.FC<{ route: any }> = ({ route }) => {
                     lineHeight: 20,
                     marginBottom: 12,
                 }}>
-                    {mockRestaurant.description}
+                    {currentRestaurant.description}
                 </Text>
 
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }}>
-                    {mockRestaurant.features.map((feature, index) => (
+                    {currentRestaurant.features.map((feature, index) => (
                         <View key={index} style={{
                             backgroundColor: '#f0f9f4',
                             paddingHorizontal: 8,
@@ -508,9 +513,9 @@ const RestaurantDetailScreen: React.FC<{ route: any }> = ({ route }) => {
                         🤖 AI Insights
                     </Text>
                     <Text style={{ fontSize: 12, color: '#6b21a8', lineHeight: 18 }}>
-                        • Popular: {mockRestaurant.aiInsights.popularItems.join(', ')}
-                        {'\n'}• Current wait: {mockRestaurant.aiInsights.currentWaitTime}min
-                        {'\n'}• Peak hours: {mockRestaurant.aiInsights.peakHours}
+                        • Popular: {currentRestaurant.aiInsights.popularItems.join(', ')}
+                        {'\n'}• Current wait: {currentRestaurant.aiInsights.currentWaitTime}min
+                        {'\n'}• Peak hours: {currentRestaurant.aiInsights.peakHours}
                     </Text>
                 </View>
             </View>

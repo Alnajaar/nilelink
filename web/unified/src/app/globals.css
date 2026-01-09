@@ -1,1 +1,5 @@
 @import '../../../shared/globals.shared.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

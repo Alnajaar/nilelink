@@ -1,1 +1,33 @@
-@import '../../../shared/globals.shared.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --primary: #0e372b;
+    --surface: #f1f5f9;
+    --text: #0f172a;
+    --background: #ffffff;
+}
+
+@layer base {
+    body {
+        @apply bg-background text-text selection:bg-primary/20 antialiased;
+    }
+}
+
+@layer components {
+    .mesh-bg {
+        background-image:
+            radial-gradient(at 0% 0%, hsla(164, 74%, 13%, 0.03) 0, transparent 50%),
+            radial-gradient(at 50% 0%, hsla(164, 74%, 13%, 0.05) 0, transparent 50%),
+            radial-gradient(at 100% 0%, hsla(164, 74%, 13%, 0.03) 0, transparent 50%);
+    }
+
+    .glass-v2 {
+        @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-xl;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+}

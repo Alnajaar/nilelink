@@ -1,21 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import { jest } from '@jest/globals';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-// Mock Prisma Client for unit tests
-jest.mock('@prisma/client', () => ({
-    PrismaClient: jest.fn().mockImplementation(() => ({
-        domainEvent: {
-            createMany: jest.fn(),
-            findMany: jest.fn(),
-            deleteMany: jest.fn(),
-        },
-        eventSnapshot: {
-            upsert: jest.fn(),
-            findFirst: jest.fn(),
-        },
-    })),
-}));
+// Load test environment variables
+dotenv.config({ path: path.resolve(__dirname, '../.env.test'), override: true });
 
+// Prisma mocking is disabled for hardening phase to ensure real database verification in E2E tests.
+// If unit tests need mocks, use jest.doMock() within the specific test file.
+
+/*
 // Mock logger
 jest.mock('../src/utils/logger', () => ({
     logger: {
@@ -25,9 +19,10 @@ jest.mock('../src/utils/logger', () => ({
         warn: jest.fn(),
     },
 }));
+*/
 
 // Global test utilities
-global.testUtils = {
+(global as any).testUtils = {
     createMockEvent: (overrides = {}) => ({
         id: 'test-event-id',
         eventType: 'TEST_EVENT',

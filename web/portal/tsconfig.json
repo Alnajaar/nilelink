@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2017",
     "lib": [
       "dom",
       "dom.iterable",
@@ -28,19 +28,27 @@
         "./src/*"
       ],
       "@/components/*": [
-        "./src/components/*"
+        "./src/components/*",
+        "../shared/components/*"
       ],
       "@/lib/*": [
-        "./src/lib/*"
+        "./src/lib/*",
+        "../shared/utils/*"
       ],
       "@/types/*": [
-        "./src/types/*"
+        "./src/types/*",
+        "../shared/types/*"
       ],
       "@/hooks/*": [
-        "./src/hooks/*"
+        "./src/hooks/*",
+        "../shared/hooks/*"
+      ],
+      "@/shared/*": [
+        "./src/shared/*",
+        "../shared/*"
       ],
       "@shared/*": [
-        "../../shared/*"
+        "../shared/*"
       ]
     }
   },
@@ -49,7 +57,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "../../shared/**/*"
+    "../shared/**/*"
   ],
   "exclude": [
     "node_modules"

@@ -2,138 +2,125 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, ArrowRight, Wallet, AlertTriangle } from 'lucide-react';
-import { DeliveryProtocol } from '@/lib/protocol/DeliveryProtocol';
+import {
+    Zap, Fingerprint, Lock, Shield,
+    Smartphone, ChevronRight, Globe,
+    Activity, ShieldCheck
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Card } from '@/shared/components/Card';
+import { Button } from '@/shared/components/Button';
+import { Badge } from '@/shared/components/Badge';
 
 export default function DriverLogin() {
     const router = useRouter();
-    const [step, setStep] = useState<'disclaimer' | 'pin'>('disclaimer');
-    const [pin, setPin] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [authMethod, setAuthMethod] = useState<'Phone' | 'Biometric'>('Phone');
 
-    // In prod, use useContext to share the protocol instance
-    const [protocol] = useState(() => new DeliveryProtocol());
-
-    const handleDisclaimerAccept = () => {
-        setStep('pin');
-    };
-
-    const handlePinSubmit = async () => {
-        if (pin.length !== 4) return;
+    const handleLogin = (e: React.FormEvent) => {
+        e.preventDefault();
         setIsLoading(true);
-        const success = await protocol.startShift(pin);
-        if (success) {
-            router.push('/driver/home');
-        } else {
-            alert('Invalid PIN'); // Simple alert for MVP
-            setPin('');
+        setTimeout(() => {
             setIsLoading(false);
-        }
-    };
-
-    const handleNum = (n: string) => {
-        if (pin.length < 4) setPin(p => p + n);
+            router.push('/driver/home');
+        }, 1500);
     };
 
     return (
-        <div className="min-h-screen bg-background flex flex-col p-6 items-center justify-center relative overflow-hidden">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 z-0 opacity-[0.03]"
-                style={{ backgroundImage: 'radial-gradient(#0e372b 1px, transparent 1px)', backgroundSize: '32px 32px' }}>
+        <div className="min-h-[80vh] flex flex-col justify-center gap-12 pt-10">
+            {/* Branding Section */}
+            <div className="text-center space-y-4">
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-24 h-24 bg-text rounded-[2.5rem] flex items-center justify-center text-primary mx-auto shadow-2xl relative overflow-hidden group"
+                >
+                    <div className="absolute inset-0 bg-primary opacity-5 group-hover:opacity-20 transition-opacity" />
+                    <Zap size={48} fill="currentColor" className="relative z-10" />
+                </motion.div>
+                <div>
+                    <h1 className="text-4xl font-black text-text tracking-tighter uppercase leading-none">NileLink<br />Fleet</h1>
+                    <Badge className="bg-primary/10 text-primary border-primary/20 font-black text-[8px] px-3 py-1 mt-3 tracking-[0.2em] uppercase">Auth Node v2.1</Badge>
+                </div>
             </div>
 
-            <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full relative z-10">
-
-                {/* Header */}
-                <div className="mb-10 text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white mx-auto mb-6 shadow-xl shadow-primary/20">
-                        <Shield size={32} />
-                    </div>
-                    <h1 className="text-2xl font-bold text-text-main mb-2">Logistics Protocol</h1>
-                    <p className="text-xs font-semibold text-text-muted uppercase tracking-widest">Driver Authorization</p>
-                </div>
-
-                {step === 'disclaimer' ? (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="p-8 rounded-3xl bg-background-card border border-border shadow-lg shadow-black/5">
-                            <div className="flex items-center gap-3 text-warning mb-6">
-                                <AlertTriangle size={20} />
-                                <span className="text-xs font-bold uppercase tracking-widest">Liability Warning</span>
-                            </div>
-                            <p className="text-sm font-medium text-text-main leading-relaxed mb-6">
-                                By activating this session, you accept full custody of all physical assets and cash collected.
-                            </p>
-                            <ul className="space-y-4 mb-2">
-                                <li className="flex gap-4 text-xs font-medium text-text-muted">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
-                                    Cash custody is legally binding.
-                                </li>
-                                <li className="flex gap-4 text-xs font-medium text-text-muted">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
-                                    Deliveries are cryptographically signed.
-                                </li>
-                                <li className="flex gap-4 text-xs font-medium text-text-muted">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
-                                    Real-time GPS tracking is mandatory.
-                                </li>
-                            </ul>
-                        </div>
-
+            {/* Login Interface */}
+            <Card className="p-8 border-2 border-text bg-white shadow-[16px_16px_0px_0px_rgba(15,23,42,0.05)] overflow-hidden">
+                <div className="flex p-1 bg-surface rounded-2xl mb-10">
+                    {['Phone', 'Biometric'].map((m) => (
                         <button
-                            onClick={handleDisclaimerAccept}
-                            className="w-full h-16 bg-primary text-white rounded-2xl font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all hover:bg-primary-dark active:scale-[0.98] shadow-lg shadow-primary/20"
-                        >
-                            Accept Protocol
-                            <ArrowRight size={18} />
-                        </button>
-                    </div>
-                ) : (
-                    <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
-                        {/* PIN Display */}
-                        <div className="flex justify-center gap-4 mb-10">
-                            {[0, 1, 2, 3].map(i => (
-                                <div key={i} className={`w-3 h-3 rounded-full transition-all duration-300 ${i < pin.length ? 'bg-primary scale-125' : 'bg-border'}`} />
-                            ))}
-                        </div>
-
-                        {/* PIN Pad */}
-                        <div className="grid grid-cols-3 gap-3 mb-8">
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
-                                <button
-                                    key={n}
-                                    onClick={() => handleNum(n.toString())}
-                                    className="h-16 rounded-2xl bg-white border border-border-subtle hover:bg-background-subtle active:bg-primary/5 text-2xl font-bold text-text-main transition-colors shadow-sm"
-                                >
-                                    {n}
-                                </button>
-                            ))}
-                            <div />
-                            <button
-                                onClick={() => handleNum('0')}
-                                className="h-16 rounded-2xl bg-white border border-border-subtle hover:bg-background-subtle active:bg-primary/5 text-2xl font-bold text-text-main transition-colors shadow-sm"
-                            >
-                                0
-                            </button>
-                            <button
-                                onClick={() => setPin(p => p.slice(0, -1))}
-                                className="h-16 rounded-2xl hover:bg-background-subtle active:bg-primary/5 flex items-center justify-center text-text-muted transition-colors"
-                            >
-                                <span className="text-xs font-bold uppercase tracking-widest">Del</span>
-                            </button>
-                        </div>
-
-                        <button
-                            onClick={handlePinSubmit}
-                            disabled={pin.length !== 4 || isLoading}
-                            className={`w-full h-16 rounded-2xl font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${pin.length === 4
-                                ? 'bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary-dark active:scale-[0.98]'
-                                : 'bg-background-subtle text-text-subtle cursor-not-allowed border border-border'
+                            key={m}
+                            onClick={() => setAuthMethod(m as any)}
+                            className={`flex-1 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all ${authMethod === m ? 'bg-text text-background shadow-lg' : 'text-text opacity-30 hover:opacity-50'
                                 }`}
                         >
-                            {isLoading ? 'Verifying Identity...' : 'Start Shift'}
+                            {m === 'Phone' ? <Smartphone size={14} className="inline mr-2" /> : <Fingerprint size={14} className="inline mr-2" />}
+                            {m} Access
                         </button>
-                    </div>
-                )}
+                    ))}
+                </div>
+
+                <form onSubmit={handleLogin} className="space-y-6">
+                    {authMethod === 'Phone' ? (
+                        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-black text-text opacity-30 uppercase tracking-[0.3em] mb-3 ml-1">Protocol ID / Mobile</label>
+                                <div className="relative">
+                                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-text opacity-30 font-black text-xs">+20</div>
+                                    <input
+                                        type="tel"
+                                        required
+                                        className="w-full h-16 pl-16 pr-6 bg-surface border-2 border-transparent focus:border-text focus:bg-white rounded-2xl font-black text-lg transition-all outline-none"
+                                        placeholder="123 456 7890"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-text opacity-30 uppercase tracking-[0.3em] mb-3 ml-1">Access Passcode</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-text opacity-30" size={20} />
+                                    <input
+                                        type="password"
+                                        required
+                                        className="w-full h-16 pl-16 pr-6 bg-surface border-2 border-transparent focus:border-text focus:bg-white rounded-2xl font-black text-lg tracking-widest transition-all outline-none"
+                                        placeholder="••••"
+                                    />
+                                </div>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-10 space-y-6">
+                            <div className="w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mx-auto relative group cursor-pointer hover:bg-primary/20 transition-all">
+                                <Fingerprint size={48} className="text-primary animate-pulse" />
+                                <div className="absolute inset-0 border-4 border-primary rounded-[2.5rem] animate-ping opacity-10" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-black text-text uppercase tracking-tighter">Ready for Biometric Sync</p>
+                                <p className="text-[10px] font-bold text-text opacity-30 uppercase tracking-widest mt-1">Place finger on device sensor</p>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    <Button
+                        className="w-full h-20 bg-text text-background font-black uppercase tracking-widest text-sm rounded-3xl hover:bg-primary transition-all shadow-2xl shadow-text/10"
+                        isLoading={isLoading}
+                    >
+                        Initialize Mission
+                        <ChevronRight className="ml-2" size={20} />
+                    </Button>
+                </form>
+            </Card>
+
+            {/* Security Indicators */}
+            <div className="flex justify-between items-center px-4">
+                <div className="flex items-center gap-2">
+                    <ShieldCheck size={14} className="text-primary" />
+                    <span className="text-[9px] font-black uppercase text-text opacity-30 tracking-widest">NileShield™ Verified</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Globe size={14} className="text-text opacity-10" />
+                    <span className="text-[9px] font-black uppercase text-text opacity-30 tracking-widest">Region: MEA-NORTH-1</span>
+                </div>
             </div>
         </div>
     );

@@ -1,74 +1,78 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { orderApi } from '@/shared/utils/api';
 import {
-    MapPin,
-    Navigation,
-    Box,
-    Clock,
-    DollarSign,
-    Filter
+    MapPin, Clock, Zap, Timer, ChevronRight,
+    Navigation, Filter, Shell, AlertCircle,
+    CheckCircle2
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card } from '@/shared/components/Card';
+import { Button } from '@/shared/components/Button';
+import { Badge } from '@/shared/components/Badge';
 
-export default function QueuePage() {
+export default function MissionQueue() {
     const router = useRouter();
-    const [filter, setFilter] = useState<'all' | 'new' | 'active'>('all');
-    const [orders, setOrders] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [filter, setFilter] = useState('All');
 
-    // Fetch available orders from backend
-    useEffect(() => {
-        const fetchOrders = async () => {
-            try {
-                const response = await (orderApi as any).list({ status: 'READY' });
-                const fetchedOrders = response.orders;
-                setOrders(fetchedOrders || []);
-            } catch (error) {
-                console.error('Failed to fetch orders:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchOrders();
-    }, []);
-
-    const getPriorityColor = (p: string) => {
-        if (p === 'rush') return 'bg-rose-500 text-white shadow-lg shadow-rose-900/20';
-        if (p === 'high') return 'bg-amber-500 text-nile-dark';
-        return 'bg-white/10 text-nile-silver';
-    }
-
-    const handleAcceptOrder = async (orderId: string) => {
-        try {
-            await orderApi.updateStatus(orderId, 'IN_DELIVERY');
-            router.push(`/driver/transit/${orderId}`);
-        } catch (error) {
-            console.error('Failed to accept order:', error);
+    const missions = [
+        {
+            id: 'M-1250',
+            restaurant: 'Pizza Palace',
+            pickup: 'Zamalek, Plot 42',
+            dropoff: 'Downtown, Nile View',
+            distance: '2.4km',
+            payout: 25.50,
+            urgency: 'ASAP',
+            difficulty: 'Low',
+            items: 4,
+            category: 'Standard'
+        },
+        {
+            id: 'M-1251',
+            restaurant: 'Burger Joint',
+            pickup: 'Giza Square',
+            dropoff: 'Mohandessin Res',
+            distance: '5.8km',
+            payout: 42.00,
+            urgency: '15m',
+            difficulty: 'High',
+            items: 12,
+            category: 'Bulk'
+        },
+        {
+            id: 'M-1252',
+            restaurant: 'Sushi Express',
+            pickup: 'Maadi Ring Road',
+            dropoff: 'New Cairo Sector 1',
+            distance: '12.2km',
+            payout: 65.20,
+            urgency: '25m',
+            difficulty: 'Epic',
+            items: 2,
+            category: 'Express'
         }
-    };
-
-    if (isLoading) {
-        return <div className="flex items-center justify-center h-full text-text-secondary">Loading orders...</div>;
-    }
+    ];
 
     return (
-        <div className="flex flex-col gap-6 px-4">
-            <header className="flex justify-between items-center mb-2">
-                <h1 className="text-3xl font-black text-white italic tracking-tighter uppercase">Load Board</h1>
-                <button className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-nile-silver">
-                    <Filter size={18} />
-                </button>
+        <div className="space-y-8">
+            {/* Header */}
+            <header className="flex flex-col gap-1">
+                <h1 className="text-4xl font-black text-text tracking-tighter uppercase leading-tight">Mission Queue</h1>
+                <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Active Protocol Feed</p>
+                    <Badge className="bg-primary/10 text-primary border-primary/20 text-[8px] font-black uppercase">{missions.length} Available</Badge>
+                </div>
             </header>
 
-            {/* Filter Pills */}
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                {['all', 'new', 'active', 'completed'].map((f) => (
+            {/* Filter Hub */}
+            <div className="flex gap-2 p-1 bg-surface rounded-[2rem] border border-text/5">
+                {['All', 'High Payout', 'Nearby', 'Express'].map((f) => (
                     <button
                         key={f}
-                        onClick={() => setFilter(f as any)}
-                        className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${filter === f ? 'bg-white text-nile-dark' : 'bg-white/5 text-nile-silver/40'
+                        onClick={() => setFilter(f)}
+                        className={`flex-1 py-3 rounded-[1.5rem] font-black uppercase tracking-widest text-[9px] transition-all ${filter === f ? 'bg-text text-background shadow-lg' : 'text-text opacity-30 hover:opacity-50'
                             }`}
                     >
                         {f}
@@ -76,61 +80,99 @@ export default function QueuePage() {
                 ))}
             </div>
 
-            <div className="space-y-4">
-                {orders.map((order) => (
-                    <div
-                        key={order.id}
-                        className="group bg-white/5 border border-white/5 rounded-3xl p-5 active:scale-[0.98] transition-all"
-                    >
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="flex gap-4">
-                                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white bg-emerald-500">
-                                    <MapPin size={20} />
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-white/10 text-nile-silver">
-                                            {order.status}
-                                        </span>
-                                        <span className="text-[10px] font-bold text-nile-silver/40 flex items-center gap-1">
-                                            <Clock size={10} /> {new Date(order.createdAt).toLocaleTimeString()}
-                                        </span>
+            {/* Missions List */}
+            <div className="space-y-6">
+                <AnimatePresence>
+                    {missions.map((m, i) => (
+                        <motion.div
+                            key={m.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.1 }}
+                        >
+                            <Card className="p-0 border-2 border-surface bg-white hover:border-text transition-all group overflow-hidden">
+                                <div className="p-8">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-14 h-14 bg-text rounded-2xl flex items-center justify-center text-background shadow-lg group-hover:bg-primary transition-colors">
+                                                <Zap size={24} className={m.urgency === 'ASAP' ? 'animate-pulse' : ''} />
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <h3 className="text-2xl font-black text-text tracking-tighter uppercase leading-none">{m.restaurant}</h3>
+                                                    <Badge className="bg-surface text-text/40 text-[8px] font-black uppercase border-0">{m.category}</Badge>
+                                                </div>
+                                                <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest opacity-30">
+                                                    <div className="flex items-center gap-1"><Timer size={12} /> {m.urgency}</div>
+                                                    <div className="flex items-center gap-1"><MapPin size={12} /> {m.distance}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-2xl font-black font-mono tracking-tighter text-primary">${m.payout.toFixed(2)}</div>
+                                            <div className="text-[8px] font-black uppercase text-text opacity-20 tracking-widest">Base Payout</div>
+                                        </div>
                                     </div>
-                                    <h3 className="font-bold text-white text-lg leading-tight">Order #{order.orderNumber}</h3>
+
+                                    <div className="grid grid-cols-2 gap-4 mb-8">
+                                        <div className="p-4 bg-surface rounded-2xl border border-transparent">
+                                            <p className="text-[8px] font-black uppercase tracking-widest opacity-30 mb-1">Pickup</p>
+                                            <p className="text-[11px] font-bold text-text truncate">{m.pickup}</p>
+                                        </div>
+                                        <div className="p-4 bg-surface rounded-2xl border border-transparent">
+                                            <p className="text-[8px] font-black uppercase tracking-widest opacity-30 mb-1">Dropoff</p>
+                                            <p className="text-[11px] font-bold text-text truncate">{m.dropoff}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-6">
+                                            <div className="flex flex-col">
+                                                <span className="text-[8px] font-black uppercase text-text opacity-20 tracking-widest">Difficulty</span>
+                                                <span className={`text-[10px] font-black uppercase ${m.difficulty === 'Epic' ? 'text-amber-500' :
+                                                        m.difficulty === 'High' ? 'text-rose-500' : 'text-emerald-500'
+                                                    }`}>{m.difficulty}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[8px] font-black uppercase text-text opacity-20 tracking-widest">Cargo Size</span>
+                                                <span className="text-[10px] font-black uppercase text-text">{m.items} Items</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <Button variant="outline" className="w-12 h-12 border-2 border-surface text-text/20 hover:border-rose-500 hover:text-rose-500 rounded-2xl transition-all p-0">
+                                                <Shell size={18} />
+                                            </Button>
+                                            <Button
+                                                onClick={() => router.push(`/driver/transit/${m.id}`)}
+                                                className="h-12 px-8 bg-text text-background font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-primary transition-all shadow-xl shadow-text/10"
+                                            >
+                                                Accept Mission
+                                                <ChevronRight size={14} className="ml-2" />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex flex-col items-end">
-                                <span className="font-black italic text-white text-xl">${Number(order.totalAmount).toFixed(2)}</span>
-                                <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
-                                    <DollarSign size={10} /> Cash
+                                <div className="h-1 w-full bg-surface">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: '100%' }}
+                                        transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+                                        className="h-full bg-primary/20"
+                                    />
                                 </div>
-                            </div>
-                        </div>
+                            </Card>
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+            </div>
 
-                        <div className="flex items-center gap-3 mb-6 bg-black/20 p-3 rounded-xl border border-white/5">
-                            <Navigation size={14} className="text-nile-silver/50" />
-                            <p className="text-xs font-medium text-nile-silver line-clamp-1">{order.deliveryAddress || 'Address not specified'}</p>
-                        </div>
-
-                        <div className="flex gap-3">
-                            <button className="flex-1 h-12 rounded-xl bg-white/5 text-nile-silver/40 font-bold text-xs uppercase tracking-wider hover:bg-white/10 transition-colors">
-                                Ignore
-                            </button>
-                            <button
-                                onClick={() => handleAcceptOrder(order.id)}
-                                className="flex-[2] h-12 rounded-xl bg-nile-silver text-nile-dark font-black text-xs uppercase tracking-wider hover:bg-white transition-colors"
-                            >
-                                Accept Load
-                            </button>
-                        </div>
-                    </div>
-                ))}
-
-                {orders.length === 0 && (
-                    <div className="text-center py-12 text-text-secondary">
-                        No orders available at the moment
-                    </div>
-                )}
+            {/* Offline Shield Indicator */}
+            <div className="p-8 rounded-[3rem] bg-text/5 border-2 border-dashed border-text/10 flex flex-col items-center justify-center text-center gap-4">
+                <AlertCircle size={32} className="text-text opacity-20" />
+                <div>
+                    <h4 className="text-sm font-black uppercase tracking-tighter opacity-40">Scanning for Missions...</h4>
+                    <p className="text-[10px] font-bold text-text opacity-20 uppercase tracking-widest mt-1">NileLink Protocol Synchronization v4.2</p>
+                </div>
             </div>
         </div>
     );
