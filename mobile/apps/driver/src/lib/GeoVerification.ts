@@ -1,6 +1,6 @@
 
 import * as Location from 'expo-location';
-import { SHA256 } from 'crypto-js';
+import * as Crypto from 'expo-crypto';
 
 export interface GeoProof {
     latitude: number;
@@ -12,7 +12,8 @@ export interface GeoProof {
 
 export class GeoVerificationClient {
     /**
-     * Capture current location and generate a cryptographic proof
+     * Capture current location and generate a simple proof (for demo purposes)
+     * TODO: Implement proper cryptographic proof in production
      */
     static async captureProof(orderId: string): Promise<GeoProof | null> {
         try {
@@ -29,10 +30,14 @@ export class GeoVerificationClient {
             const { latitude, longitude, accuracy } = location.coords;
             const timestamp = location.timestamp;
 
-            // Generate Proof Hash: SHA256(orderId + lat + long + timestamp)
-            // This anchors the location to the specific order events
-            const payload = `${orderId}:${latitude}:${longitude}:${timestamp}`;
-            const proofHash = SHA256(payload).toString();
+            // Create deterministic data string
+            const data = `${orderId}:${latitude}:${longitude}:${timestamp}`;
+
+            // Generate SHA-256 hash
+            const proofHash = await Crypto.digestStringAsync(
+                Crypto.CryptoDigestAlgorithm.SHA256,
+                data
+            );
 
             return {
                 latitude,

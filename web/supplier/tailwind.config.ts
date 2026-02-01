@@ -6,6 +6,7 @@ const config: Config = {
         "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
         "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
         "./src/components/shared/**/*.{js,ts,jsx,tsx}",
+        "../shared/**/*.{js,ts,jsx,tsx}",
     ],
     theme: {
         extend: {
@@ -37,7 +38,7 @@ const config: Config = {
                 },
 
                 surface: '#f1f5f9',       // Surface color
-                
+
                 // 📝 Typography
                 text: {
                     primary: '#E6EEF7',   // Main text (dark UI)

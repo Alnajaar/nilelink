@@ -73,17 +73,14 @@ export default function ReportsPage() {
     const router = useRouter();
     const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly'>('daily');
     const [isGenerating, setIsGenerating] = useState(false);
-    const [data, setData] = useState(generateMockData());
+    const [data, setData] = useState<any>(null); // TODO: Load from smart contract
 
     const exportToPDF = async () => {
         setIsGenerating(true);
         try {
-            // Mock PDF generation
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // In a real implementation, this would generate and download a PDF
+            // TODO: Generate real PDF from smart contract data
             const element = document.createElement('a');
-            element.href = '#'; // Mock PDF URL
+            element.href = '';
             element.download = `nilelink-report-${reportType}-${new Date().toISOString().split('T')[0]}.pdf`;
             element.click();
 

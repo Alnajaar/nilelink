@@ -272,8 +272,7 @@ export default function MenuManagementPage() {
                             {/* Status Badge */}
                             <div className="flex items-center justify-between">
                                 <Badge
-                                    variant={menu.isPublished ? 'success' : 'warning'}
-                                    className="text-xs"
+                                    className={`text-xs ${menu.isPublished ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-orange-500/10 text-orange-500 border-orange-500/20'}`}
                                 >
                                     {menu.isPublished ? 'Published' : 'Draft'}
                                 </Badge>
@@ -334,10 +333,10 @@ export default function MenuManagementPage() {
                                     </Button>
                                 ) : (
                                     <Button
-                                        variant="success"
+                                        variant="primary"
                                         size="sm"
                                         onClick={() => handlePublishMenu(menu.id)}
-                                        className="gap-2"
+                                        className="gap-2 bg-green-600 hover:bg-green-700 text-white"
                                     >
                                         <CheckCircle size={16} />
                                         Publish

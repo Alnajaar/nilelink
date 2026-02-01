@@ -10,12 +10,14 @@ export interface CartItem {
     image?: string;
     restaurantId: string;
     restaurantName: string;
+    specialInstructions?: string;
 }
 
 interface CustomerContextType {
     cart: CartItem[];
     addToCart: (item: CartItem) => void;
     removeFromCart: (itemId: string) => void;
+    updateQuantity: (itemId: string, quantity: number) => void;
     clearCart: () => void;
     cartTotal: number;
     cartCount: number;
@@ -23,6 +25,8 @@ interface CustomerContextType {
     setActiveOrderId: (id: string | null) => void;
     location: { lat: number; lng: number; address: string } | null;
     setLocation: (location: { lat: number; lng: number; address: string } | null) => void;
+    user: { id: string; name: string; email: string } | null;
+    setUser: (user: { id: string; name: string; email: string } | null) => void;
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined);
@@ -91,24 +95,45 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
         });
     };
 
+    const updateQuantity = (itemId: string, quantity: number) => {
+        if (quantity <= 0) {
+            removeFromCart(itemId);
+            return;
+        }
+        setCart(prev =>
+            prev.map(item =>
+                item.id === itemId ? { ...item, quantity } : item
+            )
+        );
+    };
+
     const clearCart = () => setCart([]);
 
     const cartTotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
+    // TODO: Integrate with AuthContext for real user data
+    // import { useAuth } from '@shared/contexts/AuthContext';
+    // const { user } = useAuth();
+    
+    const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null);
+    
     return (
         <CustomerContext.Provider
             value={{
                 cart,
                 addToCart,
                 removeFromCart,
+                updateQuantity,
                 clearCart,
                 cartTotal,
                 cartCount,
                 activeOrderId,
                 setActiveOrderId,
                 location,
-                setLocation
+                setLocation,
+                user,
+                setUser
             }}
         >
             {children}

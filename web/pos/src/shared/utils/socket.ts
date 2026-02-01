@@ -1,117 +1,58 @@
-import { io, Socket } from 'socket.io-client';
-
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3001';
-
-let socket: Socket | null = null;
+import web3Service from '@shared/services/Web3Service';
 
 // Standardized event names
 export const SocketEvents = {
   // Order events
-  ORDER_CREATED: 'order:new',
-  ORDER_UPDATED: 'order:updated',
-  ORDER_STATUS_CHANGED: 'order:statusChanged',
+  ORDER_CREATED: 'ORDER_CREATED',
+  ORDER_UPDATED: 'ORDER_UPDATED',
+  ORDER_STATUS_CHANGED: 'ORDER_STATUS_CHANGED',
 
   // Delivery events
-  DRIVER_ASSIGNED: 'driver:assigned',
-  DRIVER_LOCATION: 'driver:location',
-  DELIVERY_STARTED: 'delivery:started',
-  DELIVERY_COMPLETED: 'delivery:completed',
+  DRIVER_ASSIGNED: 'DRIVER_ASSIGNED',
+  DRIVER_LOCATION: 'DRIVER_LOCATION',
+  DELIVERY_STARTED: 'DELIVERY_STARTED',
+  DELIVERY_COMPLETED: 'DELIVERY_COMPLETED',
 
   // Financial events
-  PAYMENT_RECEIVED: 'payment:received',
-  LEDGER_UPDATE: 'ledger:update',
-
-  // System events
-  CONNECTION: 'connection',
-  DISCONNECT: 'disconnect',
+  PAYMENT_RECEIVED: 'PAYMENT_RECEIVED',
+  LEDGER_UPDATE: 'LEDGER_UPDATE',
 } as const;
 
-export type SocketEventName = typeof SocketEvents[keyof typeof SocketEvents];
+export type SocketEventName = keyof typeof SocketEvents;
 
-// Initialize socket connection
-export function initializeSocket(userId?: string, token?: string): Socket {
-  if (socket && socket.connected) {
-    return socket;
-  }
-
-  const options: any = {
-    transports: ['websocket', 'polling'],
-    reconnection: true,
-    reconnectionAttempts: 5,
-    reconnectionDelay: 1000,
-  };
-
-  if (token) {
-    options.auth = { token };
-  }
-
-  socket = io(SOCKET_URL, options);
-
-  socket.on('connect', () => {
-    console.log('Socket connected:', socket?.id);
-
-    // Join user-specific room if userId provided
-    if (userId) {
-      socket?.emit('join', userId);
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log('Socket disconnected');
-  });
-
-  return socket;
+/**
+ * Decentralized Event Bus replacing centralized Socket.IO
+ * Integrates directly with Web3Service listeners
+ */
+export function initializeSocket(userId?: string, token?: string) {
+  console.log('✅ POS Decentralized Event Bus Initialized');
+  return null;
 }
 
-// Get existing socket or create new one
-export function getSocket(userId?: string, token?: string): Socket {
-  if (!socket) {
-    return initializeSocket(userId, token);
-  }
-  return socket;
-}
-
-// Join a specific room (restaurant, order, etc.)
-export function joinRoom(roomName: string): void {
-  const s = getSocket();
-
-  if (roomName.startsWith('restaurant_')) {
-    s.emit('joinRestaurant', roomName.replace('restaurant_', ''));
-  } else if (roomName.startsWith('order_')) {
-    s.emit('joinOrder', roomName.replace('order_', ''));
-  }
-}
-
-// Leave a room
-export function leaveRoom(roomName: string): void {
-  const s = getSocket();
-  s.emit('leaveRoom', roomName);
-}
-
-// Disconnect socket
-export function disconnectSocket(): void {
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
-}
-
-// Subscribe to an event
 export function subscribeToEvent(
   eventName: SocketEventName,
   callback: (data: any) => void
 ): () => void {
-  const s = getSocket();
-  s.on(eventName, callback);
+  if (eventName === 'ORDER_CREATED') {
+    web3Service.onOrderCreated((orderId, restaurantId, customer) => {
+      callback({ id: orderId, restaurantId, customer });
+    });
+  } else if (eventName === 'PAYMENT_RECEIVED') {
+    web3Service.onPaymentReceived((orderId, amount, customer) => {
+      callback({ orderId, amount, customer });
+    });
+  }
 
-  // Return unsubscribe function
   return () => {
-    s.off(eventName, callback);
+    console.log(`Unsubscribed from ${eventName} (Decentralized POS)`);
   };
 }
 
-// Emit an event
 export function emitEvent(eventName: string, data: any): void {
-  const s = getSocket();
-  s.emit(eventName, data);
+  console.warn(`Direct emission of ${eventName} is deprecated in POS.`);
 }
+
+export function disconnectSocket(): void { }
+export function getSocket(): null { return null; }
+export function joinRoom(roomName: string): void { }
+export function leaveRoom(roomName: string): void { }

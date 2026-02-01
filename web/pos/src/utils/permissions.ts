@@ -5,12 +5,13 @@
 
 export enum POS_ROLE {
     SUPER_ADMIN = 'SUPER_ADMIN',
-    RESTAURANT_OWNER = 'RESTAURANT_OWNER',
+    OWNER = 'OWNER',
     MANAGER = 'MANAGER',
     ACCOUNTANT = 'ACCOUNTANT',
     CASHIER = 'CASHIER',
     KITCHEN_STAFF = 'KITCHEN_STAFF',
     SERVER = 'SERVER',
+    SECURITY = 'SECURITY',
     STAFF = 'STAFF'
 }
 
@@ -61,14 +62,22 @@ export enum PERMISSION {
 
     // Tables (for dine-in)
     TABLES_VIEW = 'TABLES_VIEW',
-    TABLES_MANAGE = 'TABLES_MANAGE'
+    TABLES_MANAGE = 'TABLES_MANAGE',
+
+    // New Modules
+    PAYROLL_MANAGE = 'PAYROLL_MANAGE',
+    SUPPLIER_MANAGE = 'SUPPLIER_MANAGE',
+
+    // Security & Monitoring (Supermarket)
+    MONITORING_ACCESS = 'MONITORING_ACCESS',
+    ANOMALY_LOGS = 'ANOMALY_LOGS'
 }
 
 // Role to Permissions mapping
 export const ROLE_PERMISSIONS: Record<POS_ROLE, PERMISSION[]> = {
     [POS_ROLE.SUPER_ADMIN]: Object.values(PERMISSION), // All permissions
 
-    [POS_ROLE.RESTAURANT_OWNER]: Object.values(PERMISSION), // All permissions
+    [POS_ROLE.OWNER]: Object.values(PERMISSION), // All permissions
 
     [POS_ROLE.MANAGER]: [
         PERMISSION.SALES_CREATE,
@@ -88,7 +97,9 @@ export const ROLE_PERMISSIONS: Record<POS_ROLE, PERMISSION[]> = {
         PERMISSION.STAFF_SCHEDULE,
         PERMISSION.LEDGER_VIEW,
         PERMISSION.TABLES_VIEW,
-        PERMISSION.TABLES_MANAGE
+        PERMISSION.TABLES_MANAGE,
+        PERMISSION.PAYROLL_MANAGE,
+        PERMISSION.SUPPLIER_MANAGE
     ],
 
     [POS_ROLE.ACCOUNTANT]: [
@@ -100,7 +111,8 @@ export const ROLE_PERMISSIONS: Record<POS_ROLE, PERMISSION[]> = {
         PERMISSION.LEDGER_VIEW,
         PERMISSION.LEDGER_EDIT,
         PERMISSION.ACCOUNTING_FULL_ACCESS,
-        PERMISSION.ANALYTICS_VIEW
+        PERMISSION.ANALYTICS_VIEW,
+        PERMISSION.PAYROLL_MANAGE
     ],
 
     [POS_ROLE.CASHIER]: [
@@ -128,6 +140,12 @@ export const ROLE_PERMISSIONS: Record<POS_ROLE, PERMISSION[]> = {
         PERMISSION.INVENTORY_VIEW,
         PERMISSION.TABLES_VIEW,
         PERMISSION.TABLES_MANAGE
+    ],
+
+    [POS_ROLE.SECURITY]: [
+        PERMISSION.MONITORING_ACCESS,
+        PERMISSION.ANOMALY_LOGS,
+        PERMISSION.STAFF_VIEW
     ],
 
     [POS_ROLE.STAFF]: [
@@ -166,12 +184,13 @@ export function getRoleLabel(role: POS_ROLE): string {
 export function getRoleColor(role: POS_ROLE): string {
     const colors: Record<POS_ROLE, string> = {
         [POS_ROLE.SUPER_ADMIN]: 'bg-primary text-background',
-        [POS_ROLE.RESTAURANT_OWNER]: 'bg-primary text-background',
+        [POS_ROLE.OWNER]: 'bg-primary text-background',
         [POS_ROLE.MANAGER]: 'bg-text text-background',
         [POS_ROLE.ACCOUNTANT]: 'bg-surface text-text',
         [POS_ROLE.CASHIER]: 'bg-surface text-text',
         [POS_ROLE.KITCHEN_STAFF]: 'bg-surface text-text',
         [POS_ROLE.SERVER]: 'bg-surface text-text',
+        [POS_ROLE.SECURITY]: 'bg-error text-white',
         [POS_ROLE.STAFF]: 'bg-surface text-text'
     };
     return colors[role] || 'bg-surface text-text';
@@ -181,12 +200,13 @@ export function getRoleColor(role: POS_ROLE): string {
 export function getDefaultRoute(role: POS_ROLE): string {
     const routes: Record<POS_ROLE, string> = {
         [POS_ROLE.SUPER_ADMIN]: '/admin',
-        [POS_ROLE.RESTAURANT_OWNER]: '/admin',
+        [POS_ROLE.OWNER]: '/admin',
         [POS_ROLE.MANAGER]: '/terminal',
         [POS_ROLE.ACCOUNTANT]: '/terminal/ledger',
         [POS_ROLE.CASHIER]: '/terminal',
         [POS_ROLE.KITCHEN_STAFF]: '/terminal/kitchen',
         [POS_ROLE.SERVER]: '/terminal/tables',
+        [POS_ROLE.SECURITY]: '/security',
         [POS_ROLE.STAFF]: '/terminal'
     };
     return routes[role] || '/terminal';

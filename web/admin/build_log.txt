@@ -1,0 +1,98 @@
+
+> @nilelink/admin@1.0.0 build
+> next build
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\nilel\Projects\Sduan\New folder\nilelink\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\nilel\Projects\Sduan\New folder\nilelink\web\admin\package-lock.json
+
+   ▲ Next.js 15.5.10
+
+   Creating an optimized production build ...
+Failed to compile.
+
+./node_modules/ox/erc8010/SignatureErc8010.ts
+Module not found: Can't resolve '../core/AbiParameters.js'
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./node_modules/porto/dist/core/internal/erc8010.js
+./node_modules/porto/dist/core/internal/modes/relay.js
+./node_modules/porto/dist/core/Mode.js
+./node_modules/porto/dist/index.js
+./node_modules/@wagmi/connectors/dist/esm/porto.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./src/app/providers/ClientProviders.tsx
+
+./node_modules/ox/erc8010/SignatureErc8010.ts
+Module not found: Can't resolve '../core/Authorization.js'
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./node_modules/porto/dist/core/internal/erc8010.js
+./node_modules/porto/dist/core/internal/modes/relay.js
+./node_modules/porto/dist/core/Mode.js
+./node_modules/porto/dist/index.js
+./node_modules/@wagmi/connectors/dist/esm/porto.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./src/app/providers/ClientProviders.tsx
+
+./node_modules/ox/erc8010/SignatureErc8010.ts
+Module not found: Can't resolve '../core/Errors.js'
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./node_modules/porto/dist/core/internal/erc8010.js
+./node_modules/porto/dist/core/internal/modes/relay.js
+./node_modules/porto/dist/core/Mode.js
+./node_modules/porto/dist/index.js
+./node_modules/@wagmi/connectors/dist/esm/porto.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./src/app/providers/ClientProviders.tsx
+
+./node_modules/ox/erc8010/SignatureErc8010.ts
+Module not found: Can't resolve '../core/Hex.js'
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./node_modules/porto/dist/core/internal/erc8010.js
+./node_modules/porto/dist/core/internal/modes/relay.js
+./node_modules/porto/dist/core/Mode.js
+./node_modules/porto/dist/index.js
+./node_modules/@wagmi/connectors/dist/esm/porto.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./src/app/providers/ClientProviders.tsx
+
+./node_modules/ox/erc8010/SignatureErc8010.ts
+Module not found: Can't resolve '../core/Secp256k1.js'
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./node_modules/porto/dist/core/internal/erc8010.js
+./node_modules/porto/dist/core/internal/modes/relay.js
+./node_modules/porto/dist/core/Mode.js
+./node_modules/porto/dist/index.js
+./node_modules/@wagmi/connectors/dist/esm/porto.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./src/app/providers/ClientProviders.tsx
+
+
+> Build failed because of webpack errors

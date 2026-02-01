@@ -1,26 +1,28 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
+import { ReactNode } from 'react';
+import { SafeClientProviders } from './providers/SafeClientProviders';
+import { AdminLayout } from '@/components/layout/AdminLayout';
+import '../../../shared/globals.shared.css';
+import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] })
-
-export const metadata: Metadata = {
-  title: 'NileLink Super Admin',
-  description: 'NileLink Ecosystem Management',
-}
+export const metadata = {
+  title: 'NileLink Admin Dashboard',
+  description: 'Protocol Governance & Administration',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <div className="min-h-screen bg-gray-50">
-          {children}
-        </div>
+    <html lang="en" className="dark">
+      <body className="antialiased">
+        <SafeClientProviders>
+          <AdminLayout>
+            {children}
+          </AdminLayout>
+        </SafeClientProviders>
       </body>
     </html>
-  )
+  );
 }

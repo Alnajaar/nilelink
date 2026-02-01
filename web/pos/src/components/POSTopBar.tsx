@@ -17,7 +17,7 @@ export const POSTopBar: React.FC<POSTopBarProps> = ({
     branchName
 }) => {
     return (
-        <header className="h-16 bg-white/60 backdrop-blur-2xl border-b border-white/5 px-6 flex items-center justify-between shrink-0 z-30">
+        <header className="h-16 bg-background-primary/40 backdrop-blur-3xl border-b-2 border-border-default/50 px-6 flex items-center justify-between shrink-0 z-30">
             <div className="flex items-center gap-8">
                 {/* Staff Info */}
                 <div className="flex items-center gap-4">

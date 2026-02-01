@@ -7,10 +7,11 @@ import {
     Building2, Mail, Shield, Eye, EyeOff, Loader2
 } from 'lucide-react';
 
-import { useAuth } from '@shared/contexts/AuthContext';
+import { useAuth } from '@shared/providers/FirebaseAuthProvider';
 import AuthGuard from '@shared/components/AuthGuard';
 import { Button } from '@shared/components/Button';
 import { Card } from '@shared/components/Card';
+import { supplierApi } from '@shared/utils/api';
 
 interface PaymentMethod {
     id: string;
@@ -70,16 +71,8 @@ export default function PaymentSettingsPage() {
 
     const loadPaymentMethods = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/payments/methods`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                }
-            });
-
-            const data = await res.json();
-            if (data.success) {
-                setPaymentMethods(data.data);
-            }
+            const data = await supplierApi.listPaymentMethods();
+            setPaymentMethods(data);
         } catch (error) {
             console.error('Failed to load payment methods:', error);
         }
@@ -88,39 +81,26 @@ export default function PaymentSettingsPage() {
     const handleAddCreditCard = async () => {
         setFormLoading(true);
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/payments/methods`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                },
-                body: JSON.stringify({
-                    type: 'credit_card',
-                    ...cardForm
-                })
+            const data = await supplierApi.addPaymentMethod({
+                type: 'credit_card',
+                ...cardForm
             });
-
-            const data = await res.json();
-            if (data.success) {
-                setPaymentMethods(prev => [...prev, data.data]);
-                setShowAddForm(false);
-                setCardForm({
-                    number: '',
-                    expMonth: '',
-                    expYear: '',
-                    cvc: '',
-                    name: '',
-                    billingAddress: {
-                        line1: '',
-                        city: '',
-                        state: '',
-                        postalCode: '',
-                        country: 'United States'
-                    }
-                });
-            } else {
-                alert(data.error || 'Failed to add credit card');
-            }
+            setPaymentMethods(prev => [...prev, data as PaymentMethod]);
+            setShowAddForm(false);
+            setCardForm({
+                number: '',
+                expMonth: '',
+                expYear: '',
+                cvc: '',
+                name: '',
+                billingAddress: {
+                    line1: '',
+                    city: '',
+                    state: '',
+                    postalCode: '',
+                    country: 'United States'
+                }
+            });
         } catch (error) {
             alert('Network error. Please try again.');
         } finally {
@@ -130,22 +110,13 @@ export default function PaymentSettingsPage() {
 
     const handleSetDefault = async (methodId: string) => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/payments/methods/${methodId}/default`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                }
-            });
-
-            const data = await res.json();
-            if (data.success) {
-                setPaymentMethods(prev =>
-                    prev.map(method => ({
-                        ...method,
-                        isDefault: method.id === methodId
-                    }))
-                );
-            }
+            await supplierApi.setDefaultPaymentMethod(methodId);
+            setPaymentMethods(prev =>
+                prev.map(method => ({
+                    ...method,
+                    isDefault: method.id === methodId
+                }))
+            );
         } catch (error) {
             alert('Failed to set default payment method');
         }
@@ -155,17 +126,8 @@ export default function PaymentSettingsPage() {
         if (!confirm('Are you sure you want to delete this payment method?')) return;
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/payments/methods/${methodId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                }
-            });
-
-            const data = await res.json();
-            if (data.success) {
-                setPaymentMethods(prev => prev.filter(method => method.id !== methodId));
-            }
+            await supplierApi.deletePaymentMethod(methodId);
+            setPaymentMethods(prev => prev.filter(method => method.id !== methodId));
         } catch (error) {
             alert('Failed to delete payment method');
         }
@@ -296,18 +258,15 @@ export default function PaymentSettingsPage() {
                                         <button
                                             key={method.id}
                                             onClick={() => setSelectedMethod(method.id as any)}
-                                            className={`p-4 border-2 rounded-xl transition-all ${
-                                                selectedMethod === method.id
-                                                    ? 'border-orange-500 bg-orange-50'
-                                                    : 'border-slate-200 hover:border-slate-300'
-                                            }`}
+                                            className={`p-4 border-2 rounded-xl transition-all ${selectedMethod === method.id
+                                                ? 'border-orange-500 bg-orange-50'
+                                                : 'border-slate-200 hover:border-slate-300'
+                                                }`}
                                         >
-                                            <method.icon className={`w-8 h-8 mx-auto mb-2 ${
-                                                selectedMethod === method.id ? 'text-orange-600' : 'text-slate-600'
-                                            }`} />
-                                            <p className={`text-sm font-medium ${
-                                                selectedMethod === method.id ? 'text-orange-600' : 'text-slate-700'
-                                            }`}>
+                                            <method.icon className={`w-8 h-8 mx-auto mb-2 ${selectedMethod === method.id ? 'text-orange-600' : 'text-slate-600'
+                                                }`} />
+                                            <p className={`text-sm font-medium ${selectedMethod === method.id ? 'text-orange-600' : 'text-slate-700'
+                                                }`}>
                                                 {method.name}
                                             </p>
                                         </button>

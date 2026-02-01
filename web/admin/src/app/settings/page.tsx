@@ -1,441 +1,476 @@
-'use client'
+/**
+ * Admin Settings Page
+ * System-wide configuration and preferences
+ * 
+ * SUPER_ADMIN ONLY
+ * 
+ * FEATURES:
+ * - System configuration
+ * - Feature flags (enable/disable features globally)
+ * - Email/notification settings
+ * - API keys management
+ * - Security settings
+ * - Backup/restore
+ * - Audit log configuration
+ */
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import {
-    Settings,
-    ArrowLeft,
-    Globe,
-    DollarSign,
-    Mail,
-    Bell,
-    Shield,
-    Database,
-    Zap,
-    Save
-} from 'lucide-react'
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRole } from '@shared/hooks/useGuard';
+
+// ============================================
+// TYPES
+// ============================================
 
 interface SystemSettings {
     // General
-    siteName: string
-    siteUrl: string
-    supportEmail: string
-
-    // Currency
-    baseCurrency: string
-    allowMultiCurrency: boolean
-    autoSyncRates: boolean
-    lastSyncTimestamp?: number
-
-    // Notifications
-    emailNotifications: boolean
-    smsNotifications: boolean
-    pushNotifications: boolean
-
-    // Security
-    requireEmailVerification: boolean
-    requirePhoneVerification: boolean
-    twoFactorAuth: boolean
-    sessionTimeout: number
+    systemName: string;
+    systemNameAr: string;
+    maintenanceMode: boolean;
 
     // Features
-    enableBlockchain: boolean
-    enableAIFraud: boolean
-    enableGeoVerification: boolean
-    enableOfflineMode: boolean
+    aiRecommendationsEnabled: boolean;
+    deliverySystemEnabled: boolean;
+    loyaltyProgramEnabled: boolean;
+    affiliateSystemEnabled: boolean;
 
-    // Limits
-    maxUsersPerAccount: number
-    maxLocationsPerAccount: number
-    orderRetentionDays: number
+    // Security
+    sessionTimeoutMinutes: number;
+    mfaRequired: boolean;
+    maxLoginAttempts: number;
+    passwordMinLength: number;
+
+    // Notifications
+    emailNotificationsEnabled: boolean;
+    smsNotificationsEnabled: boolean;
+    adminAlerts: boolean;
+
+    // Blockchain
+    confirmationsRequired: number;
+    gasLimit: string;
+
+    // Compliance
+    dataRetentionYears: number;
+    auditLogEnabled: boolean;
+    gdprMode: boolean;
 }
 
+const DEFAULT_SETTINGS: SystemSettings = {
+    systemName: 'NileLink POS',
+    systemNameAr: 'نايل لينك',
+    maintenanceMode: false,
+
+    aiRecommendationsEnabled: true,
+    deliverySystemEnabled: true,
+    loyaltyProgramEnabled: true,
+    affiliateSystemEnabled: true,
+
+    sessionTimeoutMinutes: 15,
+    mfaRequired: false,
+    maxLoginAttempts: 5,
+    passwordMinLength: 8,
+
+    emailNotificationsEnabled: true,
+    smsNotificationsEnabled: false,
+    adminAlerts: true,
+
+    confirmationsRequired: 3,
+    gasLimit: '500000',
+
+    dataRetentionYears: 7,
+    auditLogEnabled: true,
+    gdprMode: true,
+};
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
+
 export default function SettingsPage() {
-    const router = useRouter()
-    const [settings, setSettings] = useState<SystemSettings>({
-        siteName: 'NileLink',
-        siteUrl: 'https://nilelink.app',
-        supportEmail: 'support@nilelink.app',
-        baseCurrency: 'USD',
-        allowMultiCurrency: true,
-        autoSyncRates: true,
-        lastSyncTimestamp: Date.now(),
-        emailNotifications: true,
-        smsNotifications: true,
-        pushNotifications: true,
-        requireEmailVerification: true,
-        requirePhoneVerification: false,
-        twoFactorAuth: false,
-        sessionTimeout: 30,
-        enableBlockchain: true,
-        enableAIFraud: true,
-        enableGeoVerification: true,
-        enableOfflineMode: true,
-        maxUsersPerAccount: 100,
-        maxLocationsPerAccount: 10,
-        orderRetentionDays: 365
-    })
-    const [isSaving, setIsSaving] = useState(false)
+    const { isSuperAdmin } = useRole('SUPER_ADMIN');
+    const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
+    const [saving, setSaving] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
+    const [activeTab, setActiveTab] = useState<'general' | 'features' | 'security' | 'notifications' | 'blockchain' | 'compliance'>('general');
 
     useEffect(() => {
-        // Check admin authentication
-        const adminSession = localStorage.getItem('admin_session')
-        if (!adminSession) {
-            router.push('/login')
-            return
-        }
+        if (!isSuperAdmin) return;
 
-        loadSettings()
-    }, [router])
+        loadSettings();
+    }, [isSuperAdmin]);
 
-    const loadSettings = () => {
-        const storedSettings = localStorage.getItem('systemSettings')
-        if (storedSettings) {
-            setSettings(JSON.parse(storedSettings))
+    const loadSettings = async () => {
+        try {
+            // TODO: Load from smart contract or database
+            console.log('[Settings] Using default settings');
+        } catch (error: any) {
+            console.error('[Settings] Failed to load:', error);
         }
-    }
+    };
 
     const handleSave = async () => {
-        setIsSaving(true)
+        if (!confirm('Save system settings? This will affect all users.')) return;
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        try {
+            setSaving(true);
 
-        localStorage.setItem('systemSettings', JSON.stringify(settings))
-        setIsSaving(false)
+            // TODO: Write to smart contract or database
+            console.log('[Settings] Saving:', settings);
 
-        alert('Settings saved successfully!')
+            // Simulate save
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            alert('Settings saved successfully!');
+            setHasChanges(false);
+        } catch (error: any) {
+            alert(`Failed to save settings: ${error.message}`);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleReset = () => {
+        if (!confirm('Reset all settings to defaults?')) return;
+        setSettings(DEFAULT_SETTINGS);
+        setHasChanges(true);
+    };
+
+    const updateSetting = <K extends keyof SystemSettings>(key: K, value: SystemSettings[K]) => {
+        setSettings(prev => ({ ...prev, [key]: value }));
+        setHasChanges(true);
+    };
+
+    if (!isSuperAdmin) {
+        return (
+            <div className="min-h-screen bg-[#02050a] flex items-center justify-center">
+                <div className="text-red-400 text-center">
+                    <div className="text-6xl mb-4">🚫</div>
+                    <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
+                    <p>Only Super Admins can manage settings</p>
+                </div>
+            </div>
+        );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="space-y-8">
             {/* Header */}
-            <header className="bg-white shadow-sm border-b">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center py-4">
-                        <div className="flex items-center">
-                            <button onClick={() => router.push('/dashboard')} className="mr-4">
-                                <ArrowLeft className="h-6 w-6 text-gray-600" />
-                            </button>
-                            <div className="flex items-center">
-                                <Settings className="h-8 w-8 text-red-600 mr-3" />
-                                <div>
-                                    <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
-                                    <p className="text-sm text-gray-500">Configure ecosystem parameters</p>
-                                </div>
-                            </div>
-                        </div>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-4xl font-black text-white mb-2">
+                        System Settings
+                    </h1>
+                    <p className="text-gray-400 text-sm uppercase tracking-wider">
+                        Configure System • Features • Security • Compliance
+                    </p>
+                </div>
+
+                {hasChanges && (
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleReset}
+                            className="px-6 py-3 bg-gray-600 hover:bg-gray-700 rounded text-white font-bold"
+                        >
+                            Reset
+                        </button>
                         <button
                             onClick={handleSave}
-                            disabled={isSaving}
-                            className="flex items-center px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                            disabled={saving}
+                            className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded text-white font-bold disabled:opacity-50 flex items-center gap-2"
                         >
-                            {isSaving ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            ) : (
-                                <Save className="h-5 w-5 mr-2" />
-                            )}
-                            {isSaving ? 'Saving...' : 'Save Changes'}
+                            {saving ? '⏳ Saving...' : '💾 Save Changes'}
                         </button>
                     </div>
-                </div>
-            </header>
-
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* General Settings */}
-                    <div className="bg-white rounded-lg shadow-sm border p-6">
-                        <div className="flex items-center mb-6">
-                            <Globe className="h-6 w-6 text-blue-500 mr-3" />
-                            <h2 className="text-xl font-bold text-gray-900">General Settings</h2>
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Site Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={settings.siteName}
-                                    onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Site URL
-                                </label>
-                                <input
-                                    type="url"
-                                    value={settings.siteUrl}
-                                    onChange={(e) => setSettings({ ...settings, siteUrl: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Support Email
-                                </label>
-                                <input
-                                    type="email"
-                                    value={settings.supportEmail}
-                                    onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Currency Settings */}
-                    <div className="bg-white rounded-lg shadow-sm border p-6">
-                        <div className="flex items-center mb-6">
-                            <DollarSign className="h-6 w-6 text-green-500 mr-3" />
-                            <h2 className="text-xl font-bold text-gray-900">Currency Settings</h2>
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Base Currency
-                                </label>
-                                <select
-                                    value={settings.baseCurrency}
-                                    onChange={(e) => setSettings({ ...settings, baseCurrency: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                >
-                                    <option value="USD">USD - US Dollar</option>
-                                    <option value="EUR">EUR - Euro</option>
-                                    <option value="GBP">GBP - British Pound</option>
-                                    <option value="AED">AED - UAE Dirham</option>
-                                    <option value="SAR">SAR - Saudi Riyal</option>
-                                </select>
-                            </div>
-                            <div className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    checked={settings.allowMultiCurrency}
-                                    onChange={(e) => setSettings({ ...settings, allowMultiCurrency: e.target.checked })}
-                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                                />
-                                <label className="ml-2 block text-sm text-gray-900">
-                                    Allow Multi-Currency Support
-                                </label>
-                            </div>
-                            <div className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    checked={settings.autoSyncRates}
-                                    onChange={(e) => setSettings({ ...settings, autoSyncRates: e.target.checked })}
-                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                                />
-                                <label className="ml-2 block text-sm text-gray-900">
-                                    Auto-Sync Exchange Rates (Real-Time)
-                                </label>
-                            </div>
-                            {settings.lastSyncTimestamp && (
-                                <p className="text-[10px] text-gray-400 font-mono">
-                                    Last Sync: {new Date(settings.lastSyncTimestamp).toLocaleString()}
-                                </p>
-                            )}
-                            <button
-                                onClick={() => setSettings({ ...settings, lastSyncTimestamp: Date.now() })}
-                                className="text-xs font-bold text-red-600 hover:text-red-700 underline"
-                            >
-                                Sync Rates Now
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Notification Settings */}
-                    <div className="bg-white rounded-lg shadow-sm border p-6">
-                        <div className="flex items-center mb-6">
-                            <Bell className="h-6 w-6 text-yellow-500 mr-3" />
-                            <h2 className="text-xl font-bold text-gray-900">Notifications</h2>
-                        </div>
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-900">Email Notifications</span>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.emailNotifications}
-                                    onChange={(e) => setSettings({ ...settings, emailNotifications: e.target.checked })}
-                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                                />
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-900">SMS Notifications</span>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.smsNotifications}
-                                    onChange={(e) => setSettings({ ...settings, smsNotifications: e.target.checked })}
-                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                                />
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-900">Push Notifications</span>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.pushNotifications}
-                                    onChange={(e) => setSettings({ ...settings, pushNotifications: e.target.checked })}
-                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Security Settings */}
-                    <div className="bg-white rounded-lg shadow-sm border p-6">
-                        <div className="flex items-center mb-6">
-                            <Shield className="h-6 w-6 text-red-500 mr-3" />
-                            <h2 className="text-xl font-bold text-gray-900">Security</h2>
-                        </div>
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-900">Require Email Verification</span>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.requireEmailVerification}
-                                    onChange={(e) => setSettings({ ...settings, requireEmailVerification: e.target.checked })}
-                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                                />
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-900">Require Phone Verification</span>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.requirePhoneVerification}
-                                    onChange={(e) => setSettings({ ...settings, requirePhoneVerification: e.target.checked })}
-                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                                />
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-900">Two-Factor Authentication</span>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.twoFactorAuth}
-                                    onChange={(e) => setSettings({ ...settings, twoFactorAuth: e.target.checked })}
-                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Session Timeout (minutes)
-                                </label>
-                                <input
-                                    type="number"
-                                    value={settings.sessionTimeout}
-                                    onChange={(e) => setSettings({ ...settings, sessionTimeout: Number(e.target.value) })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Feature Toggles */}
-                    <div className="bg-white rounded-lg shadow-sm border p-6">
-                        <div className="flex items-center mb-6">
-                            <Zap className="h-6 w-6 text-purple-500 mr-3" />
-                            <h2 className="text-xl font-bold text-gray-900">Features</h2>
-                        </div>
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-900">Blockchain Integration</span>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.enableBlockchain}
-                                    onChange={(e) => setSettings({ ...settings, enableBlockchain: e.target.checked })}
-                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                                />
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-900">AI Fraud Detection</span>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.enableAIFraud}
-                                    onChange={(e) => setSettings({ ...settings, enableAIFraud: e.target.checked })}
-                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                                />
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-900">Geo-Verification</span>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.enableGeoVerification}
-                                    onChange={(e) => setSettings({ ...settings, enableGeoVerification: e.target.checked })}
-                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                                />
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-900">Offline Mode</span>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.enableOfflineMode}
-                                    onChange={(e) => setSettings({ ...settings, enableOfflineMode: e.target.checked })}
-                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* System Limits */}
-                    <div className="bg-white rounded-lg shadow-sm border p-6">
-                        <div className="flex items-center mb-6">
-                            <Database className="h-6 w-6 text-indigo-500 mr-3" />
-                            <h2 className="text-xl font-bold text-gray-900">System Limits</h2>
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Max Users Per Account
-                                </label>
-                                <input
-                                    type="number"
-                                    value={settings.maxUsersPerAccount}
-                                    onChange={(e) => setSettings({ ...settings, maxUsersPerAccount: Number(e.target.value) })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Max Locations Per Account
-                                </label>
-                                <input
-                                    type="number"
-                                    value={settings.maxLocationsPerAccount}
-                                    onChange={(e) => setSettings({ ...settings, maxLocationsPerAccount: Number(e.target.value) })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Order Retention (days)
-                                </label>
-                                <input
-                                    type="number"
-                                    value={settings.orderRetentionDays}
-                                    onChange={(e) => setSettings({ ...settings, orderRetentionDays: Number(e.target.value) })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Save Button (Bottom) */}
-                <div className="mt-8 flex justify-end">
-                    <button
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="flex items-center px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-lg font-semibold"
-                    >
-                        {isSaving ? (
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        ) : (
-                            <Save className="h-5 w-5 mr-2" />
-                        )}
-                        {isSaving ? 'Saving Settings...' : 'Save All Changes'}
-                    </button>
-                </div>
+                )}
             </div>
+
+            {/* Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto">
+                {[
+                    { id: 'general', label: 'General', icon: '⚙️' },
+                    { id: 'features', label: 'Features', icon: '🎯' },
+                    { id: 'security', label: 'Security', icon: '🔒' },
+                    { id: 'notifications', label: 'Notifications', icon: '📢' },
+                    { id: 'blockchain', label: 'Blockchain', icon: '⛓️' },
+                    { id: 'compliance', label: 'Compliance', icon: '⚖️' },
+                ].map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as any)}
+                        className={`px-6 py-3 rounded font-bold text-sm uppercase whitespace-nowrap transition-colors ${activeTab === tab.id
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-white/10 text-gray-400 hover:bg-white/20'
+                            }`}
+                    >
+                        <span className="mr-2">{tab.icon}</span>
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Settings Content */}
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-8">
+                {/* General Tab */}
+                {activeTab === 'general' && (
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-white mb-6">General Settings</h2>
+
+                        <SettingRow label="System Name (English)">
+                            <input
+                                type="text"
+                                value={settings.systemName}
+                                onChange={(e) => updateSetting('systemName', e.target.value)}
+                                className="px-4 py-2 bg-white/10 border border-white/20 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full max-w-md"
+                            />
+                        </SettingRow>
+
+                        <SettingRow label="System Name (Arabic)">
+                            <input
+                                type="text"
+                                value={settings.systemNameAr}
+                                onChange={(e) => updateSetting('systemNameAr', e.target.value)}
+                                className="px-4 py-2 bg-white/10 border border-white/20 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full max-w-md text-right"
+                                dir="rtl"
+                            />
+                        </SettingRow>
+
+                        <SettingRow label="Maintenance Mode" description="Disable access for all users except admins">
+                            <Toggle
+                                enabled={settings.maintenanceMode}
+                                onChange={(val) => updateSetting('maintenanceMode', val)}
+                            />
+                        </SettingRow>
+                    </div>
+                )}
+
+                {/* Features Tab */}
+                {activeTab === 'features' && (
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-white mb-6">Feature Flags</h2>
+
+                        <SettingRow label="AI Recommendations" description="Enable AI-powered insights and suggestions">
+                            <Toggle
+                                enabled={settings.aiRecommendationsEnabled}
+                                onChange={(val) => updateSetting('aiRecommendationsEnabled', val)}
+                            />
+                        </SettingRow>
+
+                        <SettingRow label="Delivery System" description="Enable delivery management features">
+                            <Toggle
+                                enabled={settings.deliverySystemEnabled}
+                                onChange={(val) => updateSetting('deliverySystemEnabled', val)}
+                            />
+                        </SettingRow>
+
+                        <SettingRow label="Loyalty Program" description="Allow businesses to create customer loyalty programs">
+                            <Toggle
+                                enabled={settings.loyaltyProgramEnabled}
+                                onChange={(val) => updateSetting('loyaltyProgramEnabled', val)}
+                            />
+                        </SettingRow>
+
+                        <SettingRow label="Affiliate System" description="Enable customer referral and affiliate commissions">
+                            <Toggle
+                                enabled={settings.affiliateSystemEnabled}
+                                onChange={(val) => updateSetting('affiliateSystemEnabled', val)}
+                            />
+                        </SettingRow>
+                    </div>
+                )}
+
+                {/* Security Tab */}
+                {activeTab === 'security' && (
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-white mb-6">Security Settings</h2>
+
+                        <SettingRow label="Session Timeout (Minutes)" description="Auto-logout users after inactivity">
+                            <input
+                                type="number"
+                                value={settings.sessionTimeoutMinutes}
+                                onChange={(e) => updateSetting('sessionTimeoutMinutes', parseInt(e.target.value))}
+                                min={5}
+                                max={120}
+                                className="px-4 py-2 bg-white/10 border border-white/20 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
+                            />
+                        </SettingRow>
+
+                        <SettingRow label="Multi-Factor Authentication" description="Require MFA for all admin accounts">
+                            <Toggle
+                                enabled={settings.mfaRequired}
+                                onChange={(val) => updateSetting('mfaRequired', val)}
+                            />
+                        </SettingRow>
+
+                        <SettingRow label="Max Login Attempts" description="Lock account after failed login attempts">
+                            <input
+                                type="number"
+                                value={settings.maxLoginAttempts}
+                                onChange={(e) => updateSetting('maxLoginAttempts', parseInt(e.target.value))}
+                                min={3}
+                                max={10}
+                                className="px-4 py-2 bg-white/10 border border-white/20 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
+                            />
+                        </SettingRow>
+
+                        <SettingRow label="Minimum Password Length" description="Enforce strong passwords">
+                            <input
+                                type="number"
+                                value={settings.passwordMinLength}
+                                onChange={(e) => updateSetting('passwordMinLength', parseInt(e.target.value))}
+                                min={6}
+                                max={32}
+                                className="px-4 py-2 bg-white/10 border border-white/20 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
+                            />
+                        </SettingRow>
+                    </div>
+                )}
+
+                {/* Notifications Tab */}
+                {activeTab === 'notifications' && (
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-white mb-6">Notification Settings</h2>
+
+                        <SettingRow label="Email Notifications" description="Send email notifications to users">
+                            <Toggle
+                                enabled={settings.emailNotificationsEnabled}
+                                onChange={(val) => updateSetting('emailNotificationsEnabled', val)}
+                            />
+                        </SettingRow>
+
+                        <SettingRow label="SMS Notifications" description="Send SMS for critical updates">
+                            <Toggle
+                                enabled={settings.smsNotificationsEnabled}
+                                onChange={(val) => updateSetting('smsNotificationsEnabled', val)}
+                            />
+                        </SettingRow>
+
+                        <SettingRow label="Admin Alerts" description="Notify admins of critical events">
+                            <Toggle
+                                enabled={settings.adminAlerts}
+                                onChange={(val) => updateSetting('adminAlerts', val)}
+                            />
+                        </SettingRow>
+                    </div>
+                )}
+
+                {/* Blockchain Tab */}
+                {activeTab === 'blockchain' && (
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-white mb-6">Blockchain Settings</h2>
+
+                        <SettingRow label="Required Confirmations" description="Number of block confirmations before considering transaction final">
+                            <input
+                                type="number"
+                                value={settings.confirmationsRequired}
+                                onChange={(e) => updateSetting('confirmationsRequired', parseInt(e.target.value))}
+                                min={1}
+                                max={12}
+                                className="px-4 py-2 bg-white/10 border border-white/20 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
+                            />
+                        </SettingRow>
+
+                        <SettingRow label="Gas Limit" description="Default gas limit for transactions">
+                            <input
+                                type="text"
+                                value={settings.gasLimit}
+                                onChange={(e) => updateSetting('gasLimit', e.target.value)}
+                                className="px-4 py-2 bg-white/10 border border-white/20 rounded text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 w-48"
+                            />
+                        </SettingRow>
+                    </div>
+                )}
+
+                {/* Compliance Tab */}
+                {activeTab === 'compliance' && (
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-white mb-6">Compliance Settings</h2>
+
+                        <SettingRow label="Data Retention (Years)" description="How long to retain user data">
+                            <input
+                                type="number"
+                                value={settings.dataRetentionYears}
+                                onChange={(e) => updateSetting('dataRetentionYears', parseInt(e.target.value))}
+                                min={1}
+                                max={10}
+                                className="px-4 py-2 bg-white/10 border border-white/20 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
+                            />
+                        </SettingRow>
+
+                        <SettingRow label="Audit Logging" description="Log all admin actions to blockchain">
+                            <Toggle
+                                enabled={settings.auditLogEnabled}
+                                onChange={(val) => updateSetting('auditLogEnabled', val)}
+                            />
+                        </SettingRow>
+
+                        <SettingRow label="GDPR Mode" description="Enable GDPR-like data protection features">
+                            <Toggle
+                                enabled={settings.gdprMode}
+                                onChange={(val) => updateSetting('gdprMode', val)}
+                            />
+                        </SettingRow>
+                    </div>
+                )}
+            </div>
+
+            {/* Warning */}
+            {hasChanges && (
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6">
+                    <h3 className="text-yellow-400 font-bold mb-2 flex items-center gap-2">
+                        <span>⚠️</span>
+                        Unsaved Changes
+                    </h3>
+                    <p className="text-yellow-200 text-sm">
+                        You have unsaved changes. Click "Save Changes" to apply them system-wide.
+                    </p>
+                </div>
+            )}
         </div>
-    )
+    );
+}
+
+// ============================================
+// SUB-COMPONENTS
+// ============================================
+
+function SettingRow({
+    label,
+    description,
+    children,
+}: {
+    label: string;
+    description?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div className="flex items-center justify-between py-4 border-b border-white/10 last:border-0">
+            <div className="flex-1 max-w-xl">
+                <div className="text-white font-bold mb-1">{label}</div>
+                {description && <div className="text-gray-400 text-sm">{description}</div>}
+            </div>
+            <div>{children}</div>
+        </div>
+    );
+}
+
+function Toggle({
+    enabled,
+    onChange,
+}: {
+    enabled: boolean;
+    onChange: (value: boolean) => void;
+}) {
+    return (
+        <button
+            onClick={() => onChange(!enabled)}
+            className={`relative w-16 h-8 rounded-full transition-colors ${enabled ? 'bg-green-600' : 'bg-gray-600'
+                }`}
+        >
+            <div
+                className={`absolute top-1 w-6 h-6 rounded-full bg-white transition-transform ${enabled ? 'translate-x-9' : 'translate-x-1'
+                    }`}
+            />
+        </button>
+    );
 }

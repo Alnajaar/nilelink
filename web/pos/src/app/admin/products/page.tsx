@@ -32,9 +32,8 @@ import { Button } from '@/shared/components/Button';
 import { Card } from '@/shared/components/Card';
 import { Input } from '@/shared/components/Input';
 import { Badge } from '@/shared/components/Badge';
-// TODO: Uncomment when AIContext and useAI hooks are available
-// import { useAIContext } from '@/shared/contexts/AIContext';
-// import { useAIConfidence } from '@/shared/hooks/useAI';
+import { ProductImageUploader } from '@/components/product/ProductImageUploader';
+import { IPFSGatewayImage } from '@/components/ipfs/IPFSGatewayImage';
 
 interface Product {
     id: string;
@@ -44,6 +43,8 @@ interface Product {
     price: number;
     discount?: number;
     image?: string;
+    imageCID?: string;  // IPFS Content Identifier
+    imageGatewayUrl?: string;  // IPFS gateway URL
     stock: number | 'unlimited';
     sku?: string;
     barcode?: string;
@@ -68,10 +69,10 @@ export default function AdminProductsPage() {
     // TODO: AI integration - uncomment when AIContext is available
     // const { ai, analyzeTransaction, getMemory } = useAIContext();
     // const { getRiskBadgeVariant, getConfidenceLabel, getConfidenceColor } = useAIConfidence();
-    
+
     // Placeholder AI functions until modules are available
     const ai = { isInitialized: false, serviceHealth: null, agents: null };
-    const getRiskBadgeVariant = (severity: any) => 'outline' as const;
+    const getRiskBadgeVariant = (severity: any) => 'neutral' as const;
     const getConfidenceLabel = (confidence: number) => `${Math.round(confidence * 100)}%`;
     const getConfidenceColor = (confidence: number) => 'bg-success';
 
@@ -93,6 +94,10 @@ export default function AdminProductsPage() {
     const [showAddCategory, setShowAddCategory] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+    
+    // IPFS Image Upload State
+    const [tempImageCID, setTempImageCID] = useState<string | null>(null);
+    const [tempImageGatewayUrl, setTempImageGatewayUrl] = useState<string | null>(null);
 
     // Data - in production this would come from an API
     const [products, setProducts] = useState<Product[]>([
@@ -104,6 +109,8 @@ export default function AdminProductsPage() {
             price: 45.99,
             discount: 0,
             image: '/api/placeholder/200/150',
+            imageCID: 'QmWATWbDAj8EcZgCyscGRxztjnF4zxJNgWNYNRQKj5uHKL', // Sample CID
+            imageGatewayUrl: 'https://gateway.pinata.cloud/ipfs/QmWATWbDAj8EcZgCyscGRxztjnF4zxJNgWNYNRQKj5uHKL',
             stock: 15,
             sku: 'WAG-BUR-001',
             barcode: '1234567890123',
@@ -226,7 +233,12 @@ export default function AdminProductsPage() {
         if (editingProduct) {
             // Update existing
             setProducts(prev => prev.map(p =>
-                p.id === editingProduct.id ? { ...p, ...productData } : p
+                p.id === editingProduct.id ? { 
+                    ...p, 
+                    ...productData,
+                    imageCID: tempImageCID || p.imageCID,
+                    imageGatewayUrl: tempImageGatewayUrl || p.imageGatewayUrl
+                } : p
             ));
         } else {
             // Add new
@@ -238,6 +250,8 @@ export default function AdminProductsPage() {
                 price: productData.price || 0,
                 discount: productData.discount || 0,
                 image: productData.image,
+                imageCID: tempImageCID || undefined,
+                imageGatewayUrl: tempImageGatewayUrl || undefined,
                 stock: productData.stock || 0,
                 sku: productData.sku || `PRD-${Date.now().toString().slice(-4)}`,
                 barcode: productData.barcode,
@@ -249,6 +263,9 @@ export default function AdminProductsPage() {
             setProducts(prev => [...prev, newProduct]);
         }
 
+        // Reset temporary IPFS state
+        setTempImageCID(null);
+        setTempImageGatewayUrl(null);
         setShowAddProduct(false);
         setEditingProduct(null);
     };
@@ -456,7 +473,15 @@ export default function AdminProductsPage() {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-4">
                                                     <div className="relative w-12 h-12 rounded-xl bg-background-subtle border border-border-subtle overflow-hidden">
-                                                        {product.image ? (
+                                                        {product.imageCID ? (
+                                                            <IPFSGatewayImage 
+                                                                cid={product.imageCID}
+                                                                alt={product.name}
+                                                                width={48}
+                                                                height={48}
+                                                                className="object-cover w-full h-full"
+                                                            />
+                                                        ) : product.image ? (
                                                             <Image src={product.image} alt={product.name} fill className="object-cover" />
                                                         ) : (
                                                             <div className="w-full h-full flex items-center justify-center text-text-subtle">
@@ -527,7 +552,15 @@ export default function AdminProductsPage() {
                                             <div className="p-4">
                                                 <div className="relative mb-4">
                                                     <div className="relative w-full h-32 rounded-lg bg-background border border-border-subtle overflow-hidden">
-                                                        {product.image ? (
+                                                        {product.imageCID ? (
+                                                            <IPFSGatewayImage 
+                                                                cid={product.imageCID}
+                                                                alt={product.name}
+                                                                width={200}
+                                                                height={128}
+                                                                className="object-cover w-full h-full"
+                                                            />
+                                                        ) : product.image ? (
                                                             <Image src={product.image} alt={product.name} fill className="object-cover" />
                                                         ) : (
                                                             <div className="w-full h-full flex items-center justify-center text-text-subtle">
@@ -846,6 +879,19 @@ export default function AdminProductsPage() {
                                 handleSaveProduct(productData);
                             }}
                         >
+                            {/* IPFS Image Uploader */}
+                            <ProductImageUploader
+                                currentImage={editingProduct?.image || editingProduct?.imageGatewayUrl}
+                                onImageUploaded={(cid, gatewayUrl) => {
+                                    setTempImageCID(cid);
+                                    setTempImageGatewayUrl(gatewayUrl);
+                                }}
+                                onImageRemoved={() => {
+                                    setTempImageCID(null);
+                                    setTempImageGatewayUrl(null);
+                                }}
+                            />
+                            
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <div>

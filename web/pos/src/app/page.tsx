@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
     WifiOff,
@@ -13,19 +14,27 @@ import {
     Zap,
     CreditCard,
     Clock,
-    Users
+    Users,
+    ShoppingBag,
+    Monitor,
+    Truck,
+    Layers,
+    Database,
+    Lock
 } from 'lucide-react';
-import { UniversalHeader } from '@shared/components/UniversalHeader';
+import GlobalNavbar from '@shared/components/GlobalNavbar';
 import { UniversalFooter } from '@shared/components/UniversalFooter';
 import { Button } from '@shared/components/Button';
 import { Card } from '@shared/components/Card';
 import { Badge } from '@shared/components/Badge';
-import { useAuth } from '@shared/contexts/AuthContext';
+import { useAuth } from '@shared/providers/AuthProvider';
+import { DeepSpaceBackground } from '@shared/components/DeepSpaceBackground';
+import { Web3Integration } from '@/components/Web3Integration';
 
 export default function PosLandingPage() {
     const [mounted, setMounted] = React.useState(false);
     const router = useRouter();
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
 
     React.useEffect(() => {
         setMounted(true);
@@ -35,227 +44,319 @@ export default function PosLandingPage() {
         if (user) {
             router.push('/dashboard');
         } else {
-            router.push('/auth/register');
+            router.push('/onboarding');
         }
     };
 
-    const handleConnectWallet = () => {
-        router.push('/auth/login?web3=true');
+    const handleExploreGuest = () => {
+        router.push('/terminal');
     };
 
-    return (
-        <div className="min-h-screen bg-neutral text-text-primary flex flex-col antialiased selection:bg-primary/20">
-            {/* Background Effects */}
-            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/10 blur-[150px] rounded-full animate-pulse" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-secondary/10 blur-[150px] rounded-full animate-pulse-slow" />
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03]" />
-            </div>
-            {/* Header */}
-            <UniversalHeader
-                appName="POS Terminal"
-                user={user ? { name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Merchant', role: user.role } : undefined}
-                onLogin={() => router.push('/auth/login')}
-                onLogout={logout}
-                status="online"
-            />
+    if (!mounted) return null;
 
-            {/* Main Content */}
+    return (
+        <div className="min-h-screen bg-[#02050a] text-white flex flex-col selection:bg-pos-accent/30 overflow-x-hidden relative">
+            {/* ADVANCED LINKING BACKGROUND */}
+            {/* UI Component Extraction */}
+            <DeepSpaceBackground />
+
+            {/* Nav */}
+            <GlobalNavbar context="pos" variant="transparent" />
+
             <main className="flex-1 relative z-10">
-                {/* Status Bar */}
-                <div className="bg-white/40 backdrop-blur-md border-b border-border-subtle">
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-success">Nodes Verified</span>
-                        </div>
-                        <div className="w-px h-4 bg-border-subtle hidden sm:block" />
-                        <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted">Network Health:</span>
-                            <span className="text-[10px] font-black uppercase text-secondary">Optimum</span>
+                {/* HERO SECTION - The Anchor of Trust */}
+                <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden px-6 pt-20">
+                    <div className="max-w-7xl mx-auto w-full relative">
+                        <div className="flex flex-col items-center text-center space-y-10">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.8 }}
+                                className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl"
+                            >
+                                <span className="flex h-1.5 w-1.5 rounded-full bg-pos-accent shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
+                                <span className="text-[10px] font-black tracking-[0.4em] uppercase text-white/70">
+                                    Economic OS for Modern Merchants
+                                </span>
+                            </motion.div>
+
+                            <motion.h1
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 1, ease: "easeOut" }}
+                                className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tightest leading-[0.9] max-w-5xl"
+                            >
+                                High-Performance <br />
+                                <span className="block italic drop-shadow-[0_0_15px_rgba(34,211,238,0.2)]">Commerce Control.</span>
+                            </motion.h1>
+
+                            <motion.p
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.8, delay: 0.3 }}
+                                className="text-lg md:text-xl text-gray-400 font-medium leading-relaxed max-w-2xl mx-auto"
+                            >
+                                The first decentralized POS system built for institutional reliability,
+                                multi-branch scaling, and instantaneous global settlement. Run your
+                                business on the protocol that never sleeps.
+                            </motion.p>
+
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.8, delay: 0.4 }}
+                                className="flex flex-col sm:flex-row items-center gap-6 pt-8 w-full sm:w-auto"
+                            >
+                                <button
+                                    onClick={handleStartTrial}
+                                    className="w-full sm:w-auto px-10 h-16 bg-white text-black font-black uppercase tracking-[0.2em] rounded-xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3"
+                                >
+                                    Start Your Business
+                                    <ArrowRight size={20} />
+                                </button>
+                                <button
+                                    onClick={handleExploreGuest}
+                                    className="w-full sm:w-auto px-10 h-16 bg-white/5 border border-white/10 text-white font-black uppercase tracking-[0.2em] rounded-xl hover:bg-white/10 transition-all flex items-center justify-center"
+                                >
+                                    Explore as Guest
+                                </button>
+                                <Link 
+                                    href="/test-web3"
+                                    className="w-full sm:w-auto px-6 h-16 bg-pos-accent/10 border border-pos-accent/30 text-pos-accent font-black uppercase tracking-[0.2em] rounded-xl hover:bg-pos-accent/20 transition-all flex items-center justify-center text-sm"
+                                >
+                                    Test Web3
+                                </Link>
+                            </motion.div>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <div className="max-w-7xl mx-auto px-6 py-20 lg:py-32">
-                    <div className="text-center mb-24">
-                        <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.8 }}
-                        >
-                            <Badge className="bg-primary/5 text-primary border border-primary/20 font-black px-6 py-2 text-xs uppercase tracking-[0.4em] mb-12">
-                                Institutional Commerce OS
-                            </Badge>
-
-                            <h1 className="text-5xl md:text-7xl lg:text-9xl font-black text-text-primary tracking-tighter uppercase leading-[0.85] italic mb-12">
-                                The Digital<br />
-                                <span className="text-primary">Powerhouse.</span>
-                            </h1>
-
-                            <p className="text-xl md:text-2xl font-medium text-text-secondary leading-relaxed max-w-3xl mx-auto mb-16 px-4">
-                                Orchestrating global commerce with high-frequency ledger processing,
-                                cryptographically secured settlement, and institutional-grade offline resilience.
-                            </p>
-
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16">
-                                <Button
-                                    onClick={handleStartTrial}
-                                    size="lg"
-                                    className="w-full sm:w-auto min-w-[280px] h-20 bg-primary hover:scale-[1.02] active:scale-[0.98] text-background px-12 text-sm font-black uppercase tracking-[0.3em] rounded-2xl shadow-2xl transition-all"
-                                >
-                                    {user ? 'Enter Ecosystem' : 'Initialize Enterprise Node'}
-                                </Button>
-                                {!user && (
-                                    <Button
-                                        onClick={handleConnectWallet}
-                                        variant="outline"
-                                        size="lg"
-                                        className="w-full sm:w-auto min-w-[280px] h-20 border-2 border-primary/20 hover:border-primary text-text-primary px-12 text-sm font-black uppercase tracking-[0.3em] rounded-2xl transition-all"
-                                    >
-                                        Connect Wallet
-                                    </Button>
-                                )}
-                            </div>
-
-                            <div className="inline-flex items-center gap-4 bg-accent/5 border border-accent/20 rounded-2xl px-6 py-4">
-                                <div className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-                                <p className="text-xs font-black text-accent uppercase tracking-widest leading-none">
-                                    Limited Genesis Deployment • First 10 Merchants
+                {/* TRUST & PROOF SECTION - Why NileLink? */}
+                <section className="py-24 bg-[#0a0a0a] border-y border-white/5 px-6">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
+                            <div className="space-y-4">
+                                <div className="p-3 w-fit rounded-xl bg-pos-accent/10 border border-pos-accent/20">
+                                    <WifiOff className="text-pos-accent" />
+                                </div>
+                                <h3 className="text-xl font-bold">99.99% Offline Uptime</h3>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                    Built with an edge-first architecture. Your terminal continues processing
+                                    sales even when the internet goes dark. Data syncs automatically.
                                 </p>
                             </div>
-                        </motion.div>
-                    </div>
-
-                    {/* Features Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32">
-                        {[
-                            {
-                                icon: WifiOff,
-                                title: "Offline Resilience",
-                                desc: "Proprietary edge-sync technology. Process high-frequency sales without connectivity, automatically salt-hashed to the mainnet upon reconnection.",
-                                color: "text-primary"
-                            },
-                            {
-                                icon: Shield,
-                                title: "Trustless Integrity",
-                                desc: "Every transaction is an economic event secured by the NileLink Protocol. Immutable, audited, and mathematically verified.",
-                                color: "text-secondary"
-                            },
-                            {
-                                icon: BarChart3,
-                                title: "Real-time Intelligence",
-                                desc: "Hyper-granular telemetry providing instant visibility into your global liquidity, inventory velocity, and node performance.",
-                                color: "text-accent"
-                            }
-                        ].map((feature, idx) => (
-                            <motion.div
-                                key={idx}
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.6, delay: idx * 0.1 }}
-                            >
-                                <Card className="p-10 h-full bg-white border-2 border-border-subtle hover:border-primary/30 hover:shadow-2xl transition-all duration-500 rounded-[2.5rem] group">
-                                    <div className={`w-16 h-16 rounded-2xl bg-neutral flex items-center justify-center ${feature.color} mb-8 group-hover:bg-primary group-hover:text-background transition-colors`}>
-                                        <feature.icon size={32} />
-                                    </div>
-                                    <h3 className="text-2xl font-black text-text-primary mb-4 uppercase tracking-tighter italic">{feature.title}</h3>
-                                    <p className="text-text-secondary leading-relaxed font-medium uppercase text-xs tracking-tight opacity-70 italic">{feature.desc}</p>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </div>
-
-                    {/* Infrastructure Section */}
-                    <div className="p-10 md:p-16 rounded-[3rem] bg-white border-2 border-border-subtle mb-32 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-16 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000">
-                            <Globe size={400} />
+                            <div className="space-y-4">
+                                <div className="p-3 w-fit rounded-xl bg-blue-500/10 border border-blue-500/20">
+                                    <Lock className="text-blue-400" />
+                                </div>
+                                <h3 className="text-xl font-bold">Cryptographically Verified</h3>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                    Every transaction is signed and immutable. No central point of failure,
+                                    no data tampering, and full military-grade encryption.
+                                </p>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="p-3 w-fit rounded-xl bg-green-500/10 border border-green-500/20">
+                                    <Zap className="text-green-400" />
+                                </div>
+                                <h3 className="text-xl font-bold">Instant Settlement</h3>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                    Remove the 3-day bank delay. Settlement happens directly via the
+                                    NileLink Protocol, giving you immediate access to your liquidity.
+                                </p>
+                            </div>
                         </div>
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-text-muted text-center mb-16 italic">Global Protocol Distribution</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-12 relative z-10">
+                    </div>
+                </section>
+
+                {/* HOW IT WORKS - The Frictionless Onboarding */}
+                <section className="py-32 px-6 relative">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="text-center mb-24">
+                            <h2 className="text-xs font-bold uppercase tracking-[0.5em] text-pos-accent mb-4">The Workflow</h2>
+                            <p className="text-4xl md:text-6xl font-black tracking-tightest">From Setup to Sale in Minutes.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 relative">
+                            {/* Connector Line for Desktop */}
+                            <div className="hidden lg:block absolute top-[40px] left-[10%] right-[10%] h-[2px] bg-gradient-to-r from-transparent via-white/10 to-transparent z-0" />
+
                             {[
-                                { icon: Zap, label: "POS Terminal" },
-                                { icon: Globe, label: "Logistics Fleet" },
-                                { icon: BarChart3, label: "Marketplace" },
-                                { icon: Shield, label: "Supplier Core" },
-                                { icon: Users, label: "Governance" },
-                                { icon: CreditCard, label: "Treasury" },
-                                { icon: CheckCircle, label: "Transparency" },
-                                { icon: Clock, label: "Voting" }
-                            ].map((item, idx) => (
-                                <motion.div
-                                    key={idx}
-                                    whileHover={{ y: -10 }}
-                                    className="flex flex-col items-center text-center group/item"
-                                >
-                                    <div className="w-20 h-20 bg-neutral rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-transparent group-hover/item:border-primary/20 group-hover/item:bg-white transition-all">
-                                        <item.icon size={32} className="text-text-muted group-hover/item:text-primary transition-colors" />
+                                { step: '01', title: 'Register', desc: 'Secure your brand with a simple email or phone verification.' },
+                                { step: '02', title: 'Onboard', desc: 'Define your business profile, location, and operating hours.' },
+                                { step: '03', title: 'Configure', desc: 'Launch your terminal and connect thermal printers & scanners.' },
+                                { step: '04', title: 'Scale', desc: 'Manage unlimited branches and inventory from one dashboard.' }
+                            ].map((item, i) => (
+                                <div key={i} className="relative z-10 flex flex-col items-center text-center space-y-6">
+                                    <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl font-black italic text-pos-accent/50">
+                                        {item.step}
                                     </div>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-text-primary italic opacity-60 group-hover/item:opacity-100">{item.label}</span>
-                                </motion.div>
+                                    <div className="space-y-2">
+                                        <h4 className="text-xl font-bold">{item.title}</h4>
+                                        <p className="text-gray-400 text-sm max-w-[200px] mx-auto">{item.desc}</p>
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     </div>
+                </section>
 
-                    {/* Social Proof */}
-                    <div className="text-center mb-16">
-                        <div className="flex flex-wrap items-center justify-center gap-6 py-6 px-8 bg-white border border-gray-200 rounded-xl shadow-sm">
-                            <div className="flex items-center gap-2">
-                                <CreditCard size={20} className="text-green-600" />
-                                <span className="font-medium text-gray-700">No Credit Card Required</span>
+                {/* WEB3 INTEGRATION SECTION - Decentralized Commerce */}
+                <section className="py-32 px-6 bg-gradient-to-b from-[#0a0a0a] to-[#02050a]">
+                    <div className="max-w-4xl mx-auto text-center space-y-12">
+                        <div>
+                            <Badge variant="primary" className="text-pos-accent border-pos-accent/30 tracking-widest uppercase text-[10px] font-black mb-6">
+                                Decentralized Protocol
+                            </Badge>
+                            <h2 className="text-4xl md:text-6xl font-black tracking-tightest mb-6">
+                                Blockchain-Powered <br />
+                                <span className="text-pos-accent italic">Commerce Engine</span>
+                            </h2>
+                            <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+                                Connect your wallet to access the NileLink Protocol. Create immutable orders,
+                                manage decentralized inventory, and settle payments instantly on Polygon.
+                            </p>
+                        </div>
+                        
+                        <div className="max-w-2xl mx-auto">
+                            <Web3Integration />
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+                            <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
+                                <div className="w-12 h-12 bg-pos-accent/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                                    <Lock className="text-pos-accent w-6 h-6" />
+                                </div>
+                                <h4 className="font-bold text-lg mb-2">Immutable Orders</h4>
+                                <p className="text-gray-400 text-sm">Every transaction recorded permanently on blockchain</p>
                             </div>
-                            <div className="hidden md:block w-px h-6 bg-gray-300"></div>
-                            <div className="flex items-center gap-2">
-                                <Globe size={20} className="text-blue-600" />
-                                <span className="font-medium text-gray-700">Global Network</span>
+                            <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
+                                <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                                    <Zap className="text-blue-400 w-6 h-6" />
+                                </div>
+                                <h4 className="font-bold text-lg mb-2">Instant Settlement</h4>
+                                <p className="text-gray-400 text-sm">Remove 3-day bank delays with protocol-level settlement</p>
                             </div>
-                            <div className="hidden md:block w-px h-6 bg-gray-300"></div>
-                            <div className="flex items-center gap-2">
-                                <Zap size={20} className="text-yellow-600" />
-                                <span className="font-medium text-gray-700">Instant Setup</span>
+                            <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
+                                <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                                    <Shield className="text-green-400 w-6 h-6" />
+                                </div>
+                                <h4 className="font-bold text-lg mb-2">Trustless Security</h4>
+                                <p className="text-gray-400 text-sm">Military-grade encryption with zero central points of failure</p>
                             </div>
                         </div>
                     </div>
+                </section>
 
-                    {/* CTA Section */}
-                    <Card className="p-10 md:p-20 bg-primary border-0 rounded-[3rem] relative overflow-hidden group mb-20 shadow-2xl shadow-primary/20">
-                        <div className="absolute top-0 right-0 p-20 opacity-10 group-hover:scale-110 transition-transform duration-1000">
-                            <Zap size={300} className="text-background" />
-                        </div>
-                        <div className="relative z-10 text-center max-w-3xl mx-auto">
-                            <Badge className="bg-background/10 text-background border border-background/20 font-black px-6 py-2 text-xs uppercase tracking-[0.4em] mb-12">
-                                Secure Your Future
-                            </Badge>
-                            <h3 className="text-4xl md:text-6xl font-black text-background tracking-tighter uppercase leading-none italic mb-12">
-                                Ready to Transform<br />Your Economic Reality?
-                            </h3>
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                                <Button
-                                    onClick={handleStartTrial}
-                                    size="lg"
-                                    className="w-full sm:w-auto h-20 bg-white text-primary hover:scale-[1.05] active:scale-[0.95] px-12 text-sm font-black uppercase tracking-[0.3em] rounded-2xl transition-all"
-                                >
-                                    Deploy Now
-                                    <ArrowRight size={20} className="ml-4" />
-                                </Button>
-                                <Button
-                                    onClick={handleConnectWallet}
-                                    variant="outline"
-                                    size="lg"
-                                    className="w-full sm:w-auto h-20 border-2 border-white/20 hover:border-white text-white px-12 text-sm font-black uppercase tracking-[0.3em] rounded-2xl transition-all"
-                                >
-                                    Web3 Auth
-                                </Button>
+                {/* FEATURE BLOCKS - The Core Systems */}
+                <section className="py-32 px-6 bg-[#0a0a0a]">
+                    <div className="max-w-7xl mx-auto space-y-32">
+                        {/* POS & Terminal */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+                            <div className="space-y-8">
+                                <Badge variant="primary" className="text-pos-accent border-pos-accent/30 tracking-widest uppercase text-[10px] font-black">
+                                    Mission Critical
+                                </Badge>
+                                <h3 className="text-4xl md:text-5xl font-black italic tracking-tightest uppercase">Elite Terminal <br /> Interface</h3>
+                                <p className="text-lg text-gray-400 leading-relaxed">
+                                    Optimized for maximum throughput. A low-latency, lightning-fast UI designed for high-volume
+                                    retail and hospitality environments. Multi-branch compatible by design.
+                                </p>
+                                <ul className="space-y-4">
+                                    {['Lightning-fast barcode scanning', 'Split-bill & tax management', 'Universal hardware support'].map((feat, i) => (
+                                        <li key={i} className="flex items-center gap-3 text-gray-300 font-medium">
+                                            <CheckCircle size={18} className="text-pos-accent" />
+                                            {feat}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <div className="relative group">
+                                <div className="absolute -inset-4 bg-pos-accent/20 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                <img src="/assets/landing/hero.png" alt="Terminal UI" className="relative rounded-3xl border border-white/10 shadow-2xl" />
                             </div>
                         </div>
-                    </Card>
-                </div>
-            </main >
 
-            {/* Footer */}
-            < UniversalFooter />
-        </div >
+                        {/* Inventory & Supply Chain */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+                            <div className="order-2 lg:order-1 relative group">
+                                <div className="absolute -inset-4 bg-blue-500/20 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                <img src="/assets/landing/feature_telemetry.png" alt="Inventory Monitoring" className="relative rounded-3xl border border-white/10 shadow-2xl" />
+                            </div>
+                            <div className="order-1 lg:order-2 space-y-8">
+                                <Badge variant="primary" className="text-blue-400 border-blue-400/30 tracking-widest uppercase text-[10px] font-black">
+                                    Deep Visibility
+                                </Badge>
+                                <h3 className="text-4xl md:text-5xl font-black italic tracking-tightest uppercase">Supplier & <br /> Inventory Control</h3>
+                                <p className="text-lg text-gray-400 leading-relaxed">
+                                    Track inventory velocity across all branches. Automate reordering from your verified
+                                    supplier network and eliminate waste with real-time stock telemetry.
+                                </p>
+                                <ul className="space-y-4">
+                                    {['Real-time stock depletion', 'Automated supplier reordering', 'Wastage & audit tracking'].map((feat, i) => (
+                                        <li key={i} className="flex items-center gap-3 text-gray-300 font-medium">
+                                            <CheckCircle size={18} className="text-blue-400" />
+                                            {feat}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* WHO IT'S FOR - The Targets */}
+                <section className="py-32 px-6">
+                    <div className="max-w-7xl mx-auto text-center">
+                        <div className="mb-20">
+                            <h2 className="text-xs font-bold uppercase tracking-[0.5em] text-pos-accent mb-4">Industries</h2>
+                            <p className="text-4xl md:text-6xl font-black tracking-tightest italic uppercase">Engineered for Scale.</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                            {[
+                                { title: 'Restaurants', icon: Users },
+                                { title: 'Coffee Shops', icon: Clock },
+                                { title: 'Supermarkets', icon: ShoppingBag },
+                                { title: 'Multi-Branch', icon: Globe }
+                            ].map((item, i) => (
+                                <div key={i} className="p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-pos-accent/50 transition-all group flex flex-col items-center gap-6">
+                                    <item.icon size={32} className="text-white/50 group-hover:text-pos-accent transition-colors" />
+                                    <span className="font-bold tracking-widest text-sm uppercase">{item.title}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* FINAL CTA */}
+                <section className="py-48 px-6 text-center relative overflow-hidden">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-pos-accent/5 blur-[120px] rounded-full" />
+                    <div className="max-w-4xl mx-auto relative z-10 space-y-16">
+                        <h2 className="text-5xl md:text-9xl font-black italic tracking-tightest uppercase leading-none">
+                            Ready for the <br />
+                            <span className="text-pos-accent">Next Level?</span>
+                        </h2>
+
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
+                            <button
+                                onClick={handleStartTrial}
+                                className="w-full sm:w-auto px-16 h-20 bg-white text-black text-xl font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-110 active:scale-95 transition-all shadow-[0_20px_60px_rgba(255,255,255,0.1)]"
+                            >
+                                Start Business
+                            </button>
+                            <button
+                                onClick={() => router.push('https://docs.nilelink.app')}
+                                className="w-full sm:w-auto px-16 h-20 bg-white/5 border border-white/10 text-xl font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-white/10 transition-all"
+                            >
+                                View Docs
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <UniversalFooter />
+        </div>
     );
 }

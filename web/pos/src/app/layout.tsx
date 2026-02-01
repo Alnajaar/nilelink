@@ -1,22 +1,14 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
-import { POSProvider } from '@/contexts/POSContext';
-import { AuthProvider } from '@shared/contexts/AuthContext';
-import { WalletProvider } from '@shared/contexts/WalletContext';
-import Web3Provider from '@shared/components/Web3Provider';
-import { NotificationProvider } from '@shared/contexts/NotificationContext';
-import { SubscriptionProvider } from '@shared/contexts/SubscriptionContext';
-import { POSLocationGuard } from '@/components/POSLocationGuard';
-// import { SyncProvider } from '@/providers/SyncProvider'; // TODO: Re-enable after fixing React Native compatibility
-import { CurrencyProvider } from '@shared/contexts/CurrencyContext';
+import { Inter, Outfit } from 'next/font/google';
+import { ClientProviders } from '@/providers/ClientProviders';
+import { POSErrorBoundary } from '@/components/common/POSErrorBoundary';
 import '@shared/globals.shared.css';
 import './globals.css';
+import '@/styles/pos-design-system.css';
+import '@/styles/mobile-optimization.css';
 
-import { DemoProvider } from '@shared/contexts/DemoContext';
-import { DemoModeBanner } from '@shared/components/ModeBanner';
-import { HapticHUD } from '@shared/components/HapticHUD';
-
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
 
 export const viewport: Viewport = {
     width: 'device-width',
@@ -35,50 +27,37 @@ export const metadata: Metadata = {
         icon: '/shared/assets/logo/logo-icon.ico',
         apple: '/shared/assets/logo/logo-square.png',
     },
+    manifest: '/manifest.json',
 };
 
 export default function RootLayout({
     children,
-}: Readonly<{
+}: {
     children: React.ReactNode;
-}>) {
+}) {
     return (
         <html lang="en">
-            <body className={`${inter.className} bg-background text-text-main min-h-screen antialiased selection:bg-primary/10`}>
-                <DemoProvider>
-                    <HapticHUD />
-                    <DemoModeBanner />
-                    <Web3Provider>
-                        <CurrencyProvider defaultLocalCurrency="AED">
-                            <WalletProvider>
-                                <AuthProvider>
-                                    <SubscriptionProvider>
-                                        <NotificationProvider>
-                                            <POSProvider>
-                                                <POSLocationGuard>
-                                                    {children}
-                                                </POSLocationGuard>
-                                            </POSProvider>
-                                        </NotificationProvider>
-                                    </SubscriptionProvider>
-                                </AuthProvider>
-                            </WalletProvider>
-                        </CurrencyProvider>
-                    </Web3Provider>
-                </DemoProvider>
+            <body className={`${inter.className} ${inter.variable} bg-pos-bg-primary text-pos-text-primary min-h-screen antialiased selection:bg-primary/20 flex flex-col`}>
+                <ClientProviders>
+                    <POSErrorBoundary>
+                        <main className="flex-1">
+                            {children}
+                        </main>
+                    </POSErrorBoundary>
+                </ClientProviders>
                 <script
                     dangerouslySetInnerHTML={{
                         __html: `
                             if ('serviceWorker' in navigator) {
-                                window.addEventListener('load', () => {
-                                    navigator.serviceWorker.register('/sw.js').then(reg => {
-                                        console.log('NileLink POS Service Worker Registered', reg.scope);
-                                    }).catch(err => {
+                                window.addEventListener('load', function() {
+                                    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                                        console.log('NileLink POS Service Worker Registered');
+                                    }).catch(function(err) {
                                         console.error('NileLink POS SW Registration Failed', err);
                                     });
                                 });
                             }
-                        `,
+                        `.replace(/\s+/g, ' '),
                     }}
                 />
             </body>

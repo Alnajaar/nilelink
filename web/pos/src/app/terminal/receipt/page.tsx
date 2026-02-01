@@ -14,12 +14,32 @@ import {
 import { Button } from '@/shared/components/Button';
 import { Card } from '@/shared/components/Card';
 import { Badge } from '@/shared/components/Badge';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
+import hardwareService from '@shared/services/HardwareService';
 
 export default function ReceiptPage() {
     const router = useRouter();
-    const totalAmount = 44.62;
+    const searchParams = useSearchParams();
+
+    // Get live data from URL or state
+    const orderId = searchParams.get('orderId') || 'NL-8821-X99';
+    const totalAmount = parseFloat(searchParams.get('amount') || '44.62');
+    const paymentMode = searchParams.get('method') || 'Card • **** 4242';
+
+    const handlePrint = async () => {
+        const receiptText = `
+            NILELINK RECEIPT
+            ----------------
+            Order: ${orderId}
+            Total: $${totalAmount.toFixed(2)}
+            Mode: ${paymentMode}
+            Date: ${new Date().toLocaleString()}
+            ----------------
+            PROTOCOL VERIFIED
+        `;
+        await hardwareService.printReceipt(receiptText);
+    };
 
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 bg-gradient-to-b from-primary/5 to-transparent">
@@ -57,8 +77,8 @@ export default function ReceiptPage() {
 
                     <div className="flex flex-col gap-3">
                         <div className="grid grid-cols-2 gap-3">
-                            <Button variant="outline" className="h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest">
-                                <Printer size={16} className="mr-2" /> PHYSCIAL
+                            <Button variant="outline" onClick={handlePrint} className="h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest">
+                                <Printer size={16} className="mr-2" /> PHYSICAL
                             </Button>
                             <Button variant="outline" className="h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest">
                                 <Mail size={16} className="mr-2" /> DIGITAL

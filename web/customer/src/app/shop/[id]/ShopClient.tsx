@@ -17,12 +17,13 @@ import {
     Flame
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/shared/components/Button';
+import { Button, Badge } from '@shared/components';
 import { LocationGuard } from '@/components/LocationGuard';
 import { useCustomer } from '@/contexts/CustomerContext';
-import { Badge } from '@/shared/components/Badge';
+import { useRestaurant } from '@/hooks/useRestaurants';
+import { PremiumButton } from '@/components/shared/PremiumButton';
 
-export const dynamic = 'force-dynamic';
+
 
 const MENU_ITEMS = [
     { id: '101', name: 'Cairo Charcoal Chicken', price: 12.50, desc: 'Half chicken, grilled with local spices.', popular: true, image: '🍗' },
@@ -42,10 +43,10 @@ export default function ShopClient({ id }: { id: string }) {
 function ShopContent({ id }: { id: string }) {
     const router = useRouter();
     const { addToCart, removeFromCart, cart } = useCustomer();
+    const { restaurant, isLoading, isError } = useRestaurant(id);
 
     // Derived state
-    const currentShopCartInfo = cart.filter(i => i.restaurantId === id); // In real app, filter by shop
-    // For demo simplicity, we assume generic cart for now or mapped by ID
+    const currentShopCartInfo = cart.filter(i => i.restaurantId === id);
 
     const getItemQuantity = (itemId: string) => {
         return cart.find(i => i.id === itemId)?.quantity || 0;
@@ -58,11 +59,30 @@ function ShopContent({ id }: { id: string }) {
             price: item.price,
             quantity: 1,
             restaurantId: id,
-            restaurantName: 'Grand Cairo Grill'
+            restaurantName: restaurant?.name || 'Restaurant'
         });
     };
 
     const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full"></div>
+            </div>
+        );
+    }
+
+    if (isError || !restaurant) {
+        return (
+            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
+                <Info size={48} className="text-text-muted mb-4" />
+                <h2 className="text-2xl font-bold mb-2">Shop not found</h2>
+                <p className="text-text-muted mb-6">The shop you are looking for does not exist or is currently offline.</p>
+                <PremiumButton onClick={() => router.push('/')}>Back to Home</PremiumButton>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-background pb-32">
@@ -90,15 +110,15 @@ function ShopContent({ id }: { id: string }) {
                             <ShieldCheck size={12} className="mr-1" /> Verified Node
                         </Badge>
                         <Badge variant="neutral" className="text-[10px] text-emerald-200 border-white/10 bg-white/5">
-                            <MapPin size={10} className="mr-1" /> 1.2 km
+                            <MapPin size={10} className="mr-1" /> {restaurant.deliveryTime || '20-30 min'}
                         </Badge>
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2">Grand Cairo Grill</h1>
+                    <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2">{restaurant.name}</h1>
                     <div className="flex items-center gap-4 text-xs font-bold text-emerald-100/80 uppercase tracking-widest">
-                        <span className="flex items-center gap-1"><Star size={12} className="fill-warning text-warning" /> 4.9 (1.2k)</span>
-                        <span className="flex items-center gap-1"><Clock size={12} /> 20-30 min</span>
+                        <span className="flex items-center gap-1"><Star size={12} className="fill-warning text-warning" /> {restaurant.rating} ({restaurant.reviewCount})</span>
+                        <span className="flex items-center gap-1"><Clock size={12} /> {restaurant.deliveryTime}</span>
                         <span>•</span>
-                        <span>$$ • Grill</span>
+                        <span>{Array(Math.floor(restaurant.deliveryFee || 2) + 1).join('$') || '$'} • {restaurant.category}</span>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,43 @@
+src/app/checkout/page.tsx(36,69): error TS2339: Property 'user' does not exist on type 'CustomerContextType'.
+src/app/checkout/page.tsx(126,17): error TS2353: Object literal may only specify known properties, and 'scheduledTime' does not exist in type '{ restaurantId: string; customerId?: string | undefined; items: { menuItemId: string; quantity: number; specialInstructions?: string | undefined; }[]; deliveryAddress?: string | undefined; specialInstructions?: string | undefined; paymentMethod?: string | undefined; }'.
+src/app/checkout/page.tsx(463,55): error TS2339: Property 'specialInstructions' does not exist on type 'CartItem'.
+src/app/checkout/page.tsx(464,101): error TS2339: Property 'specialInstructions' does not exist on type 'CartItem'.
+src/app/dashboard/page.tsx(50,7): error TS2322: Type '{ id: string; restaurant: string; items: number; status: string; total: number; date: string; rating: number; }' is not assignable to type 'never'.
+src/app/dashboard/page.tsx(59,7): error TS2322: Type '{ id: string; restaurant: string; items: number; status: string; total: number; date: string; rating: number; }' is not assignable to type 'never'.
+src/app/dashboard/page.tsx(68,7): error TS2322: Type '{ id: string; restaurant: string; items: number; status: string; total: number; date: string; rating: null; }' is not assignable to type 'never'.
+src/app/dashboard/page.tsx(137,15): error TS2322: Type '"accent"' is not assignable to type '"error" | "success" | "primary" | "warning" | "info" | undefined'.
+src/app/dashboard/page.tsx(211,53): error TS2339: Property 'status' does not exist on type 'never'.
+src/app/dashboard/page.tsx(214,32): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/dashboard/page.tsx(220,50): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/dashboard/page.tsx(228,87): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/dashboard/page.tsx(229,86): error TS2339: Property 'restaurant' does not exist on type 'never'.
+src/app/dashboard/page.tsx(230,80): error TS2339: Property 'items' does not exist on type 'never'.
+src/app/dashboard/page.tsx(230,102): error TS2339: Property 'date' does not exist on type 'never'.
+src/app/dashboard/page.tsx(235,85): error TS2339: Property 'total' does not exist on type 'never'.
+src/app/dashboard/page.tsx(237,38): error TS2339: Property 'status' does not exist on type 'never'.
+src/app/dashboard/page.tsx(241,34): error TS2339: Property 'rating' does not exist on type 'never'.
+src/app/dashboard/page.tsx(243,74): error TS2339: Property 'rating' does not exist on type 'never'.
+src/app/history/page.tsx(107,10): error TS2304: Cannot find name 'AuthGuard'.
+src/app/history/page.tsx(178,11): error TS2304: Cannot find name 'AuthGuard'.
+src/app/layout.tsx(54,47): error TS2322: Type '{ context: string; }' is not assignable to type 'IntrinsicAttributes & GlobalFooterProps'.
+  Property 'context' does not exist on type 'IntrinsicAttributes & GlobalFooterProps'.
+src/app/loyalty/page.tsx(174,87): error TS2532: Object is possibly 'undefined'.
+src/app/loyalty/page.tsx(294,37): error TS2322: Type '"outline" | "default"' is not assignable to type '"primary" | "secondary" | "ghost" | "danger" | "outline" | undefined'.
+  Type '"default"' is not assignable to type '"primary" | "secondary" | "ghost" | "danger" | "outline" | undefined'.
+src/app/loyalty/page.tsx(313,34): error TS2304: Cannot find name 'ShoppingBag'.
+src/app/loyalty/page.tsx(321,34): error TS2304: Cannot find name 'User'.
+src/app/order-confirmation/page.tsx(7,10): error TS2305: Module '"@/shared/utils/api"' has no exported member 'api'.
+src/app/order-confirmation/page.tsx(8,27): error TS2307: Cannot find module '@/shared/contexts/SocketContext' or its corresponding type declarations.
+src/app/track/[id]/TrackClient.tsx(16,34): error TS2307: Cannot find module '@/shared/components/Map' or its corresponding type declarations.
+src/app/track/[id]/TrackClient.tsx(168,21): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: {}): string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Promise<...> | Component<...> | null | undefined', gave the following error.
+    Type '{ locations: { id: string; name: string; latitude: number; longitude: number; color: string; type: string; }[]; center: number[]; zoom: number; height: string; className: string; }' is not assignable to type 'IntrinsicAttributes'.
+      Property 'locations' does not exist on type 'IntrinsicAttributes'.
+  Overload 2 of 2, '(props: {}, context?: any): string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Promise<...> | Component<...> | null | undefined', gave the following error.
+    Type '{ locations: { id: string; name: string; latitude: number; longitude: number; color: string; type: string; }[]; center: number[]; zoom: number; height: string; className: string; }' is not assignable to type 'IntrinsicAttributes'.
+      Property 'locations' does not exist on type 'IntrinsicAttributes'.
+../shared/components/GlobalNavbar.tsx(521,28): error TS18048: 'item' is possibly 'undefined'.
+../shared/components/GlobalNavbar.tsx(522,39): error TS18048: 'item' is possibly 'undefined'.
+../shared/components/GlobalNavbar.tsx(526,24): error TS18048: 'item' is possibly 'undefined'.
+../shared/components/GlobalNavbar.tsx(527,25): error TS18048: 'item' is possibly 'undefined'.
+../shared/components/GlobalNavbar.tsx(534,81): error TS18048: 'item' is possibly 'undefined'.

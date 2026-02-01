@@ -1,0 +1,25 @@
+{
+  "deployer": "0xd1A6C4698fB9940449CedC5bDecB431222EA727E",
+  "network": "amoy",
+  "chainId": "80002",
+  "timestamp": "2026-01-22T09:10:37.907Z",
+  "usdc": "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
+  "feeRecipient": "0xd1A6C4698fB9940449CedC5bDecB431222EA727E",
+  "contracts": {
+    "restaurantRegistry": "0x8DC23D2d568Eb1002Be433EB601De4C7B9D00580",
+    "orderSettlement": "0x2aEd58E70abbB222AEe29606F237b3fE85cAed2F",
+    "currencyExchange": "0x284693d78a160AAbC7698cA556DE96295BCfEBAe",
+    "disputeResolution": "0x3762e0a3f0Dd5e1b4a1737a982312115eDe62a4F",
+    "fraudDetection": "0x0C7c24eE47C0B0dBa7a28589BA6a8Ff009b81721",
+    "investorVault": "0x26E8210EBa2e4dCdE56fec71d288cd79D4811047",
+    "supplierCredit": "0x1ae74787392cFA73f8312404c33B6509f6a4a9EA",
+    "deliveryCoordinator": "0x79CAB699ABBCa24ac7583a09489BA77A2d2fFCd0",
+    "proofOfDelivery": "0x7B89FeC57d02C2572b9aEacE8f13180692B29589",
+    "supplierRegistry": "0xC8159B7c05AbAE07Fb633e85912C2424C3f7C080",
+    "supplyChain": "0xd8380b055F801202611196F710102a9B32b447F8",
+    "bridgeCoordinator": "0x156a0F79910A35202317B9eDd61D60853f9077dd",
+    "marketplace": "0x69135D7C3E3b070f48FA8f3e26626F0cA8F4D9cB",
+    "adaptiveDefense": "0xBc3BCb6f1686f6b4D5D4e2Bb0DA81e6f1C8f0063",
+    "predictiveThreatModel": "0x658657C754fE44f372a1Bf9496A071AEA1A0753F"
+  }
+}

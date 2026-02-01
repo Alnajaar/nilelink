@@ -11,7 +11,14 @@ export type WalletType =
   | 'solflare'
   | 'brave'
   | 'opera'
-  | 'generic';
+  | 'generic'
+  | 'nilelink' // Future custom NileLink wallet
+  | 'binance'
+  | 'ledger'
+  | 'trezor'
+  | 'argent'
+  | 'gnosis'
+  | 'rainbow';
 
 export interface WalletProvider {
   id: WalletType;
@@ -139,6 +146,45 @@ export class WalletProviderManager {
       isSupported: typeof window !== 'undefined' && !!(window as any).ethereum,
       connect: this.connectGeneric.bind(this),
       disconnect: this.disconnectGeneric.bind(this)
+    });
+
+    // NileLink Custom Wallet (Future Implementation)
+    this.providers.set('nilelink', {
+      id: 'nilelink',
+      name: 'NileLink Wallet',
+      icon: '🌀',
+      description: 'Connect to your NileLink native wallet',
+      isInstalled: false, // Will be set to true when NileLink wallet is implemented
+      isSupported: typeof window !== 'undefined',
+      downloadUrl: 'https://nilelink.app/wallet',
+      connect: this.connectNileLink.bind(this),
+      disconnect: this.disconnectNileLink.bind(this)
+    });
+
+    // Binance Smart Chain Wallet
+    this.providers.set('binance', {
+      id: 'binance',
+      name: 'Binance Wallet',
+      icon: '🟡',
+      description: 'Connect to Binance Smart Chain wallet',
+      isInstalled: typeof window !== 'undefined' && !!(window as any).BinanceChain,
+      isSupported: typeof window !== 'undefined' && !!(window as any).BinanceChain,
+      downloadUrl: 'https://www.binance.com/en/wallet-direct',
+      connect: this.connectBinance.bind(this),
+      disconnect: this.disconnectBinance.bind(this)
+    });
+
+    // Ledger Hardware Wallet
+    this.providers.set('ledger', {
+      id: 'ledger',
+      name: 'Ledger',
+      icon: '🔐',
+      description: 'Connect to Ledger hardware wallet',
+      isInstalled: false, // Hardware wallets need separate detection
+      isSupported: typeof window !== 'undefined',
+      downloadUrl: 'https://www.ledger.com/',
+      connect: this.connectLedger.bind(this),
+      disconnect: this.disconnectLedger.bind(this)
     });
   }
 
@@ -360,6 +406,46 @@ export class WalletProviderManager {
 
   private async disconnectGeneric(): Promise<void> {
     // Generic disconnect logic
+  }
+
+  // Future NileLink wallet implementation
+  private async connectNileLink(): Promise<{ address: string; provider: any; signer: any }> {
+    // Placeholder for future NileLink wallet integration
+    throw new Error('NileLink wallet integration coming soon. Please use MetaMask or another wallet for now.');
+  }
+
+  private async disconnectNileLink(): Promise<void> {
+    // NileLink disconnect logic (future implementation)
+  }
+
+  private async connectBinance(): Promise<{ address: string; provider: any; signer: any }> {
+    if (!(window as any).BinanceChain) {
+      throw new Error('Binance Wallet is not installed');
+    }
+
+    const BinanceChain = (window as any).BinanceChain;
+    const accounts = await BinanceChain.request({ method: 'eth_requestAccounts' });
+    const ethersProvider = new ethers.BrowserProvider(BinanceChain);
+    const signer = await ethersProvider.getSigner();
+
+    return {
+      address: accounts[0],
+      provider: ethersProvider,
+      signer
+    };
+  }
+
+  private async disconnectBinance(): Promise<void> {
+    // Binance disconnect logic
+  }
+
+  private async connectLedger(): Promise<{ address: string; provider: any; signer: any }> {
+    // Placeholder for Ledger hardware wallet integration
+    throw new Error('Ledger hardware wallet integration requires additional setup. Please use MetaMask for now.');
+  }
+
+  private async disconnectLedger(): Promise<void> {
+    // Ledger disconnect logic (future implementation)
   }
 }
 

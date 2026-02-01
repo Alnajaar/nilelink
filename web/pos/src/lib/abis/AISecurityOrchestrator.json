@@ -1,0 +1,1035 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_fraudDetection",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_swarmIntelligence",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_adaptiveDefense",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_predictiveThreatModel",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_aiOracle",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidAddress",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "patternHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "patternType",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "successRate",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32[]",
+        "name": "evolvedPatterns",
+        "type": "bytes32[]"
+      }
+    ],
+    "name": "AIPatternLearned",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "threatId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "address[]",
+        "name": "actors",
+        "type": "address[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "coordinationScore",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum SecurityTypes.ThreatType",
+        "name": "attackPattern",
+        "type": "uint8"
+      }
+    ],
+    "name": "CoordinatedAttackDetected",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "threatId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum SecurityTypes.DefenseAction[]",
+        "name": "actions",
+        "type": "uint8[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "responseTime",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "successful",
+        "type": "bool"
+      }
+    ],
+    "name": "DefenseActivated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalThreats",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "activeThreats",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "neutralizationRate",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "systemHealth",
+        "type": "uint256"
+      }
+    ],
+    "name": "SecurityMetricsUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "threatId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "primaryActor",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum SecurityTypes.ThreatType",
+        "name": "threatType",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum SecurityTypes.ThreatSeverity",
+        "name": "severity",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "confidenceScore",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "aiAnalysis",
+        "type": "string"
+      }
+    ],
+    "name": "ThreatDetected",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "threatId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "method",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "neutralizedAt",
+        "type": "uint256"
+      }
+    ],
+    "name": "ThreatNeutralized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "actorThreats",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "adaptiveDefense",
+    "outputs": [
+      {
+        "internalType": "contract AdaptiveDefense",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "operator",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "clearanceLevel",
+        "type": "uint256"
+      }
+    ],
+    "name": "addSecurityOperator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "aiAnalysisCooldown",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "aiOracle",
+    "outputs": [
+      {
+        "internalType": "contract IAIOracle",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "actor",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "actionType",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "context",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "analyzeAction",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "allowed",
+        "type": "bool"
+      },
+      {
+        "internalType": "string",
+        "name": "reason",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "attackPatternChains",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "coordinatedAttackThreshold",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "emergencyPause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "emergencyResponseTime",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "threatId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint8",
+        "name": "threatLevel",
+        "type": "uint8"
+      },
+      {
+        "internalType": "address[]",
+        "name": "actors",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bytes",
+        "name": "attackData",
+        "type": "bytes"
+      }
+    ],
+    "name": "emergencyThreatResponse",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "emergencyUnpause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "emergencyWithdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "fraudDetection",
+    "outputs": [
+      {
+        "internalType": "contract FraudDetection",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getSecurityStatus",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "totalThreatsDetected",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "activeThreats",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "threatsNeutralized",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "falsePositives",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "coordinatedAttacksPrevented",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "averageResponseTime",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "systemUptime",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastUpdatedAt",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct SecurityTypes.SecurityMetrics",
+        "name": "metrics",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "activeThreatCount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "criticalThreatCount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "aiConfidenceLevel",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "threatId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getThreatProfile",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "primaryActor",
+        "type": "address"
+      },
+      {
+        "internalType": "address[]",
+        "name": "coordinatedActors",
+        "type": "address[]"
+      },
+      {
+        "internalType": "enum SecurityTypes.ThreatType",
+        "name": "threatType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "enum SecurityTypes.ThreatSeverity",
+        "name": "severity",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "confidenceScore",
+        "type": "uint256"
+      },
+      {
+        "internalType": "enum SecurityTypes.ThreatStatus",
+        "name": "status",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "attackPatternHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "successRate",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "victimData",
+        "type": "bytes"
+      }
+    ],
+    "name": "learnFromAttack",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "operatorClearanceLevel",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "patternEvolutions",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "patternSuccessRates",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "predictiveThreatModel",
+    "outputs": [
+      {
+        "internalType": "contract PredictiveThreatModel",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "operator",
+        "type": "address"
+      }
+    ],
+    "name": "removeSecurityOperator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "securityMetrics",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "totalThreatsDetected",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "activeThreats",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "threatsNeutralized",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "falsePositives",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "coordinatedAttacksPrevented",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "averageResponseTime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "systemUptime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lastUpdatedAt",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "securityOperators",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_aiOracle",
+        "type": "address"
+      }
+    ],
+    "name": "setAIOracle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "swarmIntelligence",
+    "outputs": [
+      {
+        "internalType": "contract SwarmIntelligence",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "threatDetectionThreshold",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "threatProfiles",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "threatId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "primaryActor",
+        "type": "address"
+      },
+      {
+        "internalType": "enum SecurityTypes.ThreatType",
+        "name": "threatType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "enum SecurityTypes.ThreatSeverity",
+        "name": "severity",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "confidenceScore",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "firstDetectedAt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lastActivityAt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "attackPatternHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "enum SecurityTypes.ThreatStatus",
+        "name": "status",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "neutralizedAt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "aiAnalysis",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "threatResponses",
+    "outputs": [
+      {
+        "internalType": "enum SecurityTypes.DefenseAction",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "enum SecurityTypes.ThreatType",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "name": "threatTypeCounts",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_threatDetectionThreshold",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_coordinatedAttackThreshold",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_emergencyResponseTime",
+        "type": "uint256"
+      }
+    ],
+    "name": "updateSecurityConfig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

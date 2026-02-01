@@ -11,7 +11,7 @@ export interface WalletState {
     isConnected: boolean;
     isConnecting: boolean;
     error: string | null;
-    provider: any | null; // Added to store the actual provider instance
+    // Removed provider from state to avoid serialization issues
 }
 
 interface WalletContextType {
@@ -32,33 +32,45 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         chainId: null,
         isConnected: false,
         isConnecting: false,
-        error: null,
-        provider: null
+        error: null
     });
 
     // Initialize wallet on mount and listen for changes
     useEffect(() => {
         // Subscribe to connection changes from the manager
         const unsubscribe = walletProviderManager.onConnectionChange(async (result: WalletConnectionResult) => {
-            if (result.success && result.address && result.provider) {
+            if (result.success && result.address) {
                 try {
                     // Fetch balance and network if successful
                     let balance = '0';
                     let chainId = 1;
 
-                    // Different providers have different ways to get this info
-                    // Ethers v6 BrowserProvider
-                    if (result.provider instanceof ethers.BrowserProvider || result.provider.getNetwork) {
-                        const network = await result.provider.getNetwork();
-                        const bal = await result.provider.getBalance(result.address);
-                        chainId = Number(network.chainId);
-                        balance = ethers.formatEther(bal);
+                    // Get provider from manager to fetch balance
+                    const provider = walletProviderManager.getCurrentProvider();
+                    if (provider) {
+                        try {
+                            // Different providers have different ways to get this info
+                            // Ethers v6 BrowserProvider
+                            if (provider instanceof ethers.BrowserProvider || provider.getNetwork) {
+                                const network = await provider.getNetwork();
+                                const bal = await provider.getBalance(result.address!);
+                                chainId = Number(network.chainId);
+                                balance = ethers.formatEther(bal);
+                            } else {
+                                // Default to Amoy if unknown
+                                chainId = 80002;
+                            }
+                        } catch (err) {
+                            console.error('Error fetching wallet details:', err);
+                            // Default values
+                            chainId = 80002;
+                            balance = '0';
+                        }
                     }
 
                     setWallet(prev => ({
                         ...prev,
                         address: result.address!,
-                        provider: result.provider,
                         balance,
                         chainId,
                         isConnected: true,
@@ -75,7 +87,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
                     setWallet(prev => ({
                         ...prev,
                         address: result.address!,
-                        provider: result.provider,
                         isConnected: true,
                         isConnecting: false,
                         error: null
@@ -95,8 +106,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
                     chainId: null,
                     isConnected: false,
                     isConnecting: false,
-                    error: null,
-                    provider: null
+                    error: null
                 });
             }
         });
@@ -132,14 +142,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     };
 
     const switchChain = async (chainId: number) => {
-        if (!wallet.provider) return;
-
         try {
             const chainIdHex = `0x${chainId.toString(16)}`;
+            const provider = walletProviderManager.getCurrentProvider();
 
             // Assuming EIP-1193 compatible provider
-            if (wallet.provider.send) {
-                await wallet.provider.send('wallet_switchEthereumChain', [{ chainId: chainIdHex }]);
+            if (provider && (provider as any).send) {
+                await (provider as any).send('wallet_switchEthereumChain', [{ chainId: chainIdHex }]);
             } else if (window.ethereum) {
                 // Fallback for some
                 await window.ethereum.request({
@@ -157,11 +166,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     };
 
     const refreshBalance = async () => {
-        if (!wallet.address || !wallet.provider) return;
+        if (!wallet.address) return;
 
         try {
-            if (wallet.provider.getBalance) {
-                const bal = await wallet.provider.getBalance(wallet.address);
+            const provider = walletProviderManager.getCurrentProvider();
+            if (provider && (provider as any).getBalance) {
+                const bal = await (provider as any).getBalance(wallet.address);
                 setWallet(prev => ({
                     ...prev,
                     balance: ethers.formatEther(bal)
@@ -174,17 +184,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     const signMessage = async (message: string): Promise<string> => {
         const currentProvider = walletProviderManager.getCurrentProvider();
-        if (!wallet.address || !currentProvider) { // Check via manager as well
+        if (!wallet.address || !currentProvider) {
             throw new Error('Wallet not connected');
         }
 
-        // We need the signer from the connection result, typically stored in manager or we can re-derive it
-        // The manager's connect returns { signer }, but we only stored provider in state.
-        // Let's re-acquire signer from provider for now if it's an ethers provider.
-
+        // We need the signer from the connection result
         try {
-            if (wallet.provider instanceof ethers.BrowserProvider) {
-                const signer = await wallet.provider.getSigner();
+            if (currentProvider instanceof ethers.BrowserProvider) {
+                const signer = await currentProvider.getSigner();
                 return await signer.signMessage(message);
             } else if ((window as any).ethereum) {
                 // Fallback
@@ -194,33 +201,30 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             }
 
             throw new Error("Provider does not support signing or is unknown type");
-
         } catch (err: any) {
-            console.error('Sign message error:', err);
+            setWallet(prev => ({ ...prev, error: err.message }));
             throw err;
         }
     };
 
     return (
-        <WalletContext.Provider
-            value={{
-                wallet,
-                connectWallet,
-                disconnectWallet,
-                switchChain,
-                refreshBalance,
-                signMessage,
-            }}
-        >
+        <WalletContext.Provider value={{
+            wallet,
+            connectWallet,
+            disconnectWallet,
+            switchChain,
+            refreshBalance,
+            signMessage
+        }}>
             {children}
         </WalletContext.Provider>
     );
 }
 
-export const useWallet = () => {
+export function useWallet() {
     const context = useContext(WalletContext);
     if (context === undefined) {
-        throw new Error('useWallet must be used within WalletProvider');
+        throw new Error('useWallet must be used within a WalletProvider');
     }
     return context;
-};
+}

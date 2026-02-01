@@ -1,49 +1,108 @@
-"use client";
-
 import React from 'react';
-import { Globe } from 'lucide-react';
 
-interface Node {
-    id: string;
-    name: string;
-    status: 'online' | 'offline' | 'degraded';
-    latitude: number;
-    longitude: number;
-    region: string;
-    load: string;
+interface Location {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  color: string;
+  type: string;
 }
 
 interface NetworkMapProps {
-    nodes: Node[];
-    height?: string;
+  locations: Location[];
+  center: [number, number];
+  zoom: number;
+  height?: string;
+  className?: string;
 }
 
-export const NetworkMap: React.FC<NetworkMapProps> = ({ nodes, height = '400px' }) => {
-    return (
-        <div
-            className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg overflow-hidden flex items-center justify-center"
-            style={{ height }}
-        >
-            <div className="absolute inset-0 bg-slate-900/50" />
-            <div className="relative z-10 text-center">
-                <Globe className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                <p className="text-slate-400 text-sm">Network Map Visualization</p>
-                <p className="text-slate-500 text-xs mt-1">{nodes.length} nodes active</p>
-            </div>
-            {/* Placeholder dots for nodes */}
-            {nodes.slice(0, 10).map((node, index) => (
-                <div
-                    key={node.id}
-                    className={`absolute w-2 h-2 rounded-full ${
-                        node.status === 'online' ? 'bg-green-500' :
-                        node.status === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
-                    }`}
-                    style={{
-                        left: `${20 + (index * 8)}%`,
-                        top: `${20 + (index * 6)}%`,
-                    }}
-                />
+export default function NetworkMap({
+  locations,
+  center,
+  zoom,
+  height = '400px',
+  className = ''
+}: NetworkMapProps) {
+  // This is a placeholder implementation for the map
+  // In a real implementation, you would use a map library like react-leaflet or Google Maps
+  return (
+    <div 
+      className={`relative bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl overflow-hidden ${className}`}
+      style={{ height }}
+    >
+      {/* Satellite grid overlay */}
+      <div className="absolute inset-0 opacity-20">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div key={`row-${i}`} className="flex">
+            {Array.from({ length: 20 }).map((_, j) => (
+              <div 
+                key={`cell-${j}`} 
+                className="w-1/20 h-4 border border-slate-600 border-opacity-30"
+              />
             ))}
-        </div>
-    );
-};
+          </div>
+        ))}
+      </div>
+      
+      {/* Neural network simulation */}
+      <div className="absolute inset-0">
+        {locations.map((location, idx) => (
+          <div
+            key={location.id}
+            className="absolute transform -translate-x-1/2 -translate-y-1/2"
+            style={{
+              left: `${20 + (idx * 30)}%`,
+              top: `${30 + (idx * 20)}%`,
+            }}
+          >
+            {/* Location pulse effect */}
+            <div 
+              className={`absolute w-4 h-4 rounded-full ${location.color.replace('#', '') === '3b82f6' ? 'bg-blue-500' : 'bg-green-500'} animate-ping opacity-75`}
+              style={{ animationDuration: '2s' }}
+            />
+            <div 
+              className={`relative w-4 h-4 rounded-full ${location.color.replace('#', '') === '3b82f6' ? 'bg-blue-500' : 'bg-green-500'}`}
+            />
+            
+            {/* Location label */}
+            <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded text-xs text-white whitespace-nowrap">
+              {location.name}
+            </div>
+          </div>
+        ))}
+        
+        {/* Connection lines */}
+        {locations.length > 1 && (
+          <svg className="absolute inset-0 w-full h-full pointer-events-none">
+            <line
+              x1="20%"
+              y1="30%"
+              x2="50%"
+              y2="50%"
+              stroke="#10b981"
+              strokeWidth="2"
+              strokeDasharray="5,5"
+              className="animate-pulse"
+            />
+          </svg>
+        )}
+      </div>
+      
+      {/* Map controls */}
+      <div className="absolute top-4 right-4 flex flex-col gap-2">
+        <button className="w-8 h-8 bg-slate-800/80 backdrop-blur-sm border border-slate-600 rounded flex items-center justify-center text-white hover:bg-slate-700 transition-colors">
+          +
+        </button>
+        <button className="w-8 h-8 bg-slate-800/80 backdrop-blur-sm border border-slate-600 rounded flex items-center justify-center text-white hover:bg-slate-700 transition-colors">
+          -
+        </button>
+      </div>
+      
+      {/* Watermark */}
+      <div className="absolute bottom-4 left-4 text-slate-500/50 text-xs font-mono">
+        NILELINK NEURAL MAP v1.0
+      </div>
+    </div>
+  );
+}

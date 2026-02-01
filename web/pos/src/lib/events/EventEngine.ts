@@ -44,7 +44,7 @@ export class EventEngine {
             branchId: this.branchId,
             hash: '', // Will be calculated
             previousHash: this.lastEventHash,
-            offline: !navigator.onLine,
+            offline: typeof navigator !== 'undefined' ? !navigator.onLine : false,
             version: 1,
         };
 
@@ -86,6 +86,13 @@ export class EventEngine {
         return () => {
             this.listeners = this.listeners.filter(l => l !== listener);
         };
+    }
+
+    /**
+     * Subscribe method for compatibility
+     */
+    subscribe(listener: (event: EconomicEvent) => void): () => void {
+        return this.onEvent(listener);
     }
 
     /**

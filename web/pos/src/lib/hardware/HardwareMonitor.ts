@@ -14,6 +14,7 @@ export interface HardwareState {
     cashDrawer: PeripheralStatus;
     cardReader: PeripheralStatus;
     scale: PeripheralStatus;
+    rfidReader: PeripheralStatus;
 }
 
 export class HardwareMonitor {
@@ -22,7 +23,8 @@ export class HardwareMonitor {
         printer: 'ONLINE',
         cashDrawer: 'ONLINE',
         cardReader: 'ONLINE',
-        scale: 'ONLINE'
+        scale: 'ONLINE',
+        rfidReader: 'ONLINE'
     };
 
     private constructor() {
@@ -30,7 +32,8 @@ export class HardwareMonitor {
         setInterval(() => this.poll(), 30000);
     }
 
-    public static getInstance(): HardwareMonitor {
+    public static getInstance(): HardwareMonitor | null {
+        if (typeof window === 'undefined') return null;
         if (!HardwareMonitor.instance) {
             HardwareMonitor.instance = new HardwareMonitor();
         }

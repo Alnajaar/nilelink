@@ -2,7 +2,12 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    output: 'export',
+    // Enable turbopack explicitly to avoid mixed config errors
+    // turbopack: {},
+    experimental: {
+        externalDir: true,
+    },
+    transpilePackages: ['@shared', '@rainbow-me/rainbowkit', 'wagmi', '@tanstack/react-query'],
     images: {
         unoptimized: true,
     },
@@ -27,22 +32,30 @@ const nextConfig = {
             ...config.resolve.alias,
             '@coinbase/wallet-sdk': false,
             '@gemini-wallet/core': false,
-            '@metamask/sdk': false,
             '@safe-global/safe-apps-sdk': false,
             '@safe-global/safe-apps-provider': false,
             'porto': false,
+            'porto/internal': false,
+            '@react-native-async-storage/async-storage': false,
         };
-        config.externals.push('pino-pretty', 'lokijs', 'encoding');
+
+        // Handle problematic imports more aggressively
+        config.externals.push(
+            'pino-pretty',
+            'lokijs',
+            'encoding',
+            (context, request, callback) => {
+                if (request.startsWith('porto')) {
+                    return callback(null, '{}'); // Return empty object for problematic imports
+                }
+                callback();
+            }
+        );
         return config;
-    },
-    transpilePackages: ['@shared'],
-    experimental: {
-        externalDir: true,
     },
     typescript: {
         ignoreBuildErrors: true,
     },
-
 }
 
 module.exports = nextConfig

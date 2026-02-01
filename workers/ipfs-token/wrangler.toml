@@ -1,0 +1,31 @@
+name = "nilelink-ipfs-token"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Worker configuration
+workers_dev = true
+route = ""
+zone_name = ""
+account_id = "79b17f6d66b3dcfd8aca5f94a1f702d3"
+
+# Durable Objects
+[durable_objects]
+bindings = [
+  { name = "RATE_LIMITER", class_name = "RateLimiter" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RateLimiter"]
+
+# Environment variables (set via wrangler secret)
+# JWT_SECRET - Secret for signing JWT tokens
+# RPC_URL - Ethereum RPC endpoint
+# RESTAURANT_REGISTRY_ADDRESS - Smart contract address
+
+# Production routes
+[env.production]
+routes = [
+  { pattern = "edge.nilelink.app/ipfs/token", zone_name = "nilelink.app" },
+  { pattern = "edge.nilelink.app/ipfs/status", zone_name = "nilelink.app" }
+]

@@ -2,26 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  html {
-    @apply scroll-smooth;
-  }
-
-  body {
-    @apply font-sans antialiased;
-  }
+:root {
+    --background: #05070a;
+    --foreground: #ffffff;
 }
 
-@layer components {
-  .btn-primary {
-    @apply px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors;
-  }
-
-  .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200;
-  }
-
-  .input {
-    @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500;
-  }
+@layer base {
+    body {
+        @apply bg-background text-foreground;
+    }
 }

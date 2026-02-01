@@ -6,12 +6,11 @@ import Link from 'next/link';
 
 export function UniversalNavbar() {
     return (
-        <nav className="relative z-50 border-b border-surface bg-primary px-6 lg:px-12 py-5 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3 group">
-                <div className="w-10 h-10 rounded-xl bg-surface flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Zap size={22} className="text-text" fill="currentColor" />
+        <nav className="relative z-50 border-b-2 border-border-default/50 bg-background-primary/80 backdrop-blur-3xl px-6 lg:px-12 py-5 flex items-center justify-between">
+            <Link href="/" className="flex items-center group">
+                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center group-hover:scale-110 transition-transform shadow-glow-primary/20">
+                    <Zap size={22} className="text-white" fill="currentColor" />
                 </div>
-                <span className="text-nav-text font-black tracking-tighter">NileLink</span>
             </Link>
 
             <div className="hidden lg:flex items-center gap-10">

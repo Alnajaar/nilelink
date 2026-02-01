@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Printer, Share2, ShieldCheck, Download, Star, MessageSquare } from 'lucide-react';
-import { Button } from '@/shared/components/Button';
-import { Card } from '@/shared/components/Card';
-import { LedgerBadge } from '@/shared/components/LedgerBadge';
-import { CurrencyDisplay } from '@/shared/components/CurrencyDisplay';
-import { orderApi, ApiError } from '@/shared/utils/api';
+import { Button } from '@shared/components/Button';
+import { Card } from '@shared/components/Card';
+import { LedgerBadge } from '@shared/components/LedgerBadge';
+import { CurrencyDisplay } from '@shared/components/CurrencyDisplay';
+import { orderApi, ApiError } from '@shared/utils/api';
 
 interface Order {
     id: string;
@@ -284,11 +284,10 @@ export default function ReceiptClient({ id }: { id: string }) {
                                             >
                                                 <Star
                                                     size={32}
-                                                    className={`${
-                                                        star <= rating
+                                                    className={`${star <= rating
                                                             ? 'text-warning fill-current'
                                                             : 'text-text-secondary'
-                                                    } transition-colors`}
+                                                        } transition-colors`}
                                                 />
                                             </button>
                                         ))}

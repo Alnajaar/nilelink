@@ -1,4 +1,5 @@
 import { authApi } from '../utils/api';
+import Cookies from 'js-cookie';
 
 export interface AuthTokens {
     accessToken: string;
@@ -81,8 +82,13 @@ export class AuthService {
 
     private initializeFromStorage(): void {
         if (typeof window !== 'undefined') {
-            this.accessToken = localStorage.getItem('nilelink_auth_token');
-            this.refreshToken = localStorage.getItem('nilelink_refresh_token');
+            this.accessToken = localStorage.getItem('nilelink_auth_token') || Cookies.get('nilelink_access_token') || null;
+            this.refreshToken = localStorage.getItem('nilelink_refresh_token') || Cookies.get('nilelink_refresh_token') || null;
+
+            // Sync cookie back to localStorage if found
+            if (!localStorage.getItem('nilelink_auth_token') && this.accessToken) {
+                localStorage.setItem('nilelink_auth_token', this.accessToken);
+            }
         }
     }
 
@@ -92,6 +98,17 @@ export class AuthService {
         if (typeof window !== 'undefined') {
             localStorage.setItem('nilelink_auth_token', accessToken);
             localStorage.setItem('nilelink_refresh_token', refreshToken);
+
+            // Set shared cookies for cross-domain SSO
+            const cookieOptions = {
+                expires: 7,
+                path: '/',
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax' as const
+            };
+
+            Cookies.set('nilelink_access_token', accessToken, cookieOptions);
+            Cookies.set('nilelink_refresh_token', refreshToken, cookieOptions);
         }
     }
 
@@ -102,6 +119,9 @@ export class AuthService {
             localStorage.removeItem('nilelink_auth_token');
             localStorage.removeItem('nilelink_refresh_token');
             localStorage.removeItem('nilelink_current_user');
+
+            Cookies.remove('nilelink_access_token', { path: '/' });
+            Cookies.remove('nilelink_refresh_token', { path: '/' });
         }
     }
 
@@ -255,6 +275,16 @@ export class AuthService {
         }
     }
 
+    async getSiweNonce(): Promise<string> {
+        try {
+            const response: any = await authApi.getSiweNonce();
+            return response.nonce;
+        } catch (error) {
+            // Fallback for demo/offline: Return a random nonce
+            return Math.random().toString(36).substring(2);
+        }
+    }
+
     async verifyWalletSignature(address: string, signature: string, message: string, challengeId?: string): Promise<WalletAuthResponse> {
         try {
             const response: any = await authApi.verifyWalletSignature({ address, signature, message, challengeId });
@@ -308,8 +338,12 @@ export class AuthService {
     }
 
     async verifyOTP(email: string, otp: string): Promise<LoginResponse> {
+        return this.loginWithPhone(email, otp);
+    }
+
+    async loginWithPhone(emailOrPhone: string, otp: string): Promise<LoginResponse> {
         try {
-            const response: any = await authApi.verifyOtp(email, otp);
+            const response: any = await authApi.verifyOtp(emailOrPhone, otp);
 
             if (response.success) {
                 const { user, accessToken, refreshToken } = response.data;

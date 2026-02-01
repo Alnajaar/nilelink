@@ -1,30 +1,34 @@
 /**
- * Sync Worker - Background Event Synchronization
+ * Web3 Sync Worker - Decentralized Background Event Synchronization
  * 
- * Automatically syncs local events to Cloudflare D1 when online
- * Handles conflict resolution via event timestamps
+ * Automatically batches local events, uploads to IPFS, and anchors CIDs 
+ * to the NileLink smart contracts (FraudDetection.sol) when online.
+ * 
+ * Fulfills "100% Decentralized" requirement.
  */
 
 import { LocalLedger } from '../storage/LocalLedger';
 import { EconomicEvent } from '../events/types';
+import ipfsService from '@shared/services/IPFSService';
+import web3Service from '@shared/services/Web3Service';
 
-export class SyncWorker {
+export class Web3SyncWorker {
     private ledger: LocalLedger;
-    private apiEndpoint: string;
-    private syncInterval: number = 30000; // 30 seconds
+    private branchId: string;
+    private syncInterval: number = 60000; // 60 seconds (longer for blockchain anchoring)
     private intervalId: NodeJS.Timeout | null = null;
     private isSyncing: boolean = false;
 
-    constructor(ledger: LocalLedger, apiEndpoint: string) {
+    constructor(ledger: LocalLedger, branchId: string) {
         this.ledger = ledger;
-        this.apiEndpoint = apiEndpoint;
+        this.branchId = branchId;
     }
 
     /**
-     * Start automatic sync process
+     * Start automatic decentralized sync process
      */
     start(): void {
-        console.log('🔄 Sync Worker started');
+        console.log('🌐 Web3 Sync Worker started (Decentralized Mode)');
 
         // Immediate sync on start
         this.syncNow();
@@ -35,14 +39,12 @@ export class SyncWorker {
         }, this.syncInterval);
 
         // Sync when connection restored
-        window.addEventListener('online', () => {
-            console.log('🌐 Connection restored, syncing...');
-            this.syncNow();
-        });
-
-        window.addEventListener('offline', () => {
-            console.log('📡 Connection lost, entering offline mode');
-        });
+        if (typeof window !== 'undefined') {
+            window.addEventListener('online', () => {
+                console.log('🌐 100% Decentralized Network restored, syncing to IPFS/Web3...');
+                this.syncNow();
+            });
+        }
     }
 
     /**
@@ -53,24 +55,28 @@ export class SyncWorker {
             clearInterval(this.intervalId);
             this.intervalId = null;
         }
-        console.log('⏸️  Sync Worker stopped');
+        console.log('⏸️ Web3 Sync Worker stopped');
     }
 
     /**
-     * Trigger immediate sync
+     * Trigger immediate decentralized sync
      */
     async syncNow(): Promise<{ success: boolean; syncedCount: number; error?: string }> {
         if (this.isSyncing) {
             return { success: false, syncedCount: 0, error: 'Sync already in progress' };
         }
 
-        if (!navigator.onLine) {
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
             return { success: false, syncedCount: 0, error: 'No internet connection' };
         }
 
+        // Blockchain requirement: Wallet must be connected to sign the anchor transaction
+        if (!web3Service.isWalletConnected()) {
+            console.warn('⚠️ Web3 Sync: Wallet not connected. Anchoring deferred.');
+            return { success: false, syncedCount: 0, error: 'Wallet not connected' };
+        }
+
         this.isSyncing = true;
-        let retryCount = 0;
-        const maxRetries = 5;
 
         try {
             const unsyncedEvents = await this.ledger.getUnsyncedEvents();
@@ -80,113 +86,69 @@ export class SyncWorker {
                 return { success: true, syncedCount: 0 };
             }
 
-            console.log(`📤 Syncing ${unsyncedEvents.length} events...`);
+            console.log(`📤 Decentralized Batch: Syncing ${unsyncedEvents.length} events to IPFS...`);
 
-            // Try Batch Sync first
-            try {
-                await this.performBatchSync(unsyncedEvents);
-                console.log(`✅ Batch Synced ${unsyncedEvents.length} events`);
-                this.isSyncing = false;
-                return { success: true, syncedCount: unsyncedEvents.length };
-            } catch (batchError) {
-                console.warn('⚠️ Batch sync failed, attempting individual item recovery', batchError);
+            // Step 1: Upload batch to IPFS
+            const batchMetadata = {
+                branchId: this.branchId,
+                eventCount: unsyncedEvents.length,
+                timestamp: Date.now(),
+                network: web3Service.getCurrentNetwork(),
+                events: unsyncedEvents
+            };
 
-                // Fallback: Item-by-Item Sync (Partial Recovery)
-                let successCount = 0;
-                for (const event of unsyncedEvents) {
-                    try {
-                        await this.performSingleSync(event);
-                        successCount++;
-                    } catch (singleError) {
-                        console.error(`❌ Failed to sync event ${event.id}`, singleError);
-                        // If 409 Conflict, we might want to mark it as 'conflicted' in DB to stop retrying forever
-                        // For now we skips it.
-                    }
-                }
+            const ipfsResult = await ipfsService.uploadJSON(batchMetadata, `pos-event-batch-${Date.now()}`);
 
-                this.isSyncing = false;
-                return { success: successCount > 0, syncedCount: successCount, error: 'Batch failed, partial recovery executed' };
+            if (!ipfsResult) {
+                throw new Error('IPFS Batch Upload Failed');
             }
 
-        } catch (error) {
-            console.error('❌ Sync error:', error);
+            console.log(`📦 IPFS Batch Anchored: CID ${ipfsResult.cid}`);
+
+            // Step 2: Anchor IPFS CID to Blockchain (FraudDetection.sol)
+            // This creates a 100% decentralized, verifiable audit trail
+            const txHash = await web3Service.anchorEventBatch(this.branchId, ipfsResult.cid);
+
+            if (!txHash) {
+                throw new Error('Blockchain Anchoring Failed');
+            }
+
+            console.log(`⛓️ Blockchain Anchor Success: TX ${txHash}`);
+
+            // Step 3: Mark events as synced in local ledger with Web3 metadata
+            const syncTimestamp = Date.now();
+            for (const event of unsyncedEvents) {
+                // We could extend LocalLedger to store IPFS CID and TX Hash per event
+                await this.ledger.markEventSynced(event.id, syncTimestamp);
+            }
+
             this.isSyncing = false;
+            return { success: true, syncedCount: unsyncedEvents.length };
 
-            // Retry logic (Exponential Backoff if needed, but usually we just wait for next interval)
-            // But if we want aggressive retry:
-            if (retryCount < maxRetries) {
-                const delay = Math.pow(2, retryCount) * 1000;
-                setTimeout(() => this.syncNow(), delay);
-            }
+        } catch (error: any) {
+            console.error('❌ Web3 Sync error:', error);
+            this.isSyncing = false;
 
             return {
                 success: false,
                 syncedCount: 0,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error.message : 'Unknown decentralized sync error'
             };
         }
-    }
-
-    private async performBatchSync(events: EconomicEvent[]): Promise<void> {
-        const response = await fetch(`${this.apiEndpoint}/events/batch`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ events }),
-        });
-
-        if (!response.ok) {
-            throw new Error(`Batch sync failed: ${response.status} ${response.statusText}`);
-        }
-
-        const syncTimestamp = Date.now();
-        for (const event of events) {
-            await this.ledger.markEventSynced(event.id, syncTimestamp);
-        }
-    }
-
-    private async performSingleSync(event: EconomicEvent): Promise<void> {
-        const response = await fetch(`${this.apiEndpoint}/events`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ event }),
-        });
-
-        if (!response.ok) {
-            // Check for specific error codes like 409
-            if (response.status === 409) {
-                // Conflict! 
-                // Strategy: Mark as synced but flag as 'resolved_conflict' or similar if we had that field.
-                // For now, we assume server rejected it. We mark it synced to stop loop? 
-                // Risk: Data loss. 
-                // Better: Leave unsynced but 'ignored' in memory? 
-                // Best: The server *accepted* it but noted conflict. If server returns 409, it usually means "I have this already" or "Invalid state".
-                // If "I have it", we mark synced.
-                if (response.statusText.includes("Duplicate")) {
-                    await this.ledger.markEventSynced(event.id, Date.now());
-                    return;
-                }
-            }
-            throw new Error(`Sync failed for ${event.id}: ${response.status}`);
-        }
-
-        await this.ledger.markEventSynced(event.id, Date.now());
     }
 
     /**
      * Get sync status
      */
-    async getSyncStatus(): Promise<{
-        isOnline: boolean;
-        isSyncing: boolean;
-        unsyncedCount: number;
-        lastSyncAttempt?: number;
-    }> {
+    async getSyncStatus() {
         const unsyncedEvents = await this.ledger.getUnsyncedEvents();
 
         return {
-            isOnline: navigator.onLine,
+            isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
             isSyncing: this.isSyncing,
             unsyncedCount: unsyncedEvents.length,
+            isWalletConnected: web3Service.isWalletConnected(),
+            network: web3Service.getCurrentNetwork()
         };
     }
 }

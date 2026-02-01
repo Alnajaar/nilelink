@@ -1,0 +1,45 @@
+
+> @nilelink/admin@1.0.0 build
+> next build
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\nilel\Projects\Sduan\New folder\nilelink\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\nilel\Projects\Sduan\New folder\nilelink\web\admin\package-lock.json
+
+   ▲ Next.js 15.5.10
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 2.1min
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/10) ...
+   Generating static pages (2/10) 
+   Generating static pages (4/10) 
+   Generating static pages (7/10) 
+ ✓ Generating static pages (10/10)
+   Finalizing page optimization ...
+   Collecting build traces ...
+   Exporting (0/2) ...
+ ✓ Exporting (2/2)
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                      647 B         105 kB
+├ ○ /_not-found                             1 kB         105 kB
+├ ○ /businesses                          3.84 kB         431 kB
+├ ○ /dashboard                              4 kB         431 kB
+├ ○ /meetings                            4.28 kB         153 kB
+├ ○ /reports                             4.81 kB         154 kB
+├ ○ /super-admin                          111 kB         538 kB
+└ ○ /users                               3.73 kB         433 kB
++ First Load JS shared by all             104 kB
+  ├ chunks/1255-8efa376732647c84.js      45.8 kB
+  ├ chunks/4bd1b696-100b9d70ed4e49c1.js  54.2 kB
+  └ other shared chunks (total)          4.44 kB
+
+
+○  (Static)  prerendered as static content
+

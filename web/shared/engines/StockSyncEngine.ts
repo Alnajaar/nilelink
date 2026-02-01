@@ -1,14 +1,20 @@
-/**
- * StockSyncEngine - Real-time Inventory Orchestration
- * 
- * listens to POS economic events and synchronizes stock levels 
- * across the supplier and catalog nodes.
- */
+import { EventType, EconomicEvent, InventoryLockIntentEvent, InventoryLockRejectedEvent } from '../../pos/src/lib/events/types';
+import { EventEngine } from '../../pos/src/lib/events/EventEngine';
+import { v4 as uuidv4 } from 'uuid';
 
-import { EventType, EconomicEvent } from '../../pos/src/lib/events/types';
+export interface PendingLock {
+    intentId: string;
+    productId: string;
+    quantity: number;
+    sessionId: string;
+    timestamp: number;
+}
 
 export class StockSyncEngine {
     private static instance: StockSyncEngine;
+    private eventEngine: EventEngine | null = null;
+    private pendingLocks = new Map<string, PendingLock>(); // intentId -> PendingLock
+    private stockLevels = new Map<string, number>(); // productId -> actual quantity
 
     private constructor() { }
 
@@ -19,47 +25,125 @@ export class StockSyncEngine {
         return StockSyncEngine.instance;
     }
 
+    public setEventEngine(engine: EventEngine) {
+        this.eventEngine = engine;
+    }
+
     /**
      * Handle incoming events from the POS EventEngine
      */
     public async processEvent(event: EconomicEvent): Promise<void> {
         switch (event.type) {
             case EventType.PAYMENT_COLLECTED_CASH:
+            case EventType.PAYMENT_COLLECTED_CARD:
+            case EventType.PAYMENT_COLLECTED_DIGITAL:
                 await this.handleSale(event.payload);
                 break;
-            case EventType.ORDER_SUBMITTED:
-                // Pre-auth stock lock if needed
+
+            case EventType.INVENTORY_LOCK_INTENT:
+                await this.handleRemoteIntent(event as InventoryLockIntentEvent);
+                break;
+
+            case EventType.ORDER_CANCELLED:
+            case EventType.ORDER_COMPLETED:
+                this.clearLocksForSession(event.payload.sessionId);
                 break;
         }
     }
 
     /**
-     * Deduct stock based on sale payload
+     * Propose an inventory lock for a product being added to cart
      */
-    private async handleSale(payload: any): Promise<void> {
-        const { orderId, amount, items } = payload;
+    public async proposeLock(productId: string, quantity: number, sessionId: string): Promise<boolean> {
+        if (!this.eventEngine) return false;
 
-        console.log(`[StockSync] Processing sale for Order ${orderId}: Deducting items...`);
+        const effectiveStock = this.getEffectiveStock(productId);
+        if (effectiveStock < quantity) {
+            console.warn(`[StockSync] Lock rejected: Insufficient effective stock for ${productId} (${effectiveStock} available)`);
+            return false;
+        }
 
-        if (items && Array.isArray(items)) {
-            for (const item of items) {
-                // In a real scenario, this would call the Supplier/Catalog API 
-                // or update a localized shared cache.
-                await this.updateSupplierStock(item.menuItemId, item.quantity);
+        const intentId = uuidv4();
+
+        // Broadcast intent to all nodes via decentralized event engine
+        await this.eventEngine.createEvent<InventoryLockIntentEvent>(
+            EventType.INVENTORY_LOCK_INTENT,
+            'system',
+            {
+                intentId,
+                productId,
+                quantity,
+                sessionId,
+                timestamp: Date.now()
+            }
+        );
+
+        return true;
+    }
+
+    /**
+     * Calculate stock accounting for pending locks
+     */
+    public getEffectiveStock(productId: string): number {
+        const actualStock = this.stockLevels.get(productId) || 100; // Default to 100 for demo
+        let lockedQuantity = 0;
+
+        for (const lock of this.pendingLocks.values()) {
+            if (lock.productId === productId) {
+                lockedQuantity += lock.quantity;
+            }
+        }
+
+        return Math.max(0, actualStock - lockedQuantity);
+    }
+
+    /**
+     * Handle intent broadcasted by another node or local
+     */
+    private async handleRemoteIntent(event: InventoryLockIntentEvent): Promise<void> {
+        const { intentId, productId, quantity, sessionId, timestamp } = event.payload;
+
+        // Check for conflicts (simple version: first come first served by timestamp)
+        // If we already have locks that exceed stock, and this one is "later", we might reject it
+        // In a true decentralized sync, nodes would eventually agree on the order.
+
+        this.pendingLocks.set(intentId, {
+            intentId,
+            productId,
+            quantity,
+            sessionId,
+            timestamp
+        });
+
+        console.log(`[StockSync] Lock Registered: ${productId} x ${quantity} (Intent: ${intentId})`);
+    }
+
+    private clearLocksForSession(sessionId: string): void {
+        for (const [id, lock] of this.pendingLocks) {
+            if (lock.sessionId === sessionId) {
+                this.pendingLocks.delete(id);
             }
         }
     }
 
     /**
-     * Actual stock update logic
+     * Deduct stock based on sale payload (permanent commitment)
      */
-    private async updateSupplierStock(itemId: string, quantity: number): Promise<void> {
-        // Logic to reach out to Supplier API or persistent cache
-        // mockup for protocol verification
-        console.log(`[StockSync] STOCK_DEDUCTION: Item ${itemId} | Qty: -${quantity}`);
+    private async handleSale(payload: any): Promise<void> {
+        const { orderId, items } = payload;
+        if (!items) return;
 
-        // This would trigger a notification to the Supplier Dashboard 
-        // to update the 'Smart Inventory' progress bars.
+        console.log(`[StockSync] Permanently deducting stock for Order ${orderId}`);
+
+        for (const item of items) {
+            const current = this.stockLevels.get(item.productId) || 100;
+            this.stockLevels.set(item.productId, current - item.quantity);
+            await this.updateSupplierStock(item.productId, item.quantity);
+        }
+    }
+
+    private async updateSupplierStock(itemId: string, quantity: number): Promise<void> {
+        console.log(`[StockSync] DECENTRALIZED_STOCK_UPDATE: ${itemId} | -${quantity}`);
     }
 }
 

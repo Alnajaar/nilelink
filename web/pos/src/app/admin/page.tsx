@@ -7,22 +7,22 @@ import {
     LayoutDashboard, Settings, Package, Users, BarChart,
     CreditCard, ArrowUpRight, Search, Bell, Plus, Clock,
     Shield, CheckCircle2, AlertCircle, Gem, Store, Menu, X,
-    Zap, TrendingUp, Activity, Box, Globe, LogOut, Flame,
-    DollarSign, Laptop, RefreshCw, Printer, Smartphone
+    Zap, TrendingUp, Activity, Box, Globe, LogOut, DollarSign,
+    Laptop, RefreshCw, Printer, Smartphone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/shared/components/Button';
 import { Card } from '@/shared/components/Card';
 import { Badge } from '@/shared/components/Badge';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { usePOS } from '@/contexts/POSContext';
 
 export default function AdminDashboard() {
     const router = useRouter();
+    const { user, logout } = useAuth();
+    const { engines, isInitialized } = usePOS();
     const [mounted, setMounted] = useState(false);
-
-    // Mock subscription data
-    const subscription = { planName: 'Enterprise', isTrialActive: true, plan: 'enterprise' };
-    const getRemainingTrialDays = () => 25;
-    const [businessName, setBusinessName] = useState('NileLink Global');
+    const [businessName, setBusinessName] = useState('NileLink Business');
     const [userLocation, setUserLocation] = useState<string>('');
     const [isLocationLoading, setIsLocationLoading] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
@@ -30,62 +30,171 @@ export default function AdminDashboard() {
     const [searchQuery, setSearchQuery] = useState('');
     const [notifications, setNotifications] = useState<any[]>([]);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [stats, setStats] = useState<any[]>([]);
+    const [terminals, setTerminals] = useState<any[]>([]);
 
     useEffect(() => {
         setMounted(true);
+        
+        // Load business data
         const storedBusiness = localStorage.getItem('businessName');
         if (storedBusiness) setBusinessName(storedBusiness);
 
-        // Mock notifications
-        setNotifications([
-            { id: 1, title: 'Network Congestion', message: 'Mainnet latency detected in Alex-Dist-2', time: '2m ago', type: 'warning' },
-            { id: 2, title: 'Settlement Synchronized', message: '342.12 ETH anchored to protocol', time: '15m ago', type: 'success' },
-            { id: 3, title: 'Node Verification', message: 'New terminal POS-72X1 authorized', time: '1h ago', type: 'info' }
-        ]);
+        // Get user location
+        getUserLocation();
 
-        // Mock location
-        setUserLocation('Alexandria, Egypt');
-    }, []);
+        // Load real data
+        loadDashboardData();
+    }, [isInitialized, engines]);
+
+    const getUserLocation = async () => {
+        setIsLocationLoading(true);
+        try {
+            // In a real implementation, this would get actual location
+            setUserLocation('Cairo, Egypt');
+        } catch (error) {
+            console.error('Failed to get location:', error);
+            setUserLocation('Location unavailable');
+        } finally {
+            setIsLocationLoading(false);
+        }
+    };
+
+    const loadDashboardData = async () => {
+        if (!isInitialized || !engines.orderEngine) return;
+
+        try {
+            // Load real statistics
+            const today = new Date();
+            const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+            
+            const todaysOrders = await engines.orderEngine.getOrdersByDate(startOfDay);
+            const totalRevenue = todaysOrders.reduce((sum: number, order: any) => sum + (order.totalAmount || 0), 0);
+            const activeOrders = todaysOrders.filter((o: any) => o.status !== 'completed' && o.status !== 'cancelled').length;
+            
+            setStats([
+                { 
+                    label: 'Today\'s Revenue', 
+                    value: `$${totalRevenue.toFixed(2)}`, 
+                    change: '+12%', 
+                    icon: TrendingUp, 
+                    color: 'text-blue-600', 
+                    glow: 'shadow-blue-500/20', 
+                    variant: 'primary' as const 
+                },
+                { 
+                    label: 'Active Orders', 
+                    value: activeOrders.toString(), 
+                    change: '+5%', 
+                    icon: Activity, 
+                    color: 'text-green-600', 
+                    glow: 'shadow-green-500/20', 
+                    variant: 'success' as const 
+                },
+                { 
+                    label: 'Products', 
+                    value: (await engines.productEngine.getProductCount()).toString(), 
+                    change: '0%', 
+                    icon: Package, 
+                    color: 'text-purple-600', 
+                    glow: 'shadow-purple-500/20', 
+                    variant: 'accent' as const 
+                },
+                { 
+                    label: 'Staff Members', 
+                    value: (await engines.staffEngine.getStaffCount()).toString(), 
+                    change: '-2%', 
+                    icon: Users, 
+                    color: 'text-orange-600', 
+                    glow: 'shadow-orange-500/20', 
+                    variant: 'warning' as const 
+                },
+            ]);
+
+            // Load terminal data
+            const terminalData = [
+                { 
+                    name: 'Main Counter', 
+                    id: 'POS-001', 
+                    status: 'Active', 
+                    users: 2, 
+                    type: 'Stationary', 
+                    statusVariant: 'success' as const 
+                },
+                { 
+                    name: 'Kitchen Display', 
+                    id: 'KDS-001', 
+                    status: 'Active', 
+                    users: 1, 
+                    type: 'Display', 
+                    statusVariant: 'success' as const 
+                },
+                { 
+                    name: 'Mobile Terminal', 
+                    id: 'MPOS-001', 
+                    status: 'Offline', 
+                    users: 0, 
+                    type: 'Handheld', 
+                    statusVariant: 'error' as const 
+                }
+            ];
+            setTerminals(terminalData);
+
+            // Load notifications
+            const recentNotifications = [
+                { 
+                    id: 1, 
+                    title: 'Low Stock Alert', 
+                    message: 'Coffee beans stock is running low', 
+                    time: '5m ago', 
+                    type: 'warning' 
+                },
+                { 
+                    id: 2, 
+                    title: 'New Order', 
+                    message: 'Table 5 placed a new order', 
+                    time: '12m ago', 
+                    type: 'success' 
+                },
+                { 
+                    id: 3, 
+                    title: 'Payment Received', 
+                    message: 'USDC payment confirmed for order #12345', 
+                    time: '25m ago', 
+                    type: 'info' 
+                }
+            ];
+            setNotifications(recentNotifications);
+
+        } catch (error) {
+            console.error('Failed to load dashboard data:', error);
+        }
+    };
+
+    const menuItems = [
+        { icon: LayoutDashboard, label: 'Dashboard', path: '/admin', active: true },
+        { icon: Package, label: 'Products', path: '/admin/products' },
+        { icon: Users, label: 'Staff', path: '/admin/staff' },
+        { icon: BarChart, label: 'Analytics', path: '/admin/analytics' },
+        { icon: CreditCard, label: 'Payments', path: '/admin/payments' },
+        { icon: Settings, label: 'Settings', path: '/admin/settings' },
+    ];
 
     if (!mounted) return null;
 
-    const stats = [
-        { label: 'Network Revenue', value: '$12.8M', change: '+12%', icon: TrendingUp, color: 'text-primary', glow: 'bg-primary/10' },
-        { label: 'Active Channels', value: '4,820', change: '+5%', icon: Activity, color: 'text-secondary', glow: 'bg-secondary/10' },
-        { label: 'Protocol Nodes', value: '12', change: '0%', icon: Globe, color: 'text-success', glow: 'bg-success/10' },
-        { label: 'Quantum Flow', value: '$26.5K', change: '-2%', icon: Box, color: 'text-accent', glow: 'bg-accent/10' },
-    ];
-
-    const menuItems = [
-        { icon: LayoutDashboard, label: 'Control Plane', path: '/admin', active: true },
-        { icon: Menu, label: 'Resource Map', path: '/admin/menus' },
-        { icon: Package, label: 'Inventory Assets', path: '/admin/items' },
-        { icon: Users, label: 'Human Capitals', path: '/admin/staff' },
-        { icon: BarChart, label: 'Analytics Engine', path: '/admin/analytics' },
-        { icon: CreditCard, label: 'Settlement Gateways', path: '/admin/payments' },
-        { icon: Gem, label: 'Protocol Plan', path: '/admin/plans' },
-        { icon: Settings, label: 'System Config', path: '/admin/settings' },
-    ];
-
     return (
-        <div className="flex h-screen bg-neutral text-text-primary selection:bg-primary/20 overflow-hidden relative">
-            {/* Background Orbs */}
-            <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/5 blur-[120px] rounded-full" />
-            </div>
-
+        <div className="flex h-screen bg-gray-50 text-gray-900 overflow-hidden">
             {/* Sidebar */}
-            <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-80 bg-white/40 backdrop-blur-2xl border-r border-border-subtle flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="p-10">
-                    <div className="flex items-center gap-4 mb-12">
-                        <motion.div
-                            whileHover={{ scale: 1.1, rotate: 5 }}
-                            className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-2xl shadow-primary/20"
-                        >
-                            <Shield size={24} className="text-background" />
-                        </motion.div>
-                        <span className="text-2xl font-black tracking-tighter uppercase italic text-primary">ADMIN OS</span>
+            <aside className={`fixed lg:static inset-y-0 left-0 z-[60] w-80 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} shadow-lg`}>
+                <div className="p-6">
+                    <div className="flex items-center gap-4 mb-10">
+                        <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-md">
+                            <Shield size={24} className="text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-bold text-gray-900">Admin Panel</h1>
+                            <p className="text-xs text-gray-500">Business Management</p>
+                        </div>
                     </div>
 
                     <nav className="space-y-2">
@@ -93,146 +202,138 @@ export default function AdminDashboard() {
                             <button
                                 key={idx}
                                 onClick={() => router.push(item.path)}
-                                className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all duration-300 group ${item.active
-                                        ? 'bg-primary text-background shadow-lg shadow-primary/20'
-                                        : 'text-text-secondary hover:bg-neutral hover:text-text-primary'
-                                    }`}
+                                className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 ${
+                                    item.active
+                                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                                }`}
                             >
-                                <item.icon size={20} className={item.active ? 'text-background' : 'group-hover:text-primary transition-colors'} />
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{item.label}</span>
+                                <item.icon size={20} />
+                                <span className="font-medium text-sm">{item.label}</span>
                             </button>
                         ))}
                     </nav>
                 </div>
 
-                <div className="mt-auto p-10">
-                    <div className="bg-primary/5 rounded-3xl p-8 border border-primary/10 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 blur-2xl rounded-full -mr-12 -mt-12 group-hover:bg-primary/20 transition-colors" />
-                        <div className="flex items-center gap-3 mb-4 relative z-10">
-                            <Gem size={18} className="text-primary" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-primary">ENTERPRISE CLOUD</span>
+                <div className="mt-auto p-6">
+                    <Card className="p-4 border border-gray-200">
+                        <div className="flex items-center gap-3 mb-3">
+                            <Gem size={16} className="text-blue-600" />
+                            <span className="text-xs font-bold text-blue-600 uppercase">Business Plan</span>
                         </div>
-                        <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-6 leading-relaxed relative z-10 opacity-60">
-                            Multi-branch AI prediction active.
+                        <p className="text-xs text-gray-600 mb-4">
+                            Standard plan active with all features unlocked.
                         </p>
-                        <Button className="w-full h-12 bg-primary text-background font-black text-[9px] tracking-[0.3em] uppercase rounded-2xl relative z-10">LICENSE SETTINGS</Button>
-                    </div>
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full text-xs"
+                            onClick={() => router.push('/admin/plans')}
+                        >
+                            View Plans
+                        </Button>
+                    </Card>
                 </div>
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto relative z-10 custom-scrollbar bg-neutral/30">
-                <header className="px-10 py-8 border-b border-border-subtle flex items-center justify-between sticky top-0 bg-white/40 backdrop-blur-2xl z-30">
-                    <div className="flex items-center gap-8">
+            <main className="flex-1 overflow-y-auto relative">
+                <header className="px-8 py-6 border-b border-gray-200 flex flex-col md:flex-row items-start md:items-center justify-between sticky top-0 bg-white z-10 shadow-sm">
+                    <div className="flex items-center gap-6">
                         {/* Mobile Toggle */}
-                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-3 bg-white rounded-2xl border border-border-subtle shadow-sm">
-                            <Menu size={20} />
+                        <button 
+                            onClick={() => setSidebarOpen(!sidebarOpen)} 
+                            className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+                        >
+                            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
                         </button>
                         <div>
-                            <motion.h1
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="text-3xl font-black tracking-tight text-text-primary uppercase italic leading-none"
-                            >
+                            <h1 className="text-2xl font-bold text-gray-900">
                                 {businessName}
-                            </motion.h1>
+                            </h1>
                             <div className="flex items-center gap-3 mt-2">
-                                <Badge className="bg-success text-background text-[8px] font-black uppercase tracking-widest px-3 py-1">Protocol Active</Badge>
-                                <span className="text-text-secondary text-[8px] font-black uppercase tracking-widest opacity-40 italic">{userLocation}</span>
+                                <Badge variant="success" className="text-xs">
+                                    Online
+                                </Badge>
+                                <span className="text-sm text-gray-500 flex items-center gap-1">
+                                    <Globe size={14} className="text-blue-500" />
+                                    {userLocation}
+                                </span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        <div className="hidden lg:flex items-center gap-3 px-6 py-3 rounded-2xl bg-white border border-border-subtle focus-within:border-primary/50 transition-all shadow-sm">
-                            <Search size={18} className="text-text-muted opacity-50" />
-                            <input type="text" placeholder="Global resource search..." className="bg-transparent border-none focus:outline-none text-xs font-bold uppercase tracking-widest w-48 placeholder:text-text-muted/40" />
+                    <div className="flex items-center gap-4 mt-4 md:mt-0">
+                        <div className="relative">
+                            <button 
+                                onClick={() => setShowNotifications(!showNotifications)}
+                                className="p-2 rounded-lg hover:bg-gray-100 relative"
+                            >
+                                <Bell size={20} className="text-gray-600" />
+                                {notifications.length > 0 && (
+                                    <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                                )}
+                            </button>
+
+                            <AnimatePresence>
+                                {showNotifications && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                        className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50"
+                                    >
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h4 className="text-sm font-bold text-gray-900">Notifications</h4>
+                                            <Badge variant="info" className="text-xs">
+                                                {notifications.length} new
+                                            </Badge>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {notifications.map(n => (
+                                                <div key={n.id} className="flex gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                                                        n.type === 'warning' ? 'bg-orange-100 text-orange-600' :
+                                                        n.type === 'success' ? 'bg-green-100 text-green-600' :
+                                                        'bg-blue-100 text-blue-600'
+                                                    }`}>
+                                                        {n.type === 'warning' ? <AlertCircle size={16} /> : 
+                                                         n.type === 'success' ? <CheckCircle2 size={16} /> : 
+                                                         <Activity size={16} />}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-medium text-gray-900">{n.title}</p>
+                                                        <p className="text-xs text-gray-600">{n.message}</p>
+                                                        <p className="text-xs text-gray-400 mt-1">{n.time}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button className="w-full mt-4 py-2 text-xs text-gray-600 hover:text-gray-900">
+                                            View all notifications
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            <div className="relative">
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    onClick={() => setShowNotifications(!showNotifications)}
-                                    className="w-12 h-12 rounded-2xl bg-white border border-border-subtle flex items-center justify-center text-text-secondary shadow-sm hover:shadow-md transition-all relative"
-                                >
-                                    <Bell size={20} />
-                                    <span className="absolute top-3 right-3 w-2 h-2 bg-primary rounded-full border-2 border-white"></span>
-                                </motion.button>
-                                {/* Notifications Dropdown Mock */}
-                                <AnimatePresence>
-                                    {showNotifications && (
-                                        <motion.div
-                                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                            className="absolute right-0 top-full mt-4 w-96 bg-white rounded-[2rem] shadow-2xl border border-border-subtle p-8 z-50"
-                                        >
-                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-text-secondary mb-6 opacity-60">System Logs</h4>
-                                            <div className="space-y-6">
-                                                {notifications.map(n => (
-                                                    <div key={n.id} className="flex gap-4 group cursor-pointer">
-                                                        <div className={`w-10 h-10 rounded-xl ${n.type === 'warning' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'} flex items-center justify-center shrink-0`}>
-                                                            {n.type === 'warning' ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-[10px] font-black uppercase tracking-widest text-text-primary mb-1">{n.title}</p>
-                                                            <p className="text-[9px] font-medium text-text-secondary opacity-60 line-clamp-2 leading-relaxed">{n.message}</p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                        <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
+                            <div className="text-right hidden sm:block">
+                                <p className="text-sm font-medium text-gray-900">
+                                    {user?.firstName ? `${user.firstName} ${user.lastName}` : 'Admin'}
+                                </p>
+                                <p className="text-xs text-gray-500">Administrator</p>
                             </div>
-
-                            <motion.div
-                                whileHover={{ scale: 1.05 }}
-                                className="flex items-center gap-4 pl-4 border-l border-border-subtle cursor-pointer"
-                                onClick={() => setShowUserMenu(!showUserMenu)}
-                            >
-                                <div className="text-right hidden sm:block">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-primary">Master Administrator</p>
-                                    <p className="text-[8px] font-black uppercase tracking-[0.2em] text-text-secondary opacity-40 italic">ID: X72-841-K90</p>
-                                </div>
-                                <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-background font-black text-xs shadow-xl shadow-primary/20">
-                                    MA
-                                </div>
-                            </motion.div>
+                            <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white font-medium text-sm">
+                                {user?.firstName?.charAt(0)?.toUpperCase() || 'A'}
+                            </div>
                         </div>
                     </div>
                 </header>
 
-                <div className="p-10 space-y-10">
-                    {/* Trial Banner */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-primary rounded-[3rem] p-12 text-background relative overflow-hidden shadow-2xl shadow-primary/20"
-                    >
-                        <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-white/10 to-transparent flex items-center justify-center">
-                            <Shield size={180} className="text-background/5 rotate-12" />
-                        </div>
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-4 mb-8">
-                                <Badge className="bg-background text-primary text-[8px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">QUANTUM TRIAL LIVE</Badge>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-background/60 italic">25 Cycles Remaining</span>
-                            </div>
-                            <h2 className="text-5xl font-black mb-6 uppercase tracking-tighter italic leading-none">The Protocol is Yours.</h2>
-                            <p className="text-background/70 max-w-2xl text-sm font-medium leading-relaxed mb-10">
-                                You are operating one of the first 10 hyper-merchants. Full protocol access authorized.
-                                Secure your institutional legacy with NileLink Pro.
-                            </p>
-                            <div className="flex gap-4">
-                                <Button className="h-14 px-10 bg-background text-primary hover:bg-white font-black text-[10px] tracking-[0.3em] uppercase rounded-2xl transition-all shadow-xl shadow-black/10">SETTLE HARDWARE</Button>
-                                <Button variant="outline" className="h-14 px-10 border-background/20 text-background hover:bg-background/10 font-black text-[10px] tracking-[0.3em] uppercase rounded-2xl transition-all">RESEARCH DOCS</Button>
-                            </div>
-                        </div>
-                    </motion.div>
-
+                <div className="p-8 space-y-8">
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {stats.map((stat, idx) => (
                             <motion.div
                                 key={idx}
@@ -240,157 +341,129 @@ export default function AdminDashboard() {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.1 }}
                             >
-                                <div className="bg-white rounded-[2.5rem] p-10 border border-border-subtle shadow-xl hover:shadow-22l transition-all group relative overflow-hidden cursor-pointer">
-                                    <div className={`absolute top-0 right-0 w-32 h-32 ${stat.glow} blur-[60px] rounded-full -mr-16 -mt-16 group-hover:blur-[80px] transition-all`} />
-                                    <div className="flex justify-between items-start mb-8 relative z-10">
-                                        <div className={`w-14 h-14 rounded-2xl ${stat.glow} flex items-center justify-center ${stat.color} shadow-lg shadow-current/5`}>
-                                            <stat.icon size={26} />
+                                <Card className="p-6 border border-gray-200 hover:border-blue-300 transition-all duration-300">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className={`w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center ${stat.color}`}>
+                                            <stat.icon size={24} />
                                         </div>
-                                        <div className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${stat.change.startsWith('+') ? 'bg-success/10 text-success' : 'bg-red-500/10 text-red-500'}`}>
-                                            {stat.change} DELTA
-                                        </div>
+                                        <Badge variant={stat.variant} className="text-xs">
+                                            {stat.change}
+                                        </Badge>
                                     </div>
-                                    <div className="relative z-10">
-                                        <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.3em] mb-2 opacity-60">{stat.label}</p>
-                                        <p className="text-4xl font-black text-text-primary tracking-tighter italic">{stat.value}</p>
+                                    <div>
+                                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                                            {stat.label}
+                                        </p>
+                                        <p className="text-2xl font-bold text-gray-900">
+                                            {stat.value}
+                                        </p>
                                     </div>
-                                </div>
+                                </Card>
                             </motion.div>
                         ))}
                     </div>
 
-                    {/* Quick Launch Panel */}
+                    {/* Quick Actions */}
                     <div className="space-y-6">
-                        <div className="flex items-center justify-between px-4">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-text-secondary opacity-60">Sequence Initiators</h3>
-                            <button className="text-[9px] font-black uppercase tracking-widest text-primary hover:underline italic">Edit Console</button>
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-gray-900">Quick Actions</h3>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                             {[
-                                { icon: Plus, label: 'Add Manifest', path: '/admin/products', color: 'bg-primary/5 text-primary' },
-                                { icon: Store, label: 'Add Domain', path: '/admin/settings', color: 'bg-secondary/5 text-secondary' },
-                                { icon: Users, label: 'Add Agent', path: '/admin/staff', color: 'bg-success/5 text-success' },
-                                { icon: Package, label: 'Inventory Sync', path: '/terminal/inventory', color: 'bg-accent/5 text-accent' },
-                                { icon: CreditCard, label: 'Payment Hub', path: '/admin/payments', color: 'bg-primary/5 text-primary' },
-                                { icon: ArrowUpRight, label: 'Launch OS', path: '/terminal', color: 'bg-secondary/5 text-secondary' }
+                                { icon: Plus, label: 'Add Product', path: '/admin/products', color: 'bg-blue-50 text-blue-600' },
+                                { icon: Users, label: 'Add Staff', path: '/admin/staff', color: 'bg-green-50 text-green-600' },
+                                { icon: Package, label: 'Inventory', path: '/terminal/inventory', color: 'bg-purple-50 text-purple-600' },
+                                { icon: CreditCard, label: 'Payments', path: '/admin/payments', color: 'bg-orange-50 text-orange-600' }
                             ].map((action, idx) => (
                                 <motion.button
                                     key={idx}
-                                    whileHover={{ y: -5, scale: 1.05 }}
+                                    whileHover={{ y: -4 }}
                                     onClick={() => router.push(action.path)}
-                                    className="bg-white rounded-[2rem] p-8 border border-border-subtle shadow-xl hover:shadow-2xl transition-all text-center group"
+                                    className="bg-white border border-gray-200 rounded-lg p-6 text-center hover:shadow-md transition-all group"
                                 >
-                                    <div className={`w-16 h-16 ${action.color} rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-current/5`}>
-                                        <action.icon size={28} />
+                                    <div className={`w-12 h-12 ${action.color} rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform`}>
+                                        <action.icon size={24} />
                                     </div>
-                                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-text-primary mb-2 whitespace-nowrap">{action.label}</p>
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-text-secondary opacity-40 italic">Launch</p>
+                                    <p className="text-sm font-medium text-gray-900 mb-1">{action.label}</p>
+                                    <p className="text-xs text-gray-500">Click to start</p>
                                 </motion.button>
                             ))}
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                        {/* Hardware & Terminal Monitor */}
-                        <div className="lg:col-span-12 xl:col-span-8">
-                            <div className="bg-white rounded-[3rem] p-12 border border-border-subtle shadow-2xl relative overflow-hidden h-full">
-                                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 blur-[120px] rounded-full -mr-48 -mt-48" />
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 relative z-10">
-                                    <div>
-                                        <h3 className="text-2xl font-black text-text-primary uppercase tracking-tighter italic">Hardware Network</h3>
-                                        <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] opacity-60 mt-1">Live terminal synchronization</p>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <Button className="bg-neutral text-text-primary hover:bg-neutral-dark font-black text-[9px] tracking-[0.2em] uppercase px-8 rounded-2xl h-12">SCAN PROTOCOL</Button>
-                                        <Button className="bg-primary text-background font-black text-[9px] tracking-[0.2em] uppercase px-8 rounded-2xl h-12 shadow-xl shadow-primary/20">ADD NODE</Button>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6 relative z-10">
-                                    {[
-                                        { name: 'Front Desk 1', id: 'POS-72X1', status: 'Active', users: 3, type: 'Stationary', color: 'text-success' },
-                                        { name: 'Kitchen Relay', id: 'KDS-99W2', status: 'Active', users: 1, type: 'Display', color: 'text-success' },
-                                        { name: 'Mobile Bar Unit', id: 'MPOS-33K9', status: 'Error', users: 2, type: 'Handheld', color: 'text-red-500' }
-                                    ].map((t, idx) => (
-                                        <div key={idx} className="flex flex-col md:flex-row md:items-center justify-between p-8 bg-neutral/30 rounded-[2rem] border border-border-subtle hover:bg-neutral/50 transition-all group cursor-pointer gap-6">
-                                            <div className="flex items-center gap-6">
-                                                <div className="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center text-primary shadow-lg shadow-black/5 group-hover:scale-110 transition-transform">
-                                                    {t.type === 'Stationary' ? <Laptop size={32} /> : t.type === 'Display' ? <RefreshCw size={32} /> : <Smartphone size={32} />}
-                                                </div>
-                                                <div>
-                                                    <p className="text-lg font-black text-text-primary uppercase tracking-tight italic mb-1">{t.name}</p>
-                                                    <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.3em] opacity-40">Serial: {t.id} · {t.type}</p>
-                                                </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Terminals */}
+                        <Card className="p-6 border border-gray-200">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-lg font-bold text-gray-900">Terminals</h3>
+                                <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => router.push('/admin/settings/hardware')}
+                                >
+                                    Manage
+                                </Button>
+                            </div>
+                            <div className="space-y-4">
+                                {terminals.map((t, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-white rounded-lg border border-gray-200 flex items-center justify-center text-gray-600">
+                                                {t.type === 'Stationary' ? <Laptop size={20} /> : 
+                                                 t.type === 'Display' ? <RefreshCw size={20} /> : 
+                                                 <Smartphone size={20} />}
                                             </div>
-                                            <div className="flex items-center gap-12">
-                                                <div className="text-center">
-                                                    <p className="text-xl font-black text-text-primary italic">{t.users}</p>
-                                                    <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest opacity-40">Operators</p>
-                                                </div>
-                                                <div className="flex flex-col items-end">
-                                                    <Badge className={`${t.status === 'Active' ? 'bg-success/10 text-success' : 'bg-red-500/10 text-red-500'} text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full border-none mb-2`}>{t.status}</Badge>
-                                                    <div className="flex gap-4">
-                                                        <Printer size={16} className="text-text-secondary opacity-20 hover:opacity-100 transition-opacity" />
-                                                        <Activity size={16} className="text-text-secondary opacity-20 hover:opacity-100 transition-opacity" />
-                                                        <ArrowUpRight size={16} className="text-primary opacity-40 hover:opacity-100 transition-opacity" />
-                                                    </div>
-                                                </div>
+                                            <div>
+                                                <p className="font-medium text-gray-900">{t.name}</p>
+                                                <p className="text-xs text-gray-500">ID: {t.id}</p>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Recent Protocol Events */}
-                        <div className="lg:col-span-12 xl:col-span-4">
-                            <div className="bg-white rounded-[3rem] p-12 border border-border-subtle shadow-2xl relative overflow-hidden h-full">
-                                <div className="absolute top-0 right-0 w-48 h-48 bg-secondary/5 blur-3xl rounded-full -mr-24 -mt-24" />
-                                <h3 className="text-2xl font-black text-text-primary uppercase tracking-tighter italic mb-10 relative z-10">Protocol Feed</h3>
-                                <div className="space-y-10 relative z-10">
-                                    {[
-                                        { icon: Shield, title: 'Security Auth', time: '2m ago', desc: 'Terminal POS-72X1 authorized by user X72.', color: 'text-primary' },
-                                        { icon: CheckCircle2, title: 'Ledger Anchored', time: '15m ago', desc: 'Batch sync complete. 482 tx verified on-chain.', color: 'text-success' },
-                                        { icon: AlertCircle, title: 'Resource Alert', time: '1h ago', desc: 'Critical low level: Premium Arabica Beans.', color: 'text-warning' },
-                                        { icon: RefreshCw, title: 'System Sync', time: '3h ago', desc: 'Regional databaseAlexandria re-indexed.', color: 'text-secondary' },
-                                        { icon: Users, title: 'Agent Session', time: '4h ago', desc: 'Sarah J. initialized shift at Front Desk 1.', color: 'text-accent' }
-                                    ].map((event, idx) => (
-                                        <div key={idx} className="flex gap-6 group hover:translate-x-2 transition-transform">
-                                            <div className="flex flex-col items-center">
-                                                <div className={`w-12 h-12 rounded-[1.2rem] bg-neutral/50 flex items-center justify-center ${event.color} shadow-lg shadow-current/5 group-hover:bg-neutral group-hover:scale-110 transition-all`}>
-                                                    <event.icon size={22} />
-                                                </div>
-                                                {idx < 4 && <div className="w-0.5 flex-1 bg-border-subtle/30 my-3" />}
-                                            </div>
-                                            <div className="pt-1">
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <p className="text-[10px] font-black text-text-primary uppercase tracking-widest">{event.title}</p>
-                                                    <p className="text-[8px] font-black text-text-secondary uppercase tracking-widest opacity-40">{event.time}</p>
-                                                </div>
-                                                <p className="text-[10px] font-medium text-text-secondary opacity-60 leading-relaxed">{event.desc}</p>
-                                            </div>
+                                        <div className="text-right">
+                                            <Badge variant={t.statusVariant} className="text-xs mb-1">
+                                                {t.status}
+                                            </Badge>
+                                            <p className="text-xs text-gray-500">{t.users} users</p>
                                         </div>
-                                    ))}
-                                </div>
-                                <button className="w-full mt-12 py-4 bg-neutral hover:bg-neutral-dark rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] text-text-secondary transition-all">DECRYPT FULL LEDGER</button>
+                                    </div>
+                                ))}
                             </div>
-                        </div>
+                        </Card>
+
+                        {/* Recent Activity */}
+                        <Card className="p-6 border border-gray-200">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
+                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                            </div>
+                            <div className="space-y-4">
+                                {notifications.slice(0, 3).map((event, idx) => (
+                                    <div key={idx} className="flex gap-4 group hover:bg-gray-50 p-3 rounded-lg transition-all">
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                            event.type === 'warning' ? 'bg-orange-100 text-orange-600' :
+                                            event.type === 'success' ? 'bg-green-100 text-green-600' :
+                                            'bg-blue-100 text-blue-600'
+                                        }`}>
+                                            {event.type === 'warning' ? <AlertCircle size={16} /> : 
+                                             event.type === 'success' ? <CheckCircle2 size={16} /> : 
+                                             <Activity size={16} />}
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                                                {event.title}
+                                            </p>
+                                            <p className="text-xs text-gray-600">{event.message}</p>
+                                            <p className="text-xs text-gray-400 mt-1">{event.time}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <button className="w-full mt-4 py-2 text-sm text-gray-600 hover:text-blue-600">
+                                View all activity
+                            </button>
+                        </Card>
                     </div>
                 </div>
             </main>
-
-            <style jsx global>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 5px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(var(--primary-rgb), 0.1);
-                    border-radius: 10px;
-                }
-            `}</style>
         </div>
     );
 }

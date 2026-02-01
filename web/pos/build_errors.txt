@@ -1,0 +1,72 @@
+scripts/verify-protocol-integrity.ts(87,21): error TS2322: Type '"CASHIER"' is not assignable to type 'POS_ROLE'.
+src/app/admin/menus/page.tsx(337,41): error TS2322: Type '"success"' is not assignable to type '"primary" | "secondary" | "ghost" | "danger" | "outline"'.
+src/app/admin/products/page.tsx(680,60): error TS2322: Type '"outline"' is not assignable to type '"success" | "warning" | "error" | "info" | "neutral"'.
+src/app/admin/products/page.tsx(734,61): error TS2322: Type '"outline"' is not assignable to type '"success" | "warning" | "error" | "info" | "neutral"'.
+src/app/admin/staff/page.tsx(26,13): error TS2339: Property 'engines' does not exist on type 'POSContextType'.
+src/app/admin/staff/page.tsx(78,22): error TS2304: Cannot find name 'Button'.
+src/app/admin/staff/page.tsx(80,23): error TS2304: Cannot find name 'Button'.
+src/app/admin/staff/page.tsx(84,30): error TS2304: Cannot find name 'Badge'.
+src/app/admin/staff/page.tsx(84,166): error TS2304: Cannot find name 'Badge'.
+src/app/admin/staff/page.tsx(90,22): error TS2304: Cannot find name 'Button'.
+src/app/admin/staff/page.tsx(93,23): error TS2304: Cannot find name 'Button'.
+src/app/admin/staff/page.tsx(94,22): error TS2304: Cannot find name 'Button'.
+src/app/admin/staff/page.tsx(97,23): error TS2304: Cannot find name 'Button'.
+src/app/admin/staff/page.tsx(110,26): error TS2304: Cannot find name 'Card'.
+src/app/admin/staff/page.tsx(118,27): error TS2304: Cannot find name 'Card'.
+src/app/admin/staff/page.tsx(123,18): error TS2304: Cannot find name 'Card'.
+src/app/admin/staff/page.tsx(127,30): error TS2304: Cannot find name 'Input'.
+src/app/admin/staff/page.tsx(135,30): error TS2304: Cannot find name 'Button'.
+src/app/admin/staff/page.tsx(138,31): error TS2304: Cannot find name 'Button'.
+src/app/admin/staff/page.tsx(175,54): error TS2304: Cannot find name 'Badge'.
+src/app/admin/staff/page.tsx(177,55): error TS2304: Cannot find name 'Badge'.
+src/app/admin/staff/page.tsx(196,46): error TS2304: Cannot find name 'Button'.
+src/app/admin/staff/page.tsx(198,47): error TS2304: Cannot find name 'Button'.
+src/app/admin/staff/page.tsx(205,19): error TS2304: Cannot find name 'Card'.
+src/app/dashboard/page.tsx(12,27): error TS2307: Cannot find module '@/components/ui/GlassCard' or its corresponding type declarations.
+src/app/kitchen-display/page.tsx(10,27): error TS2307: Cannot find module '@/shared/contexts/SocketContext' or its corresponding type declarations.
+src/app/orders/approval/page.tsx(10,27): error TS2307: Cannot find module '@/shared/contexts/SocketContext' or its corresponding type declarations.
+src/app/orders/page.tsx(37,14): error TS2339: Property 'customerName' does not exist on type 'Order'.
+src/app/orders/page.tsx(37,36): error TS2339: Property 'customerName' does not exist on type 'Order'.
+src/app/orders/page.tsx(38,53): error TS2367: This comparison appears to be unintentional because the types '"PREPARING" | "READY" | "COMPLETED" | "CANCELLED" | "PENDING" | "CONFIRMED"' and '"pending" | "completed" | "cancelled"' have no overlap.
+src/app/orders/page.tsx(120,24): error TS2367: This comparison appears to be unintentional because the types '"PREPARING" | "READY" | "COMPLETED" | "CANCELLED" | "PENDING" | "CONFIRMED"' and '"completed"' have no overlap.
+src/app/orders/page.tsx(120,108): error TS2367: This comparison appears to be unintentional because the types '"PREPARING" | "READY" | "COMPLETED" | "CANCELLED" | "PENDING" | "CONFIRMED"' and '"pending"' have no overlap.
+src/app/orders/page.tsx(128,84): error TS2339: Property 'totalAmount' does not exist on type 'Order'.
+src/app/orders/page.tsx(129,70): error TS2339: Property 'customerName' does not exist on type 'Order'.
+src/app/orders/page.tsx(131,117): error TS2367: This comparison appears to be unintentional because the types '"PREPARING" | "READY" | "COMPLETED" | "CANCELLED" | "PENDING" | "CONFIRMED"' and '"completed"' have no overlap.
+src/app/orders/page.tsx(132,27): error TS2367: This comparison appears to be unintentional because the types '"PREPARING" | "READY" | "COMPLETED" | "CANCELLED" | "PENDING" | "CONFIRMED"' and '"pending"' have no overlap.
+src/app/orders/page.tsx(148,61): error TS2339: Property 'customerName' does not exist on type 'Order'.
+src/app/orders/page.tsx(149,70): error TS2339: Property 'customerPhone' does not exist on type 'Order'.
+src/app/orders/page.tsx(153,61): error TS2339: Property 'cashierName' does not exist on type 'Order'.
+src/app/orders/page.tsx(164,66): error TS2339: Property 'productName' does not exist on type 'OrderItem'.
+src/app/orders/page.tsx(177,44): error TS2339: Property 'totalAmount' does not exist on type 'Order'.
+src/app/orders/page.tsx(179,30): error TS2339: Property 'discount' does not exist on type 'Order'.
+src/app/orders/page.tsx(182,45): error TS2339: Property 'discount' does not exist on type 'Order'.
+src/app/orders/page.tsx(187,44): error TS2339: Property 'totalAmount' does not exist on type 'Order'.
+src/app/orders/page.tsx(191,68): error TS2339: Property 'totalAmount' does not exist on type 'Order'.
+src/app/products/page.tsx(35,37): error TS2339: Property 'filter' does not exist on type 'any[] | { products: Product[]; total: number; page?: number; pageSize?: number; }'.
+  Property 'filter' does not exist on type '{ products: Product[]; total: number; page?: number; pageSize?: number; }'.
+src/app/products/page.tsx(108,57): error TS2339: Property 'length' does not exist on type 'any[] | { products: Product[]; total: number; page?: number; pageSize?: number; }'.
+  Property 'length' does not exist on type '{ products: Product[]; total: number; page?: number; pageSize?: number; }'.
+src/app/products/page.tsx(109,66): error TS2339: Property 'filter' does not exist on type 'any[] | { products: Product[]; total: number; page?: number; pageSize?: number; }'.
+  Property 'filter' does not exist on type '{ products: Product[]; total: number; page?: number; pageSize?: number; }'.
+src/app/products/page.tsx(127,25): error TS2339: Property 'filter' does not exist on type 'any[] | { products: Product[]; total: number; page?: number; pageSize?: number; }'.
+  Property 'filter' does not exist on type '{ products: Product[]; total: number; page?: number; pageSize?: number; }'.
+src/app/reports/page.tsx(21,42): error TS2307: Cannot find module '@/shared/components/NeuralIntelligenceBridge' or its corresponding type declarations.
+src/app/reports/page.tsx(22,27): error TS2307: Cannot find module '@/shared/components/GlassCard' or its corresponding type declarations.
+src/app/terminal/ledger/page.tsx(39,5): error TS2304: Cannot find name 'useEffect'.
+src/app/terminal/page.tsx(24,33): error TS2307: Cannot find module '@/shared/hooks/useIntelligence' or its corresponding type declarations.
+src/app/terminal/page.tsx(25,33): error TS2307: Cannot find module '@/shared/components/NeuralUpsellHUD' or its corresponding type declarations.
+src/app/terminal/page.tsx(56,29): error TS2304: Cannot find name 'useRef'.
+src/app/terminal/page.tsx(138,36): error TS2304: Cannot find name 'hardwareStatus'.
+src/app/terminal/page.tsx(143,38): error TS2304: Cannot find name 'hardwareStatus'.
+src/app/terminal/payment/page.tsx(150,22): error TS2304: Cannot find name 'motion'.
+src/app/terminal/payment/page.tsx(156,23): error TS2304: Cannot find name 'motion'.
+src/app/terminal/payment/page.tsx(302,60): error TS2304: Cannot find name 'motion'.
+src/app/terminal/payment/page.tsx(302,268): error TS2304: Cannot find name 'motion'.
+src/app/terminal/payment/page.tsx(319,42): error TS2304: Cannot find name 'motion'.
+src/app/terminal/payment/page.tsx(324,43): error TS2304: Cannot find name 'motion'.
+src/components/IncomingOrderHUD.tsx(13,23): error TS2339: Property 'restaurant' does not exist on type 'POSContextType'.
+src/contexts/POSContext.tsx(104,33): error TS2448: Block-scoped variable 'engines' used before its declaration.
+src/contexts/POSContext.tsx(104,54): error TS2448: Block-scoped variable 'engines' used before its declaration.
+src/contexts/POSContext.tsx(104,75): error TS2448: Block-scoped variable 'engines' used before its declaration.
+src/contexts/POSContext.tsx(117,26): error TS2304: Cannot find name 'HardwareMonitor'.

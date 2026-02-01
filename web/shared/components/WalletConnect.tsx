@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from './Button';
 import { Badge } from './Badge';
 import { useWallet } from '../contexts/WalletContext';
-import { Wallet, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Fingerprint, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { authService } from '../services/AuthService';
 
 interface WalletConnectProps {
@@ -41,7 +41,7 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
 
     const handleConnect = async () => {
         if (!isSupported) {
-            setError('Wallet not supported. Please install MetaMask or another Web3 wallet.');
+            setError('System check failed: Identity module not found.');
             return;
         }
 
@@ -66,7 +66,7 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
             return (
                 <Badge variant="error" className={`cursor-pointer ${className}`} onClick={handleConnect}>
                     <AlertCircle size={12} className="mr-1" />
-                    No Wallet
+                    Identity Disconnected
                 </Badge>
             );
         }
@@ -74,7 +74,7 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
         return (
             <Badge variant="success" className={`cursor-pointer ${className}`}>
                 <CheckCircle size={12} className="mr-1" />
-                {showAddress && address ? formatAddress(address) : 'Connected'}
+                {showAddress && address ? `Node ID: ${address.slice(0, 8)}` : 'Identity Anchored'}
                 {showBalance && balance && <span className="ml-2 text-xs opacity-75">({balance})</span>}
             </Badge>
         );
@@ -86,11 +86,11 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
             <div className={`flex items-center gap-2 ${className}`}>
                 <Badge variant="success" size="sm">
                     <CheckCircle size={12} className="mr-1" />
-                    Connected
+                    Identity Secure
                 </Badge>
                 {showAddress && address && (
                     <span className="text-sm font-mono text-gray-600">
-                        {formatAddress(address)}
+                        Node ID: {address.slice(0, 8)}
                     </span>
                 )}
                 {showBalance && balance && (
@@ -104,7 +104,7 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
                     onClick={disconnectWallet}
                     className="text-xs"
                 >
-                    Disconnect
+                    Release Identity
                 </Button>
             </div>
         );
@@ -121,12 +121,12 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
                 {isConnecting ? (
                     <>
                         <Loader2 size={16} className="mr-2 animate-spin" />
-                        Connecting...
+                        Anchoring Identity...
                     </>
                 ) : (
                     <>
-                        <Wallet size={16} className="mr-2" />
-                        Connect Wallet
+                        <Fingerprint size={16} className="mr-2" />
+                        Anchor Identity
                     </>
                 )}
             </Button>
@@ -139,7 +139,7 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
 
             {!isSupported && (
                 <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
-                    Web3 wallet not detected. Please install MetaMask or another compatible wallet.
+                    Identity module not detected. Please ensure your core service is active.
                 </div>
             )}
         </div>

@@ -1,0 +1,138 @@
+/* 
+ * COMBAT-READY POS DESIGN SYSTEM
+ * Optimized for Speed, Clarity, and Reduced Fatigue
+ */
+
+:root {
+    /* Core Backgrounds - Deep Space Philosophy */
+    --pos-bg-primary: #050505;
+    --pos-bg-secondary: #0f1115;
+    --pos-bg-tertiary: #1a1d23;
+    --pos-bg-surface: rgba(255, 255, 255, 0.03);
+
+    /* Borders & Dividers */
+    --pos-border-subtle: rgba(255, 255, 255, 0.08);
+    --pos-border-strong: rgba(255, 255, 255, 0.2);
+
+    /* Brand & Actions */
+    --pos-accent: #00f2ff;
+    /* Electric Blue - Focus */
+    --pos-accent-glow: rgba(0, 242, 255, 0.3);
+
+    /* Utility / Status Colors - ZERO AMBIGUITY */
+    --pos-success: #00ff88;
+    /* Neon Green - Paid/Success */
+    --pos-success-bg: rgba(0, 255, 136, 0.1);
+
+    --pos-warning: #ffcc00;
+    /* Caution Yellow - Info/Warning */
+    --pos-warning-bg: rgba(255, 204, 0, 0.1);
+
+    --pos-danger: #ff3344;
+    /* Alert Crimson - Deletion/Error */
+    --pos-danger-bg: rgba(255, 51, 68, 0.1);
+
+    --pos-alert: #ff0000;
+    /* Pulse Red - Security/Theft */
+
+    /* Typography - High Readability */
+    --pos-text-primary: #ffffff;
+    --pos-text-secondary: rgba(255, 255, 255, 0.7);
+    --pos-text-muted: rgba(255, 255, 255, 0.4);
+    --pos-text-inverse: #000000;
+
+    /* Heights & Targets - Touch First */
+    --pos-target-min: 48px;
+    --pos-target-standard: 56px;
+    --pos-header-height: 64px;
+    --pos-footer-height: 80px;
+
+    /* Shadows - For Depth Perception */
+    --pos-shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --pos-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.8);
+}
+
+/* Base Combat Utilities */
+.combat-bg {
+    background-color: var(--pos-bg-primary);
+    color: var(--pos-text-primary);
+}
+
+.combat-card {
+    background: var(--pos-bg-secondary);
+    border: 1px solid var(--pos-border-subtle);
+    border-radius: 12px;
+}
+
+.combat-glass {
+    background: var(--pos-bg-surface);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--pos-border-subtle);
+}
+
+/* High-Pressure Buttons */
+.combat-btn {
+    height: var(--pos-target-standard);
+    padding: 0 24px;
+    border-radius: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.1s ease-in-out;
+    cursor: pointer;
+    border: none;
+    user-select: none;
+}
+
+.combat-btn:active {
+    transform: scale(0.96);
+    filter: brightness(1.2);
+}
+
+.combat-btn-primary {
+    background: var(--pos-accent);
+    color: var(--pos-text-inverse);
+    box-shadow: 0 0 20px var(--pos-accent-glow);
+}
+
+.combat-btn-success {
+    background: var(--pos-success);
+    color: var(--pos-text-inverse);
+}
+
+.combat-btn-danger {
+    background: var(--pos-danger);
+    color: var(--pos-text-primary);
+}
+
+.combat-btn-ghost {
+    background: transparent;
+    color: var(--pos-text-primary);
+    border: 1px solid var(--pos-border-strong);
+}
+
+/* Animation: Pulsing Alert */
+@keyframes alert-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 20px rgba(255, 0, 0, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+    }
+}
+
+.alert-pulse {
+    animation: alert-pulse 1.5s infinite;
+    border: 2px solid var(--pos-alert) !important;
+}

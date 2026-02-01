@@ -7,17 +7,15 @@ import { Card } from '@/shared/components/Card';
 import { usePOS } from '@/contexts/POSContext';
 
 export const POSLocationGuard = ({ children }: { children: React.ReactNode }) => {
-    // In a real app, usePOS would expose setLocation and location
-    // For now we simulate local state or context usage 
-    const [isAnchored, setIsAnchored] = useState(false);
+    // Check localStorage immediately to prevent modal flash
+    const [isAnchored, setIsAnchored] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('nilelink_pos_anchored') === 'true';
+        }
+        return false;
+    });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    // Persist anchor state
-    useEffect(() => {
-        const anchored = localStorage.getItem('nilelink_pos_anchored');
-        if (anchored) setIsAnchored(true);
-    }, []);
 
     const handleAnchorTerminal = async () => {
         setIsLoading(true);
@@ -53,8 +51,26 @@ export const POSLocationGuard = ({ children }: { children: React.ReactNode }) =>
         );
     };
 
+    // Auto-anchor in development environment
+    useEffect(() => {
+        if (typeof window !== 'undefined' && !isAnchored) {
+            // Check if we're in development mode
+            const isDev = process.env.NODE_ENV === 'development' || typeof window !== 'undefined' && window.location.hostname === 'localhost';
+            
+            if (isDev) {
+                // Auto-anchor in development
+                localStorage.setItem('nilelink_pos_anchored', 'true');
+                setIsAnchored(true);
+            }
+        }
+    }, [isAnchored]);
+
     if (isAnchored) {
-        return <>{children}</>;
+        return (
+            <div className="min-h-screen flex flex-col">
+                {children}
+            </div>
+        );
     }
 
     return (

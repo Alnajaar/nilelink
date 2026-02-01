@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, SafeAreaView, StatusBar, Dimensions, Alert, Linking, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { LinearGradient } from 'expo-linear-gradient';
+// import { LinearGradient } from 'expo-linear-gradient'; // Temporarily disabled
 import * as Location from 'expo-location';
 import { GeoVerificationClient } from '../lib/GeoVerification';
 import { api } from '@nilelink/mobile-shared';
@@ -123,7 +123,7 @@ export function ActiveDeliveryScreen() {
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
-            <LinearGradient colors={['#050505', '#111']} style={styles.fullBg}>
+            <View style={[styles.fullBg, { backgroundColor: '#050505' }]}>
 
                 <SafeAreaView>
                     <View style={styles.header}>
@@ -199,13 +199,13 @@ export function ActiveDeliveryScreen() {
                     {/* Action Hub */}
                     <View style={styles.actionHub}>
                         {status !== 'DELIVERED' ? (
-                            <Pressable style={styles.mainAction} onPress={handleUpdate}>
-                                <LinearGradient colors={['#3b82f6', '#2563eb']} style={styles.actionGradient}>
+                            <Pressable style={[styles.mainAction, { backgroundColor: '#3b82f6' }]} onPress={handleUpdate}>
+                                <View style={styles.actionGradient}>
                                     <Text style={styles.actionText}>
                                         {status === 'ACCEPTED' ? 'CONFIRM PICKUP' : 'CONFIRM DELIVERY'}
                                     </Text>
                                     <Ionicons name="chevron-forward" size={18} color="#fff" />
-                                </LinearGradient>
+                                </View>
                             </Pressable>
                         ) : (
                             <View style={styles.doneWrapper}>
@@ -231,7 +231,7 @@ export function ActiveDeliveryScreen() {
                     <Ionicons name="shield-checkmark" size={14} color="rgba(255,255,255,0.2)" />
                     <Text style={styles.techText}>Protocol Verification v0.1.0 • P2P Envelopes Active</Text>
                 </View>
-            </LinearGradient>
+            </View>
         </View>
     );
 }

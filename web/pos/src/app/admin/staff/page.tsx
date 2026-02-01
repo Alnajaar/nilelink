@@ -20,6 +20,10 @@ import {
 import { usePOS } from '@/contexts/POSContext';
 import { AddStaffModal } from '@/components/admin/AddStaffModal';
 import { getRoleColor, getRoleLabel } from '@/utils/permissions';
+import { Button } from '@/shared/components/Button';
+import { Card } from '@/shared/components/Card';
+import { Badge } from '@/shared/components/Badge';
+import { Input } from '@/shared/components/Input';
 
 export default function AdminStaffPage() {
     const router = useRouter();
@@ -79,21 +83,18 @@ export default function AdminStaffPage() {
                         <ArrowLeft size={20} />
                     </Button>
                     <div>
-                        <div className="flex items-center gap-3 mb-1">
-                            <h1 className="text-4xl font-black text-text-primary tracking-tighter uppercase italic">Staff Intelligence</h1>
-                            <Badge className="bg-primary/10 text-primary border-primary/20 font-black uppercase tracking-widest text-[10px] py-1 px-3">Protocol 4.0</Badge>
-                        </div>
-                        <p className="text-text-muted font-medium uppercase text-[11px] tracking-widest opacity-60">Maintain zero-error human operations in the NileLink node.</p>
+                        <h1 className="text-3xl font-bold text-gray-900">Staff Management</h1>
+                        <p className="text-gray-600 font-medium">Manage team members and permissions</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <Button variant="outline" className="h-12 rounded-2xl gap-3 text-[11px] font-black uppercase tracking-widest bg-white">
-                        <Shield size={18} className="text-primary" />
-                        Roles & Permissions
+                    <Button variant="outline" className="h-12 rounded-lg gap-2 text-sm font-medium">
+                        <Shield size={18} className="text-blue-600" />
+                        Roles
                     </Button>
-                    <Button onClick={() => setIsAddModalOpen(true)} className="h-12 rounded-2xl gap-3 text-[11px] font-black uppercase tracking-widest shadow-xl shadow-primary/20">
+                    <Button onClick={() => setIsAddModalOpen(true)} className="h-12 rounded-lg gap-2 text-sm font-medium bg-blue-600 hover:bg-blue-700">
                         <UserPlus size={18} />
-                        Recruit Operator
+                        Add Staff
                     </Button>
                 </div>
             </header>

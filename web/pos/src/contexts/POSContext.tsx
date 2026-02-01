@@ -1,294 +1,180 @@
-/**
- * POS Context - Global State Management for Event-Based POS
- * 
- * Provides EventEngine, LocalLedger, SyncWorker, RecipeEngine, CashEngine 
- * and JournalEngine to all components via React Context
- */
+'use client';
 
-"use client";
-
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { EventEngine } from '@/lib/events/EventEngine';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { StaffEngine } from '@/lib/staff/StaffEngine';
+import { productInventoryEngine } from '@/lib/core/ProductInventoryEngine';
 import { LocalLedger } from '@/lib/storage/LocalLedger';
-import { SyncWorker } from '@/lib/sync/SyncWorker';
-import { RecipeEngine } from '@/lib/inventory/RecipeEngine';
+import { StaffMember } from '@/lib/staff/StaffEngine';
+import { OrderSyncService } from '@shared/services/OrderSyncService';
 import { CashEngine } from '@/lib/cash/CashEngine';
 import { JournalEngine } from '@/lib/accounting/JournalEngine';
-import { ReputationEngine } from '@/lib/trust/ReputationEngine';
-import { IntelligenceEngine } from '@/lib/intelligence/IntelligenceEngine';
-import { StaffEngine, StaffMember } from '@/lib/staff/StaffEngine';
-import { hardwareMonitor } from '@/lib/hardware/HardwareMonitor';
-import { stockSync } from '@shared/engines/StockSyncEngine';
+import { EventEngine } from '@/lib/events/EventEngine';
+import { HardwareMonitor } from '@/lib/hardware/HardwareMonitor';
+import { InventorySyncEngine } from '@/lib/sync/InventorySyncEngine';
+import { useAuth } from '@shared/providers/AuthProvider';
+import { PayrollEngine } from '@/lib/payroll/PayrollEngine';
+import { procurementEngine } from '@/lib/supplier/ProcurementEngine';
 
-import { POS_ROLE, PERMISSION, hasPermission } from '@/utils/permissions';
-
+// Define the context type
 interface POSContextType {
-    eventEngine: EventEngine | null;
-    localLedger: LocalLedger | null;
-    syncWorker: SyncWorker | null;
-    recipeEngine: RecipeEngine | null;
-    cashEngine: CashEngine | null;
-    journalEngine: JournalEngine | null;
-    reputationEngine: ReputationEngine | null;
-    intelligenceEngine: IntelligenceEngine | null;
-    staffEngine: StaffEngine | null;
-    isInitialized: boolean;
-    isOnline: boolean;
-    unsyncedCount: number;
-    deviceId: string;
-    branchId: string;
-    currentRole: POS_ROLE | null;
-    currentStaff: StaffMember | null;
-    setCurrentRole: (role: POS_ROLE | null) => void;
-    loginWithPin: (code: string, pin: string) => Promise<boolean>;
-    logout: () => void;
-    hasPermission: (permission: PERMISSION) => boolean;
-    demoMode: boolean;
-    setDemoMode: (mode: boolean) => void;
+  engines: {
+    staffEngine: StaffEngine;
+    productEngine: typeof productInventoryEngine;
+    orderEngine: any; // Using any temporarily since we don't have the specific order engine
+    cashEngine: CashEngine;
+    journalEngine: JournalEngine;
+    eventEngine: EventEngine;
+    hardwareMonitor: HardwareMonitor;
+    inventorySyncEngine: InventorySyncEngine;
+    payrollEngine: PayrollEngine;
+    procurementEngine: typeof procurementEngine;
+  };
+  currentStaff: StaffMember | null;
+  branchId: string;
+  restaurantId: string;
+  setRestaurantId: (id: string) => void;
+  isOnline: boolean;
+  isInitialized: boolean;
+  currentRole: string | null;
+  loginWithPin: (uniqueCode: string, pin: string) => Promise<boolean>;
+  loginWithSIWE: () => Promise<boolean>;
+  logout: () => void;
+  hasPermission: (permission: string) => boolean;
 }
 
+// Create the context
 const POSContext = createContext<POSContextType | undefined>(undefined);
 
-export const usePOS = () => {
-    const context = useContext(POSContext);
-    if (!context) {
-        throw new Error('usePOS must be used within POSProvider');
+// Props type for the provider
+interface POSProviderProps {
+  children: ReactNode;
+}
+
+// Provider component
+export const POSProvider: React.FC<POSProviderProps> = ({ children }) => {
+  const { user } = useAuth();
+  const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [branchId] = useState<string>('branch-cairo-grill'); // Default branch
+  const [restaurantId, setRestaurantId] = useState<string>(user?.businessId || ''); // Sync with auth
+
+  // Initialize engines
+  const localLedger = new LocalLedger();
+  const staffEngine = new StaffEngine(localLedger);
+  const productEngine = productInventoryEngine;
+  const eventEngine = new EventEngine('POS-DEVICE-01', branchId, localLedger);
+  const cashEngine = new CashEngine(eventEngine, localLedger);
+  const journalEngine = new JournalEngine(localLedger);
+  const [hardwareMonitor, setHardwareMonitor] = useState<HardwareMonitor | null>(null);
+
+  const orderSyncService = OrderSyncService.getInstance();
+  const inventorySyncEngine = new InventorySyncEngine(localLedger, eventEngine);
+  const payrollEngine = new PayrollEngine(localLedger);
+
+  useEffect(() => {
+    const monitor = HardwareMonitor.getInstance();
+    if (monitor) setHardwareMonitor(monitor);
+  }, []);
+
+  // Initialize engines
+  useEffect(() => {
+    const initializeEngines = async () => {
+      try {
+        await productEngine.initialize();
+        await staffEngine.seedDefaultAdmin(branchId);
+        setIsInitialized(true);
+      } catch (error) {
+        console.error('Failed to initialize POS engines:', error);
+      }
+    };
+
+    initializeEngines();
+  }, [branchId]);
+
+  // Sync restaurantId with user businessId
+  useEffect(() => {
+    if (user?.businessId && user.businessId !== restaurantId) {
+      setRestaurantId(user.businessId);
     }
-    return context;
+  }, [user, restaurantId]);
+
+  // Login with PIN
+  const loginWithPin = async (uniqueCode: string, pin: string): Promise<boolean> => {
+    try {
+      const staff = await staffEngine.verifyPin(uniqueCode, pin);
+      if (staff) {
+        setCurrentStaff(staff);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('PIN login failed:', error);
+      return false;
+    }
+  };
+
+  // Login with SIWE (Sign-In With Ethereum)
+  const loginWithSIWE = async (): Promise<boolean> => {
+    // Implementation would connect to wallet and authenticate
+    // For now, returning false as placeholder
+    console.warn('SIWE login not implemented in this context');
+    return false;
+  };
+
+  // Logout
+  const logout = () => {
+    setCurrentStaff(null);
+  };
+
+  // Check permissions
+  const hasPermission = (permission: string): boolean => {
+    if (!currentStaff) return false;
+    return currentStaff.permissions.includes(permission as any);
+  };
+
+  // Current role
+  const currentRole = currentStaff ? currentStaff.roles[0] : null;
+
+  const value: POSContextType = {
+    engines: {
+      staffEngine,
+      productEngine,
+      orderEngine: orderSyncService, // Using order sync service as order engine
+      cashEngine,
+      journalEngine,
+      eventEngine,
+      hardwareMonitor: hardwareMonitor as any,
+      inventorySyncEngine,
+      payrollEngine,
+      procurementEngine
+    },
+    currentStaff,
+    branchId,
+    restaurantId,
+    setRestaurantId,
+    isOnline,
+    isInitialized,
+    currentRole,
+    loginWithPin,
+    loginWithSIWE,
+    logout,
+    hasPermission
+  };
+
+  return (
+    <POSContext.Provider value={value}>
+      {children}
+    </POSContext.Provider>
+  );
 };
 
-export function POSProvider({ children }: { children: React.ReactNode }) {
-    const [isInitialized, setIsInitialized] = useState(false);
-    const [isOnline, setIsOnline] = useState(true);
-    const [unsyncedCount, setUnsyncedCount] = useState(0);
-    const [currentRole, setCurrentRole] = useState<POS_ROLE | null>(null);
-    const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null);
-    const [demoMode, setDemoMode] = useState(true);
-    const [deviceId, setDeviceId] = useState('device-initializing');
-    const [branchId, setBranchId] = useState('branch-initializing');
-    const [mounted, setMounted] = useState(false);
+// Custom hook to use the POS context
+export const usePOS = () => {
+  const context = useContext(POSContext);
+  if (context === undefined) {
+    throw new Error('usePOS must be used within a POSProvider');
+  }
+  return context;
+};
 
-    // Initial load from local storage after mount
-    useEffect(() => {
-        setMounted(true);
-        if (typeof window !== 'undefined') {
-            const savedDemo = localStorage.getItem('nilelink_demo_mode');
-            if (savedDemo === 'false') setDemoMode(false);
-
-            let savedId = localStorage.getItem('nilelink_device_id');
-            if (!savedId) {
-                savedId = `device-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                localStorage.setItem('nilelink_device_id', savedId);
-            }
-            setDeviceId(savedId);
-
-            const savedBranch = localStorage.getItem('nilelink_branch_id') || 'branch-cairo-grill';
-            setBranchId(savedBranch);
-
-            // Staff session hydration (Phase 10)
-            const savedStaffId = sessionStorage.getItem('pos_staff_id');
-            if (savedStaffId && engines.staffEngine) {
-                engines.localLedger?.getStaffById(savedStaffId).then(staff => {
-                    if (staff) {
-                        setCurrentStaff(staff);
-                        setCurrentRole(staff.roles[0]);
-                        engines.eventEngine?.setDefaultActor(staff.id);
-                    }
-                });
-            }
-        }
-    }, [engines.staffEngine, engines.localLedger]);
-
-    // Initialize engines
-    const [engines, setEngines] = useState<{
-        eventEngine: EventEngine | null;
-        localLedger: LocalLedger | null;
-        syncWorker: SyncWorker | null;
-        recipeEngine: RecipeEngine | null;
-        cashEngine: CashEngine | null;
-        journalEngine: JournalEngine | null;
-        reputationEngine: ReputationEngine | null;
-        intelligenceEngine: IntelligenceEngine | null;
-        staffEngine: StaffEngine | null;
-        hardwareMonitor: HardwareMonitor | null;
-    }>({
-        eventEngine: null,
-        localLedger: null,
-        syncWorker: null,
-        recipeEngine: null,
-        cashEngine: null,
-        journalEngine: null,
-        reputationEngine: null,
-        intelligenceEngine: null,
-        staffEngine: null,
-        hardwareMonitor: null,
-    });
-
-    useEffect(() => {
-        const initializeEngines = async () => {
-            try {
-                // Initialize LocalLedger
-                const ledger = new LocalLedger();
-
-                // Initialize EventEngine
-                const lastHash = await ledger.getLastEventHash();
-                const eventEngine = new EventEngine(deviceId, branchId, ledger);
-                if (lastHash) {
-                    eventEngine.setLastEventHash(lastHash);
-                }
-
-                // Initialize SyncWorker
-                const apiEndpoint = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
-                const syncWorker = new SyncWorker(ledger, apiEndpoint);
-
-                // Initialize RecipeEngine
-                const recipeEngine = new RecipeEngine();
-                recipeEngine.seed();
-
-                // Initialize CashEngine
-                const cashEngine = new CashEngine(eventEngine, ledger);
-
-                // Subscribe StockSyncEngine (Phase 12 Ecosystem Intelligence)
-                eventEngine.onEvent((event) => stockSync.processEvent(event));
-
-                // Initialize JournalEngine
-                const journalEngine = new JournalEngine(ledger);
-
-                // Initialize ReputationEngine
-                const reputationEngine = new ReputationEngine(ledger);
-
-                // Initialize IntelligenceEngine
-                const intelligenceEngine = new IntelligenceEngine(ledger);
-
-                // Initialize StaffEngine
-                const staffEngine = new StaffEngine(ledger);
-                await staffEngine.seedDefaultAdmin(branchId);
-
-                // Initialize HardwareMonitor
-                const hwMonitor = hardwareMonitor;
-
-                setEngines({
-                    eventEngine,
-                    localLedger: ledger,
-                    syncWorker,
-                    recipeEngine,
-                    cashEngine,
-                    journalEngine,
-                    reputationEngine,
-                    intelligenceEngine,
-                    staffEngine,
-                    hardwareMonitor: hwMonitor,
-                });
-
-                // Start sync worker
-                syncWorker.start();
-
-                setIsInitialized(true);
-                console.log('✅ POS Engines initialized', {
-                    deviceId,
-                    branchId,
-                    lastHash,
-                });
-
-                // Update unsynced count
-                const unsyncedEvents = await ledger.getUnsyncedEvents();
-                setUnsyncedCount(unsyncedEvents.length);
-
-            } catch (error) {
-                console.error('❌ Failed to initialize POS engines:', error);
-            }
-        };
-
-        initializeEngines();
-    }, [deviceId, branchId]);
-
-    // Monitor connection status
-    useEffect(() => {
-        const handleOnline = () => setIsOnline(true);
-        const handleOffline = () => setIsOnline(false);
-
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-
-        setIsOnline(navigator.onLine);
-
-        return () => {
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
-        };
-    }, []);
-
-    // Periodically update unsynced count
-    useEffect(() => {
-        const interval = setInterval(async () => {
-            if (engines.localLedger) {
-                const unsyncedEvents = await engines.localLedger.getUnsyncedEvents();
-                setUnsyncedCount(unsyncedEvents.length);
-            }
-        }, 5000);
-
-        return () => clearInterval(interval);
-    }, [engines.localLedger]);
-
-    const checkPermission = (permission: PERMISSION): boolean => {
-        // If we have a current staff member, check their granular permissions
-        if (currentStaff) {
-            return currentStaff.permissions.includes(permission);
-        }
-
-        // Fallback to role-based check
-        if (!currentRole) return false;
-        return hasPermission(currentRole, permission);
-    };
-
-    const loginWithPin = async (code: string, pin: string): Promise<boolean> => {
-        if (!engines.staffEngine) return false;
-
-        const staff = await engines.staffEngine.verifyPin(code, pin);
-        if (staff) {
-            setCurrentStaff(staff);
-            setCurrentRole(staff.roles[0]); // Primary role
-
-            // Set actor in event engine (Phase 10)
-            engines.eventEngine?.setDefaultActor(staff.id);
-
-            // Persist session locally
-            sessionStorage.setItem('pos_staff_id', staff.id);
-            sessionStorage.setItem('pos_current_role', staff.roles[0]);
-
-            return true;
-        }
-        return false;
-    };
-
-    const logout = () => {
-        setCurrentStaff(null);
-        setCurrentRole(null);
-        engines.eventEngine?.setDefaultActor('system');
-        sessionStorage.removeItem('pos_staff_id');
-        sessionStorage.removeItem('pos_current_role');
-    };
-
-    return (
-        <POSContext.Provider
-            value={{
-                ...engines,
-                isInitialized,
-                isOnline,
-                unsyncedCount,
-                deviceId,
-                branchId,
-                currentRole,
-                currentStaff,
-                setCurrentRole,
-                loginWithPin,
-                logout,
-                hasPermission: checkPermission,
-                demoMode,
-                setDemoMode,
-            }}
-        >
-            {children}
-        </POSContext.Provider>
-    );
-}

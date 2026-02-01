@@ -29,6 +29,12 @@ export const NeuralHUD: React.FC<NeuralHUDProps> = ({ data, isAnalyzing }) => {
 
     const { prediction, model, safety, data: aiData } = data;
 
+    if (!prediction || !aiData || !safety) return null;
+
+    // Safe defaults if model is undefined
+    const modelName = model?.name || 'NEURAL_AI';
+    const modelVersion = model?.version || 'v1.0';
+
     return (
         <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-gradient-to-br from-slate-900/80 to-black/90 p-1 backdrop-blur-2xl shadow-2xl">
             {/* Top Bar / Status */}
@@ -36,17 +42,17 @@ export const NeuralHUD: React.FC<NeuralHUDProps> = ({ data, isAnalyzing }) => {
                 <div className="flex items-center space-y-1">
                     <div className="flex items-center space-x-2">
                         <Brain className="h-5 w-5 text-emerald-400" />
-                        <span className="font-bold tracking-tight text-white uppercase text-xs">{model.name} v{model.version}</span>
+                        <span className="font-bold tracking-tight text-white uppercase text-xs">{modelName} {modelVersion}</span>
                     </div>
                     <div className="flex items-center space-x-2 text-[10px] text-zinc-500 font-mono italic">
-                        <span>LATENCY: {data.latency_ms}ms</span>
+                        <span>LATENCY: {data?.latency_ms || 0}ms</span>
                         <span>•</span>
-                        <span>ENV: {data.environment}</span>
+                        <span>ENV: {data?.environment || 'production'}</span>
                     </div>
                 </div>
                 <div className="flex space-x-2">
-                    <div className={`px-3 py-1 rounded-full text-[10px] font-bold border ${aiData.risk_level === 'LOW' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
-                        {aiData.risk_level} RISK
+                    <div className={`px-3 py-1 rounded-full text-[10px] font-bold border ${aiData?.risk_level === 'LOW' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+                        {aiData?.risk_level || 'UNKNOWN'} RISK
                     </div>
                 </div>
             </div>

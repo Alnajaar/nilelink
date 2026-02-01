@@ -29,6 +29,11 @@ export interface SubscriptionPlan {
         whiteLabel: boolean;
         dedicatedSupport: boolean;
         governance: boolean;
+        aiAssistant: boolean;
+        kds: boolean;
+        roleManagement: boolean;
+        securityModule: boolean;
+        profitOptimization: boolean;
     };
     trialMonths: number;
     popular?: boolean;
@@ -58,7 +63,7 @@ interface SubscriptionContextType {
     canAccessApp: (app: string) => boolean;
     getRemainingTrialDays: () => number;
     isTrialExpired: () => boolean;
-    upgradePlan: (newPlanId: string) => Promise<void>;
+    upgradePlan: (newPlanId: string, billingCycle?: 'monthly' | 'yearly') => Promise<void>;
     cancelSubscription: () => Promise<void>;
     reactivateSubscription: () => Promise<void>;
 }
@@ -84,16 +89,16 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
         {
             id: 'starter',
             name: 'Starter',
-            price: '$29/month',
-            monthlyPrice: 29,
-            yearlyPrice: 29 * 12 * 0.8, // 20% discount
-            features: ['1 POS Terminal Limit', 'Basic Reporting', 'Email Support', '1,000 Transactions/mo', 'Inventory Sync', 'Staff Management'],
+            price: '$9/month',
+            monthlyPrice: 9,
+            yearlyPrice: 90, // ~17% Off (2 months free)
+            features: ['1 POS Terminal', '3 Staff Accounts', 'Basic Inventory', 'Sales Reports', 'Email Support'],
             limitations: {
                 posTerminals: 1,
                 transactionsPerMonth: 1000,
-                staffMembers: 5,
+                staffMembers: 3,
                 branches: 1,
-                apiCalls: 10000
+                apiCalls: 5000
             },
             capabilities: {
                 basicReporting: true,
@@ -107,23 +112,28 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
                 customContracts: false,
                 whiteLabel: false,
                 dedicatedSupport: false,
-                governance: false
+                governance: false,
+                aiAssistant: false,
+                kds: false,
+                roleManagement: false,
+                securityModule: false,
+                profitOptimization: false
             },
             trialMonths: 1
         },
         {
-            id: 'growth',
-            name: 'Growth',
-            price: '$79/month',
-            monthlyPrice: 79,
-            yearlyPrice: 79 * 12 * 0.8, // 20% discount
-            features: ['Unlimited Terminals', 'Advanced Analytics', 'Staff Roles & Shifts', 'Inventory Management', 'Kitchen Display System', '24/7 Priority Support', 'Custom Smart Contracts', 'Dedicated Account Manager'],
+            id: 'business',
+            name: 'Business',
+            price: '$19/month',
+            monthlyPrice: 19,
+            yearlyPrice: 190, // ~17% Off (2 months free)
+            features: ['5 Terminals', '10 Staff Accounts', 'Full Inventory', 'Basic AI Assistant', 'Role Management', 'Priority Support'],
             limitations: {
-                posTerminals: -1, // unlimited
+                posTerminals: 5,
                 transactionsPerMonth: -1, // unlimited
-                staffMembers: -1, // unlimited
-                branches: 5,
-                apiCalls: -1 // unlimited
+                staffMembers: 10,
+                branches: 1,
+                apiCalls: 20000
             },
             capabilities: {
                 basicReporting: true,
@@ -134,27 +144,69 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
                 supplierManagement: false,
                 investmentPortal: false,
                 multiBranchSync: false,
-                customContracts: true,
+                customContracts: false,
                 whiteLabel: false,
                 dedicatedSupport: true,
-                governance: false
+                governance: false,
+                aiAssistant: true,
+                kds: true,
+                roleManagement: true,
+                securityModule: false,
+                profitOptimization: false
             },
-            trialMonths: 3,
+            trialMonths: 1,
             popular: true
         },
         {
-            id: 'protocol',
-            name: 'Protocol',
-            price: '$199/month',
-            monthlyPrice: 199,
-            yearlyPrice: 199 * 12 * 0.8, // 20% discount
-            features: ['Everything in Growth', 'Multi-Branch Sync', 'Custom API & Webhooks', 'White-label Options', 'On-chain Governance', 'Dedicated Success Manager'],
+            id: 'premium',
+            name: 'Premium',
+            price: '$39/month',
+            monthlyPrice: 39,
+            yearlyPrice: 390, // ~17% Off (2 months free)
+            features: ['Unlimited Terminals', 'Unlimited Staff', 'Advanced AI & Payroll', 'Supplier Management', 'Security Module', 'Profit Optimization'],
             limitations: {
-                posTerminals: -1, // unlimited
-                transactionsPerMonth: -1, // unlimited
-                staffMembers: -1, // unlimited
-                branches: -1, // unlimited
-                apiCalls: -1 // unlimited
+                posTerminals: -1,
+                transactionsPerMonth: -1,
+                staffMembers: -1,
+                branches: 3,
+                apiCalls: -1
+            },
+            capabilities: {
+                basicReporting: true,
+                advancedAnalytics: true,
+                inventoryManagement: true,
+                staffManagement: true,
+                deliveryIntegration: true,
+                supplierManagement: true,
+                investmentPortal: true,
+                multiBranchSync: false,
+                customContracts: false,
+                whiteLabel: false,
+                dedicatedSupport: true,
+                governance: true,
+                aiAssistant: true,
+                // Premium gets "Advanced AI" which implies basic assistant + more. 
+                // We'll use 'advanced-ai' feature string for Premium checks.
+                kds: true,
+                roleManagement: true,
+                securityModule: true,
+                profitOptimization: true
+            },
+            trialMonths: 1
+        },
+        {
+            id: 'protocol',
+            name: 'Enterprise',
+            price: 'Custom',
+            monthlyPrice: 99,
+            yearlyPrice: 990,
+            features: ['Multi-Branch Sync', 'Custom Integrations', 'Dedicated Success Manager', 'SLA', 'White-label Options'],
+            limitations: {
+                posTerminals: -1,
+                transactionsPerMonth: -1,
+                staffMembers: -1,
+                branches: -1,
+                apiCalls: -1
             },
             capabilities: {
                 basicReporting: true,
@@ -168,7 +220,12 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
                 customContracts: true,
                 whiteLabel: true,
                 dedicatedSupport: true,
-                governance: true
+                governance: true,
+                aiAssistant: true,
+                kds: true,
+                roleManagement: true,
+                securityModule: true,
+                profitOptimization: true
             },
             trialMonths: 3
         }
@@ -177,9 +234,17 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     // Load subscription from localStorage
     useEffect(() => {
         const storedSubscription = localStorage.getItem('userSubscription');
+        const activationStatus = localStorage.getItem('nilelink_activation_status');
+
         if (storedSubscription) {
             try {
                 const parsed = JSON.parse(storedSubscription);
+
+                // Sync activation status from Engine
+                if (activationStatus === 'active') {
+                    parsed.isActive = true;
+                }
+
                 setSubscription(parsed);
             } catch (error) {
                 console.error('Error parsing subscription data:', error);
@@ -189,6 +254,8 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
 
     const hasFeature = (feature: string): boolean => {
         if (!subscription) return false;
+        if (!subscription.isActive) return false; // STRICT GATING
+        if (isTrialExpired()) return false; // EXPIRATION GATING
 
         const currentPlan = plans.find(p => p.id === subscription.plan);
         if (!currentPlan) return false;
@@ -224,6 +291,19 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
                 return currentPlan.capabilities.inventoryManagement;
             case 'staff-management':
                 return currentPlan.capabilities.staffManagement;
+            case 'ai-assistant':
+                return currentPlan.capabilities.aiAssistant;
+            case 'kds':
+                return currentPlan.capabilities.kds;
+            case 'roles':
+                return currentPlan.capabilities.roleManagement;
+            case 'security':
+                return currentPlan.capabilities.securityModule;
+            case 'profit-optimization':
+                return currentPlan.capabilities.profitOptimization;
+            case 'advanced-ai':
+                // Check if plan implies advanced AI (Premium/Protocol)
+                return currentPlan.id === 'premium' || currentPlan.id === 'protocol';
             default:
                 return false;
         }
@@ -231,6 +311,8 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
 
     const canAccessApp = (app: string): boolean => {
         if (!subscription) return false;
+        if (!subscription.isActive) return false; // STRICT GATING
+        if (isTrialExpired()) return false; // EXPIRATION GATING
 
         const currentPlan = plans.find(p => p.id === subscription.plan);
         if (!currentPlan) return false;
@@ -265,15 +347,31 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     };
 
     const isTrialExpired = (): boolean => {
-        return getRemainingTrialDays() <= 0 && subscription?.isTrialActive;
+        return getRemainingTrialDays() <= 0 && !!subscription?.isTrialActive;
     };
 
-    const upgradePlan = async (newPlanId: string): Promise<void> => {
+    const upgradePlan = async (newPlanId: string, billingCycle: 'monthly' | 'yearly' = 'monthly'): Promise<void> => {
         const newPlan = plans.find(p => p.id === newPlanId);
-        if (!newPlan || !subscription) return;
+        if (!newPlan) return;
+
+        const baseSubscription: UserSubscription = subscription || {
+            plan: 'starter',
+            planName: 'Starter',
+            trialMonths: 1,
+            isTrialActive: true,
+            trialStartDate: new Date().toISOString(),
+            features: [],
+            isEarlyAdopter: false,
+            maxStaff: 5,
+            hasDelivery: false,
+            hasSupplier: false,
+            hasInvestment: false,
+            isActive: false, // DEFAULT TO PENDING
+            billingCycle: billingCycle
+        };
 
         const updatedSubscription: UserSubscription = {
-            ...subscription,
+            ...baseSubscription,
             plan: newPlanId,
             planName: newPlan.name,
             features: newPlan.features,
@@ -281,6 +379,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
             hasDelivery: newPlan.capabilities.deliveryIntegration,
             hasSupplier: newPlan.capabilities.supplierManagement,
             hasInvestment: newPlan.capabilities.investmentPortal,
+            billingCycle: billingCycle,
         };
 
         setSubscription(updatedSubscription);

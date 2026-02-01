@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { UniversalHeader } from "@shared/components/UniversalHeader";
-import { UniversalFooter } from "@shared/components/UniversalFooter";
-import { AuthProvider } from "@shared/contexts/AuthContext";
-import { WalletProvider } from "@shared/contexts/WalletContext";
+import { UniversalNavbar } from "@shared/components/UniversalNavbar";
+import GlobalFooter from "@shared/components/GlobalFooter.v2";
+import { AuthProvider as FirebaseAuthProvider } from "@shared/contexts/AuthContext";
 import { NotificationProvider } from "@shared/contexts/NotificationContext";
 import { CurrencyProvider } from "@shared/contexts/CurrencyContext";
 import { DemoProvider } from "@shared/contexts/DemoContext";
+import Web3ProviderWrapper from "@/components/Web3ProviderWrapper";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -17,9 +17,10 @@ export const metadata: Metadata = {
     },
     description: "Real-time inventory and supply chain transparency for the global economy.",
     icons: {
-        icon: '/shared/assets/logo/logo-icon.ico',
-        apple: '/shared/assets/logo/logo-square.png',
+        icon: '/favicon.ico',
+        apple: '/logo-square.png',
     },
+    manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -31,21 +32,21 @@ export default function RootLayout({
         <html lang="en">
             <body className={`${inter.className} bg-background-light text-text-primary min-h-screen flex flex-col`}>
                 <DemoProvider>
-                    <WalletProvider>
+                    <Web3ProviderWrapper>
                         <CurrencyProvider>
-                            <AuthProvider>
+                            <FirebaseAuthProvider>
                                 <NotificationProvider>
-                                    <UniversalHeader
-                                        appName="Supplier"
-                                    />
-                                    <main className="flex-1">
-                                        {children}
-                                    </main>
-                                    <UniversalFooter />
+                                    <div className="flex flex-col min-h-screen">
+                                        <UniversalNavbar context="supplier" />
+                                        <main className="flex-1 pt-20">
+                                            {children}
+                                        </main>
+                                        <GlobalFooter context="supplier" />
+                                    </div>
                                 </NotificationProvider>
-                            </AuthProvider>
+                            </FirebaseAuthProvider>
                         </CurrencyProvider>
-                    </WalletProvider>
+                    </Web3ProviderWrapper>
                 </DemoProvider>
             </body>
         </html>

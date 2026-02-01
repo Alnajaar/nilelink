@@ -8,7 +8,12 @@ interface Particle {
     size: number;
 }
 
-export const NeuralMesh: React.FC = () => {
+interface NeuralMeshProps {
+    nodes?: any[];
+    height?: string;
+}
+
+export const NeuralMesh: React.FC<NeuralMeshProps> = ({ nodes, height }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {

@@ -4,245 +4,274 @@ import React, { useState, useEffect } from 'react';
 import {
     Cpu, Printer, Smartphone, Search, Plus, Settings,
     RefreshCw, ShieldCheck, CreditCard, Box, Zap,
-    Activity, ArrowLeft, Terminal, Laptop
+    Activity, ArrowLeft, Terminal, Laptop, CheckCircle, XCircle, AlertTriangle,
+    ChevronRight, Loader, Globe
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/shared/components/Card';
 import { Button } from '@/shared/components/Button';
 import { Badge } from '@/shared/components/Badge';
 import { useRouter } from 'next/navigation';
-
-interface Device {
-    id: string;
-    productName: string;
-    manufacturerName: string;
-    serialNumber?: string;
-    type: 'printer' | 'scanner' | 'unknown';
-}
+import { printerService, Printer as PrinterType, PrinterStatus, PrinterType as PrinterTypeEnum } from '@/services/PrinterService';
 
 export default function HardwareSettings() {
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
-    const [devices, setDevices] = useState<Device[]>([]);
+    const [printers, setPrinters] = useState<PrinterType[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [printQueue, setPrintQueue] = useState<any[]>([]);
+    const [printerSummary, setPrinterSummary] = useState<any>({});
 
     useEffect(() => {
         setMounted(true);
-        // Initial mock device
-        setDevices([
-            {
-                id: 'usb-72x1',
-                productName: 'Protocol-X Thermal Printer',
-                manufacturerName: 'NILELINK CORE',
-                serialNumber: 'NL-PRN-8829',
-                type: 'printer'
-            }
-        ]);
+        loadPrinters();
     }, []);
+
+    const loadPrinters = async () => {
+        try {
+            const currentPrinters = printerService.getPrinters();
+            setPrinters(currentPrinters);
+            setPrinterSummary(printerService.getPrinterStatusSummary());
+            setPrintQueue(printerService.getPrintQueue());
+        } catch (error) {
+            console.error('Failed to load printers:', error);
+        }
+    };
 
     const scanForDevices = async () => {
         setIsSearching(true);
-        setTimeout(() => {
-            const mockDevice: Device = {
-                id: `usb-${Math.random().toString(36).substr(2, 4)}`,
-                productName: 'Quantum Scan Pro',
-                manufacturerName: 'NILELINK EDGE',
-                serialNumber: 'NL-SCN-4421',
-                type: 'scanner'
-            };
-            setDevices(prev => [...prev, mockDevice]);
+        try {
+            await printerService.detectPrinters();
+            await loadPrinters();
+        } catch (error) {
+            console.error('Device scan failed:', error);
+        } finally {
             setIsSearching(false);
-        }, 2000);
+        }
     };
 
-    const runTestPrint = (device: Device) => {
-        // Test sequence simulation
-        console.log(`Executing test sequence on ${device.id}`);
+    const runTestPrint = async (printer: PrinterType) => {
+        try {
+            await printerService.testPrinter(printer.id);
+        } catch (error) {
+            console.error('Test print failed:', error);
+        }
+    };
+
+    const getStatusIcon = (status: PrinterStatus) => {
+        switch (status) {
+            case PrinterStatus.CONNECTED:
+                return <CheckCircle size={16} className="text-green-600" />;
+            case PrinterStatus.DISCONNECTED:
+                return <XCircle size={16} className="text-gray-400" />;
+            case PrinterStatus.ERROR:
+                return <AlertTriangle size={16} className="text-red-600" />;
+            case PrinterStatus.BUSY:
+                return <Loader size={16} className="text-yellow-600 animate-spin" />;
+            default:
+                return <AlertTriangle size={16} className="text-yellow-600" />;
+        }
+    };
+
+    const getStatusVariant = (status: PrinterStatus): "success" | "warning" | "error" | "secondary" | "info" | "neutral" => {
+        switch (status) {
+            case PrinterStatus.CONNECTED:
+                return "success";
+            case PrinterStatus.DISCONNECTED:
+                return "neutral";
+            case PrinterStatus.ERROR:
+                return "error";
+            case PrinterStatus.BUSY:
+                return "warning";
+            default:
+                return "neutral";
+        }
     };
 
     if (!mounted) return null;
 
     return (
-        <div className="min-h-screen bg-neutral text-text-primary selection:bg-primary/20 overflow-hidden relative">
-            {/* Background Effects */}
-            <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/5 blur-[120px] rounded-full" />
-            </div>
-
-            <header className="px-10 py-10 flex justify-between items-center relative z-10 bg-white/40 backdrop-blur-2xl border-b border-border-subtle sticky top-0">
-                <div className="flex items-center gap-6">
-                    <Button
-                        onClick={() => router.back()}
-                        className="w-14 h-14 rounded-2xl bg-white border border-border-subtle hover:bg-neutral text-text-primary p-0 shadow-sm"
-                    >
-                        <ArrowLeft size={20} />
-                    </Button>
-                    <div>
-                        <h1 className="text-3xl font-black text-text-primary uppercase tracking-tighter italic leading-none mb-2">Hardware Nodes</h1>
-                        <p className="text-text-secondary font-black uppercase tracking-[0.3em] text-[9px] opacity-60 italic">Physical terminal & perimeter bridge control</p>
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+            <header className="px-8 py-6 bg-white border-b border-gray-200 sticky top-0 z-10">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div className="flex items-center gap-6">
+                        <Button
+                            onClick={() => router.back()}
+                            variant="outline"
+                            className="w-10 h-10 rounded-lg"
+                        >
+                            <ArrowLeft size={20} />
+                        </Button>
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">Hardware Settings</h1>
+                            <p className="text-gray-600">Manage printers and peripheral devices</p>
+                        </div>
                     </div>
-                </div>
 
-                <Button
-                    onClick={scanForDevices}
-                    isLoading={isSearching}
-                    className="h-14 px-8 bg-primary text-background font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                >
-                    <RefreshCw size={16} className={`mr-3 ${isSearching ? 'animate-spin' : ''}`} />
-                    INITIALIZE DISCOVERY
-                </Button>
+                    <Button
+                        onClick={scanForDevices}
+                        disabled={isSearching}
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+                    >
+                        <div className="flex items-center gap-2">
+                            {isSearching ? <RefreshCw size={18} className="animate-spin" /> : <Search size={18} />}
+                            {isSearching ? 'Scanning...' : 'Scan Devices'}
+                        </div>
+                    </Button>
+                </div>
             </header>
 
-            <main className="max-w-7xl mx-auto p-12 space-y-12 relative z-10">
-                {/* Active Grid */}
-                <div className="space-y-6">
-                    <div className="flex items-center justify-between px-4">
-                        <div className="flex items-center gap-3">
-                            <Activity size={16} className="text-primary" />
-                            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-text-secondary">Connected Hardware Array</h2>
+            <main className="flex-1 max-w-7xl mx-auto w-full p-8 space-y-8">
+                {/* Printer Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card className="p-6 bg-white border border-gray-200">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <Printer size={20} className="text-blue-600" />
+                            </div>
+                            <Badge variant="info" className="text-xs">
+                                {printerSummary.total || 0} Total
+                            </Badge>
                         </div>
-                        <Badge className="bg-success text-background text-[8px] font-black uppercase tracking-widest px-3 py-1">Nodes Active: {devices.length}</Badge>
+                        <p className="text-gray-500 text-sm mb-1">Printers</p>
+                        <p className="text-2xl font-bold text-gray-900">{printers.length}</p>
+                    </Card>
+
+                    <Card className="p-6 bg-white border border-gray-200">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                <CheckCircle size={20} className="text-green-600" />
+                            </div>
+                            <Badge variant="success" className="text-xs">
+                                Active
+                            </Badge>
+                        </div>
+                        <p className="text-gray-500 text-sm mb-1">Connected</p>
+                        <p className="text-2xl font-bold text-green-600">{printerSummary.connected || 0}</p>
+                    </Card>
+
+                    <Card className="p-6 bg-white border border-gray-200">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <AlertTriangle size={20} className="text-yellow-600" />
+                            </div>
+                            <Badge variant="warning" className="text-xs">
+                                Attention
+                            </Badge>
+                        </div>
+                        <p className="text-gray-500 text-sm mb-1">Issues</p>
+                        <p className="text-2xl font-bold text-yellow-600">
+                            {printerSummary.disconnected || 0}
+                        </p>
+                    </Card>
+                </div>
+
+                {/* Printers List */}
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-bold text-gray-900">Connected Devices</h2>
+                        <Badge variant="neutral" className="text-sm">
+                            {printers.length} devices
+                        </Badge>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6">
-                        {devices.length === 0 ? (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="py-24 text-center bg-white/40 backdrop-blur-xl rounded-[3rem] border-2 border-dashed border-border-subtle"
-                            >
-                                <div className="w-20 h-20 bg-neutral rounded-full flex items-center justify-center mx-auto mb-6 text-text-secondary opacity-20">
-                                    <Terminal size={40} />
-                                </div>
-                                <p className="text-xs font-black uppercase tracking-widest text-text-secondary opacity-60">No hardware nodes detected in local perimeter.</p>
-                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted mt-2">Activate discovery to sync devices via USB.</p>
-                            </motion.div>
-                        ) : (
-                            <div className="space-y-4">
-                                {devices.map((device, idx) => (
-                                    <motion.div
-                                        key={device.id}
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: idx * 0.1 }}
-                                        className="bg-white rounded-[2.5rem] p-8 border border-border-subtle shadow-xl hover:shadow-2xl transition-all group flex items-center justify-between"
-                                    >
-                                        <div className="flex items-center gap-8">
-                                            <div className="w-20 h-20 bg-neutral rounded-3xl flex items-center justify-center text-primary shadow-inner group-hover:scale-105 transition-transform">
-                                                {device.type === 'printer' ? <Printer size={32} /> : <Search size={32} />}
+                    {printers.length === 0 ? (
+                        <Card className="p-12 text-center bg-white border-2 border-dashed border-gray-300">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Terminal size={24} className="text-gray-400" />
+                            </div>
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">No printers found</h3>
+                            <p className="text-gray-500 mb-6">Connect printers to your network and scan for devices</p>
+                            <Button onClick={scanForDevices} className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+                                <Search size={18} className="mr-2" />
+                                Scan for Printers
+                            </Button>
+                        </Card>
+                    ) : (
+                        <div className="space-y-4">
+                            {printers.map((printer, idx) => (
+                                <Card 
+                                    key={printer.id} 
+                                    className={`p-6 bg-white border-2 ${
+                                        printer.status === PrinterStatus.CONNECTED 
+                                            ? 'border-green-200 bg-green-50' 
+                                            : 'border-red-200 bg-red-50'
+                                    }`}
+                                >
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                        <div className="flex items-center gap-6">
+                                            <div className={`w-16 h-16 rounded-lg flex items-center justify-center ${
+                                                printer.status === PrinterStatus.CONNECTED
+                                                    ? 'bg-green-100 text-green-600'
+                                                    : 'bg-red-100 text-red-600'
+                                            }`}>
+                                                <Printer size={24} />
                                             </div>
                                             <div>
-                                                <div className="flex items-center gap-4 mb-2">
-                                                    <h4 className="text-xl font-black text-text-primary uppercase tracking-tight italic">{device.productName}</h4>
-                                                    <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase tracking-widest px-3 py-1">USB 4.0</Badge>
+                                                <div className="flex flex-wrap items-center gap-3 mb-2">
+                                                    <h4 className="text-lg font-bold text-gray-900">{printer.name}</h4>
+                                                    <Badge variant="neutral" className="text-xs">
+                                                        {printer.connectionType}
+                                                    </Badge>
+                                                    <Badge variant={getStatusVariant(printer.status)} className="text-xs">
+                                                        {printer.status}
+                                                    </Badge>
                                                 </div>
-                                                <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.3em] opacity-40 italic">
-                                                    {device.manufacturerName} · HWID: {device.serialNumber}
-                                                </p>
-                                                <div className="flex items-center gap-4 mt-4">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <div className="w-1.5 h-1.5 bg-success rounded-full"></div>
-                                                        <span className="text-[8px] font-black uppercase tracking-widest text-success opacity-80">Online</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1.5">
-                                                        <ShieldCheck size={12} className="text-primary opacity-60" />
-                                                        <span className="text-[8px] font-black uppercase tracking-widest text-text-secondary opacity-40">Secure Bridge</span>
-                                                    </div>
+                                                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                                                    <span>{printer.type} Printer</span>
+                                                    <span>ID: {printer.id.slice(0, 8)}</span>
+                                                    {printer.ipAddress && <span className="font-mono">IP: {printer.ipAddress}</span>}
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex gap-4">
-                                            <Button
+
+                                        <div className="flex items-center gap-3">
+                                            <Button 
+                                                size="sm" 
                                                 variant="outline"
-                                                className="h-14 px-8 rounded-2xl border-border-subtle hover:bg-neutral font-black text-[9px] tracking-[0.2em] uppercase transition-all"
-                                                onClick={() => runTestPrint(device)}
+                                                onClick={() => runTestPrint(printer)}
+                                                className="flex items-center gap-2"
                                             >
-                                                RUN TEST SEQUENCE
+                                                <Printer size={16} />
+                                                Test Print
                                             </Button>
-                                            <Button
-                                                className="h-14 px-8 rounded-2xl bg-neutral text-text-primary hover:bg-neutral-dark font-black text-[9px] tracking-[0.2em] uppercase transition-all"
-                                            >
-                                                CONFIGURE NODE
+                                            <Button size="sm" variant="outline" className="flex items-center gap-2">
+                                                <Settings size={16} />
+                                                Configure
                                             </Button>
                                         </div>
-                                    </motion.div>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Print Queue */}
+                {printQueue.length > 0 && (
+                    <div className="space-y-4">
+                        <h2 className="text-xl font-bold text-gray-900">Print Queue</h2>
+                        <Card className="p-6 bg-white border border-gray-200">
+                            <div className="space-y-3">
+                                {printQueue.map((job, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p className="font-medium text-gray-900">Job #{job.id}</p>
+                                            <p className="text-sm text-gray-600">{job.documentName}</p>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <Badge variant="neutral" className="text-xs">
+                                                {job.status}
+                                            </Badge>
+                                            <span className="text-sm text-gray-500">
+                                                {new Date(job.timestamp).toLocaleTimeString()}
+                                            </span>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
-                        )}
+                        </Card>
                     </div>
-                </div>
-
-                {/* Settings Matrix */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-12">
-                    <Card className="p-10 rounded-[3rem] bg-white border border-border-subtle shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 blur-3xl rounded-full -mr-24 -mt-24" />
-                        <div className="flex items-center gap-4 mb-10 relative z-10">
-                            <div className="w-12 h-12 bg-neutral rounded-2xl flex items-center justify-center text-primary">
-                                <Zap size={24} />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-black text-text-primary uppercase tracking-tighter italic">Protocol Standard</h3>
-                                <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest opacity-60">Data transmission encoding</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 relative z-10">
-                            {[
-                                { id: 'escpos', label: 'ESC/POS (Protocol Def)', desc: 'Industry standard for thermal nodes.' },
-                                { id: 'star', label: 'Star Graphics System', desc: 'Accelerated for Star Micronics hardware.' },
-                                { id: 'legacy', label: 'Legacy Text Driver', desc: 'Fallback for vintage matrix devices.' }
-                            ].map(p => (
-                                <label key={p.id} className="flex items-center justify-between p-6 bg-neutral/30 rounded-[1.5rem] border border-transparent hover:border-primary/20 transition-all cursor-pointer group">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-5 h-5 rounded-full border-2 border-border-subtle flex items-center justify-center group-hover:border-primary transition-colors">
-                                            <div className="w-2.5 h-2.5 bg-primary rounded-full scale-0 group-hover:scale-100 transition-transform" />
-                                        </div>
-                                        <div>
-                                            <span className="block font-black text-xs uppercase tracking-widest text-text-primary mb-1">{p.label}</span>
-                                            <span className="text-[10px] font-medium text-text-secondary opacity-60">{p.desc}</span>
-                                        </div>
-                                    </div>
-                                    <input type="radio" name="protocol" defaultChecked={p.id === 'escpos'} className="hidden" />
-                                </label>
-                            ))}
-                        </div>
-                    </Card>
-
-                    <Card className="p-10 rounded-[3rem] bg-white border border-border-subtle shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-secondary/5 blur-3xl rounded-full -mr-24 -mt-24" />
-                        <div className="flex items-center gap-4 mb-10 relative z-10">
-                            <div className="w-12 h-12 bg-neutral rounded-2xl flex items-center justify-center text-secondary">
-                                <Settings size={24} />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-black text-text-primary uppercase tracking-tighter italic">Bridge Automation</h3>
-                                <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest opacity-60">Triggered node sequences</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 relative z-10">
-                            {[
-                                { id: 'drawer', label: 'Quantum Drawer Pulse', desc: 'Auto-trigger on tangible asset settlement.' },
-                                { id: 'print', label: 'Direct Kitchen Print', desc: 'Synchronous printing on order anchoring.' },
-                                { id: 'label', label: 'Barcode Label Auto-Gen', desc: 'Print manifest IDs for all items.' }
-                            ].map(a => (
-                                <label key={a.id} className="flex items-center justify-between p-6 bg-neutral/30 rounded-[1.5rem] border border-transparent hover:border-secondary/20 transition-all cursor-pointer group">
-                                    <div className="flex items-center gap-6">
-                                        <div className="w-6 h-6 rounded-lg bg-white border border-border-subtle flex items-center justify-center group-hover:border-secondary transition-colors">
-                                            <Zap size={14} className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        </div>
-                                        <div>
-                                            <span className="block font-black text-xs uppercase tracking-widest text-text-primary mb-1">{a.label}</span>
-                                            <span className="text-[10px] font-medium text-text-secondary opacity-60">{a.desc}</span>
-                                        </div>
-                                    </div>
-                                    <input type="checkbox" defaultChecked={a.id !== 'label'} className="hidden" />
-                                </label>
-                            ))}
-                        </div>
-                    </Card>
-                </div>
+                )}
             </main>
         </div>
     );

@@ -25,7 +25,7 @@ interface AccessSelectorModalProps {
 export function AccessSelectorModal({ isOpen, onClose }: AccessSelectorModalProps) {
     const router = useRouter();
     const { loginWithEmail, loginWithPhone, loginWithPin, connectWallet, loading } = useAuth();
-    const [selectedMethod, setSelectedMethod] = useState<'owner' | 'staff' | 'wallet' | null>(null);
+    const [selectedMethod, setSelectedMethod] = useState<'owner' | 'staff' | 'wallet' | 'phone' | null>(null);
     const [loginData, setLoginData] = useState({
         email: '',
         password: '',

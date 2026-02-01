@@ -1,0 +1,11 @@
+src/app/products/page.tsx(44,69): error TS2551: Property 'minimumStock' does not exist on type 'Product'. Did you mean 'minStock'?
+src/app/products/page.tsx(112,84): error TS2339: Property 'status' does not exist on type 'Product'.
+src/app/products/page.tsx(130,55): error TS2551: Property 'minimumStock' does not exist on type 'Product'. Did you mean 'minStock'?
+src/app/terminal/ledger/page.tsx(268,49): error TS2339: Property 'tr' does not exist on type '{ div: ForwardRefExoticComponent<Omit<any, "ref"> & RefAttributes<unknown>>; button: ForwardRefExoticComponent<Omit<any, "ref"> & RefAttributes<unknown>>; ... 16 more ...; li: ForwardRefExoticComponent<...>; }'.
+src/app/terminal/ledger/page.tsx(328,50): error TS2339: Property 'tr' does not exist on type '{ div: ForwardRefExoticComponent<Omit<any, "ref"> & RefAttributes<unknown>>; button: ForwardRefExoticComponent<Omit<any, "ref"> & RefAttributes<unknown>>; ... 16 more ...; li: ForwardRefExoticComponent<...>; }'.
+src/app/terminal/payment/page.tsx(150,22): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(156,23): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(302,60): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(302,268): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(319,42): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(324,43): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?

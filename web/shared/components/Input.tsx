@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -11,16 +11,36 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     error?: string;
     icon?: React.ReactNode;
     leftIcon?: React.ReactNode;
+    rightIcon?: React.ReactNode;
     helperText?: string;
     required?: boolean;
+    variant?: 'default' | 'glass' | 'bordered';
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-    ({ className, label, error, icon, leftIcon, helperText, required, id, ...props }, ref) => {
+    ({ className, label, error, icon, leftIcon, rightIcon, helperText, required, variant = 'default', id, onFocus, onBlur, ...props }, ref) => {
+        const [isFocused, setIsFocused] = useState(false);
         const finalIcon = icon || leftIcon;
+
+        const variants = {
+            default: 'bg-background-secondary border-border-default focus:border-primary',
+            glass: 'glass focus:border-accent',
+            bordered: 'bg-transparent border-2 border-border-medium focus:border-primary',
+        };
+
         const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
         const errorId = error ? `${inputId}-error` : undefined;
         const helperId = helperText ? `${inputId}-helper` : undefined;
+
+        const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+            setIsFocused(true);
+            onFocus?.(e);
+        };
+
+        const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+            setIsFocused(false);
+            onBlur?.(e);
+        };
 
         return (
             <div className="w-full">
@@ -36,7 +56,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 <div className="relative group">
                     {finalIcon && (
                         <div
-                            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle group-focus-within:text-primary transition-colors"
+                            className={cn(
+                                "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted transition-colors duration-200",
+                                isFocused && "text-primary"
+                            )}
                             aria-hidden="true"
                         >
                             {finalIcon}
@@ -46,24 +69,36 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                         ref={ref}
                         id={inputId}
                         className={cn(
-                            'flex h-11 w-full rounded-lg border border-border bg-background-card px-4 py-2 text-sm text-text-main placeholder:text-text-muted/50 transition-all duration-200',
-                            'focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10',
-                            'hover:border-primary/50',
-                            'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-background-subtle',
-                            finalIcon && 'pl-10',
-                            error && 'border-danger focus:border-danger focus:ring-danger/10',
-                            className
+                            'flex h-11 w-full rounded-lg border px-4 py-2 text-sm text-text-primary placeholder:text-text-muted transition-all duration-250',
+                            'focus:outline-none focus:ring-2 focus:ring-accent/20',
+                            'hover:border-border-medium',
+                            'disabled:cursor-not-allowed disabled:opacity-50',
+                            !!finalIcon && 'pl-10',
+                            !!rightIcon && 'pr-10',
+                            !!error && 'border-error focus:border-error focus:ring-error/20',
+                            variants[variant],
+                            className as string
                         )}
+                        onFocus={handleFocus}
+                        onBlur={handleBlur}
                         aria-invalid={error ? 'true' : 'false'}
                         aria-describedby={error ? errorId : helperText ? helperId : undefined}
                         aria-required={required}
                         {...props}
                     />
+                    {rightIcon && (
+                        <div
+                            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-muted"
+                            aria-hidden="true"
+                        >
+                            {rightIcon}
+                        </div>
+                    )}
                 </div>
                 {error && (
                     <p
                         id={errorId}
-                        className="mt-1.5 text-xs font-medium text-danger animate-in slide-in-from-top-1"
+                        className="mt-1.5 text-xs font-medium text-error"
                         role="alert"
                         aria-live="polite"
                     >
@@ -84,3 +119,5 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 );
 
 Input.displayName = 'Input';
+
+export default Input;

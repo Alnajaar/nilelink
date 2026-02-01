@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { systemApi } from '@/shared/utils/api';
+import graphService from '../services/GraphService';
 
 export const HealthStatus: React.FC = () => {
     const [status, setStatus] = useState<'healthy' | 'degraded' | 'critical' | 'loading'>('loading');
@@ -9,15 +9,21 @@ export const HealthStatus: React.FC = () => {
     useEffect(() => {
         const checkHealth = async () => {
             try {
-                const health = await systemApi.getHealth();
-                setStatus(health.status);
+                const stats = await graphService.getProtocolStats();
+                if (stats && stats.protocolStats) {
+                    // If we can reach the graph and get data, we are 'healthy'
+                    setStatus('healthy');
+                } else {
+                    setStatus('degraded');
+                }
             } catch (error) {
+                console.error("Health Check failed (Decentralized):", error);
                 setStatus('critical');
             }
         };
 
         checkHealth();
-        const interval = setInterval(checkHealth, 30000); // Poll every 30s
+        const interval = setInterval(checkHealth, 60000); // Poll every 60s
         return () => clearInterval(interval);
     }, []);
 

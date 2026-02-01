@@ -107,3 +107,9 @@ export function WarningBanner({ message, className = '' }: WarningBannerProps) {
         </div>
     );
 }
+
+export const ModeBanner = ({ mode, className = '' }: { mode: 'demo' | 'live' | 'warning', className?: string, message?: string }) => {
+    if (mode === 'demo') return <DemoModeBanner className={className} />;
+    if (mode === 'live') return <LiveModeBanner className={className} />;
+    return <WarningBanner message="System Notification" className={className} />;
+};

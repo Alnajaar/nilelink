@@ -33,6 +33,8 @@ describe('RestaurantRegistry', function () {
     ownerPhoneHash: ethers.keccak256(ethers.toUtf8Bytes('+1234567890')),
     legalNameHash: ethers.keccak256(ethers.toUtf8Bytes('Legal Name')),
     localNameHash: ethers.keccak256(ethers.toUtf8Bytes('Local Name')),
+    metadataCid: ethers.keccak256(ethers.toUtf8Bytes('QmDummyMetadataCID')),
+    catalogCid: ethers.keccak256(ethers.toUtf8Bytes('QmDummyCatalogCID')),
     country: COUNTRY_LB,
     localCurrency: CURRENCY_LBP,
     dailyRateLimitUsd6: DAILY_RATE_LIMIT,
@@ -55,6 +57,8 @@ describe('RestaurantRegistry', function () {
           restaurant.address,
           COUNTRY_LB,
           CURRENCY_LBP,
+          config.metadataCid,
+          config.catalogCid,
           DAILY_RATE_LIMIT,
           ORACLE_ADDRESS,
           anyValue

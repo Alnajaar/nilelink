@@ -2,8 +2,8 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
@@ -23,8 +23,8 @@ library NileLinkLibs {
     error AlreadyProcessed();
 
     /// @dev Constants
-    uint256 constant MAX_RATE_LIMIT = 100000 * 10**6; // $100K with 6 decimals
-    uint256 constant MIN_RATE_LIMIT = 100 * 10**6; // $100 with 6 decimals
+    uint256 constant MAX_RATE_LIMIT = 100000 * 10 ** 6; // $100K with 6 decimals
+    uint256 constant MIN_RATE_LIMIT = 100 * 10 ** 6; // $100 with 6 decimals
     uint16 constant PROTOCOL_FEE_BPS = 50; // 0.5%
     uint64 constant DISPUTE_DEADLINE = 3 days;
     uint64 constant MAX_RATE_HISTORY = 30 days;
@@ -37,7 +37,8 @@ library NileLinkLibs {
     }
 
     function validateRate(uint256 rate) internal pure {
-        if (rate == 0 || rate > 10**15) { // Support high-inflation currencies like LBP
+        if (rate == 0 || rate > 10 ** 15) {
+            // Support high-inflation currencies like LBP
             revert InvalidRate();
         }
     }

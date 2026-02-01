@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from '../contexts/AuthContext';
-import { CustomerProvider } from '../contexts/CustomerContext';
-import { WalletProvider } from '@shared/contexts/WalletContext';
+import "@shared/globals.shared.css";
+import { Providers } from '../components/Providers';
 import { ORGANIZATION_SCHEMA } from "../utils/schema";
-
-import { DemoProvider } from '@shared/contexts/DemoContext';
-import { DemoModeBanner } from '@shared/components/ModeBanner';
-
-import { UniversalHeader } from '@shared/components/UniversalHeader';
+import { UniversalNavbar } from '@shared/components/UniversalNavbar';
+import { ErrorBoundary } from '@shared/components/ErrorBoundary';
+// Footer removed per user request
+import BottomNav from '@/components/BottomNav';
+import AIAssistant from '@/components/AIAssistant';
+import { ReferralTracker } from '@/components/ReferralTracker';
+import { Suspense } from 'react';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,7 +24,11 @@ export const metadata: Metadata = {
         icon: '/shared/assets/logo/logo-icon.ico',
         apple: '/shared/assets/logo/logo-square.png',
     },
+    manifest: '/manifest.json',
 };
+
+// Force dynamic rendering for auth-dependent pages
+
 
 export default function RootLayout({
     children,
@@ -41,26 +46,34 @@ export default function RootLayout({
                 />
             </head>
             <body className={`${inter.className} bg-gray-50 text-gray-900 min-h-screen flex flex-col`}>
-                <DemoProvider>
-                    <DemoModeBanner />
-                    <WalletProvider>
-                        <AuthProvider>
-                            <CustomerProvider>
-                                <UniversalHeader
-                                    appName="Customer"
-                                    links={[
-                                        { href: '/orders', label: 'Orders' },
-                                        { href: '/wallet', label: 'Wallet' },
-                                        { href: '/settings', label: 'Settings' }
-                                    ]}
-                                />
-                                <main className="flex-1 p-4 shadow-inner bg-white/40 backdrop-blur-sm rounded-3xl m-4 border border-white/20">
-                                    {children}
-                                </main>
-                            </CustomerProvider>
-                        </AuthProvider>
-                    </WalletProvider>
-                </DemoProvider>
+                <Providers>
+                    <ErrorBoundary>
+                        <UniversalNavbar context="customer" />
+                        <main className="flex-1 pb-20">
+                            {children}
+                        </main>
+                        <BottomNav />
+                        <Suspense fallback={null}>
+                            <ReferralTracker />
+                        </Suspense>
+                        <AIAssistant />
+                    </ErrorBoundary>
+                </Providers>
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                            if ('serviceWorker' in navigator) {
+                                window.addEventListener('load', () => {
+                                    navigator.serviceWorker.register('/sw.js').then(reg => {
+                                        console.log('NileLink Customer Service Worker Registered', reg.scope);
+                                    }).catch(err => {
+                                        console.error('NileLink Customer SW Registration Failed', err);
+                                    });
+                                });
+                            }
+                        `,
+                    }}
+                />
             </body>
         </html>
     );

@@ -8,10 +8,12 @@ import {
     Calendar, ArrowLeft, BarChart3, PieChart, Activity
 } from 'lucide-react';
 
-import { useAuth } from '@/shared/contexts/AuthContext';
-import { Button } from '@/shared/components/Button';
-import { Card } from '@/shared/components/Card';
-import { Badge } from '@/shared/components/Badge';
+import { useAuth } from '@shared/providers/FirebaseAuthProvider';
+import { Button } from '@shared/components/Button';
+import { Card } from '@shared/components/Card';
+import { Badge } from '@shared/components/Badge';
+import AuthGuard from '@shared/components/AuthGuard';
+import { SettlementMatrix } from '@/components/reports/SettlementMatrix';
 
 export default function ReportsPage() {
     const router = useRouter();
@@ -57,11 +59,11 @@ export default function ReportsPage() {
                     <div className="max-w-7xl mx-auto flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <button onClick={() => router.push('/dashboard')} className="p-2 hover:bg-surface rounded-lg">
-                                <ArrowLeft size={20} className="text-text" />
+                                <ArrowLeft size={20} className="text-text-primary" />
                             </button>
                             <div>
-                                <h1 className="text-3xl font-black text-text">Analytics & Reports</h1>
-                                <p className="text-sm text-text opacity-70">Track performance and insights</p>
+                                <h1 className="text-3xl font-black text-text-primary">Analytics & Reports</h1>
+                                <p className="text-sm text-text-primary opacity-70">Track performance and insights</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -73,7 +75,7 @@ export default function ReportsPage() {
                                         onClick={() => setDateRange(range)}
                                         className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${dateRange === range
                                             ? 'bg-primary text-background'
-                                            : 'bg-surface text-text hover:bg-surface/70'
+                                            : 'bg-surface text-text-primary hover:bg-surface/70'
                                             }`}
                                     >
                                         {range}
@@ -98,10 +100,10 @@ export default function ReportsPage() {
                                 </div>
                                 <TrendingUp size={16} className="text-primary" />
                             </div>
-                            <p className="text-xs text-text opacity-50 uppercase tracking-widest font-bold mb-1">
+                            <p className="text-xs text-text-primary opacity-50 uppercase tracking-widest font-bold mb-1">
                                 Total Revenue
                             </p>
-                            <p className="text-3xl font-black font-mono text-text">
+                            <p className="text-3xl font-black font-mono text-text-primary">
                                 ${analytics.totalRevenue.toLocaleString()}
                             </p>
                             <p className="text-xs text-primary font-bold mt-2">+12.5% vs last period</p>
@@ -112,12 +114,12 @@ export default function ReportsPage() {
                                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
                                     <Package size={24} className="text-primary" />
                                 </div>
-                                <Activity size={16} className="text-text opacity-50" />
+                                <Activity size={16} className="text-text-primary opacity-50" />
                             </div>
-                            <p className="text-xs text-text opacity-50 uppercase tracking-widest font-bold mb-1">
+                            <p className="text-xs text-text-primary opacity-50 uppercase tracking-widest font-bold mb-1">
                                 Total Orders
                             </p>
-                            <p className="text-3xl font-black font-mono text-text">
+                            <p className="text-3xl font-black font-mono text-text-primary">
                                 {analytics.totalOrders}
                             </p>
                             <p className="text-xs text-primary font-bold mt-2">+8.3% vs last period</p>
@@ -147,7 +149,7 @@ export default function ReportsPage() {
                                 <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                                     <Package size={20} className="text-primary" />
                                 </div>
-                                <h2 className="text-xl font-black text-text">Top Products</h2>
+                                <h2 className="text-xl font-black text-text-primary">Top Products</h2>
                             </div>
 
                             <div className="space-y-3">
@@ -158,8 +160,8 @@ export default function ReportsPage() {
                                                 <span className="text-background font-black text-sm">#{idx + 1}</span>
                                             </div>
                                             <div>
-                                                <p className="font-bold text-text">{product.name}</p>
-                                                <p className="text-xs text-text opacity-50">{product.orders} orders</p>
+                                                <p className="font-bold text-text-primary">{product.name}</p>
+                                                <p className="text-xs text-text-primary opacity-50">{product.orders} orders</p>
                                             </div>
                                         </div>
                                         <p className="font-mono font-black text-primary">
@@ -176,7 +178,7 @@ export default function ReportsPage() {
                                 <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                                     <Users size={20} className="text-primary" />
                                 </div>
-                                <h2 className="text-xl font-black text-text">Top Customers</h2>
+                                <h2 className="text-xl font-black text-text-primary">Top Customers</h2>
                             </div>
 
                             <div className="space-y-3">
@@ -187,8 +189,8 @@ export default function ReportsPage() {
                                                 <span className="text-background font-black text-sm">#{idx + 1}</span>
                                             </div>
                                             <div>
-                                                <p className="font-bold text-text">{customer.name}</p>
-                                                <p className="text-xs text-text opacity-50">{customer.orders} orders</p>
+                                                <p className="font-bold text-text-primary">{customer.name}</p>
+                                                <p className="text-xs text-text-primary opacity-50">{customer.orders} orders</p>
                                             </div>
                                         </div>
                                         <p className="font-mono font-black text-primary">
@@ -230,7 +232,7 @@ export default function ReportsPage() {
                     <div className="mt-12">
                         <SettlementMatrix />
                     </div>
-                </main>
+                </div>
             </div>
         </AuthGuard>
     );

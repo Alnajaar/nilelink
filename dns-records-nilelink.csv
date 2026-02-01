@@ -1,0 +1,10 @@
+Type,Name,Content,TTL,Comment
+A,@,"192.0.2.1",Auto,Root domain - Update with Cloudflare IP
+CNAME,www,"@",Auto,WWW redirect
+CNAME,api,"REPLACE_WITH_ALB_DNS",Auto,API Load Balancer
+CNAME,admin,"REPLACE_WITH_CF_DIST",Auto,Admin CloudFront
+CNAME,pos,"REPLACE_WITH_CF_DIST",Auto,POS CloudFront
+CNAME,customer,"REPLACE_WITH_CF_DIST",Auto,Customer App
+CNAME,driver,"REPLACE_WITH_CF_DIST",Auto,Driver App
+CNAME,staging,"REPLACE_WITH_CF_DIST",Auto,Staging Environment
+CNAME,beta,"REPLACE_WITH_CF_DIST",Auto,Beta Environment

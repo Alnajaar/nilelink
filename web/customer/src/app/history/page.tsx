@@ -12,10 +12,11 @@ import {
     Store,
     RefreshCw
 } from 'lucide-react';
-import { Button } from '@/shared/components/Button';
-import { Badge } from '@/shared/components/Badge';
-import { CurrencyDisplay } from '@/shared/components/CurrencyDisplay';
-import { orderApi, ApiError } from '@/shared/utils/api';
+import { Button } from '@shared/components/Button';
+import { Badge } from '@shared/components/Badge';
+import { CurrencyDisplay } from '@shared/components/CurrencyDisplay';
+import { orderApi, ApiError } from '@shared/utils/api';
+import AuthGuard from '@shared/components/AuthGuard';
 
 interface Order {
     id: string;

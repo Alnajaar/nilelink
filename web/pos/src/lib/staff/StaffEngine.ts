@@ -127,4 +127,29 @@ export class StaffEngine {
         const updated = { ...current, ...updates, updatedAt: Date.now() };
         await this.ledger.upsertStaff(updated);
     }
+
+    /**
+     * Update staff profile including secure PIN change
+     */
+    async updateStaffProfile(id: string, data: { username?: string, phone?: string, roles?: POS_ROLE[], pin?: string, status?: 'active' | 'suspended' }): Promise<void> {
+        const current = await this.ledger.getStaffById(id);
+        if (!current) throw new Error('Staff not found');
+
+        const updates: Partial<StaffMember> = {};
+        if (data.username) updates.username = data.username;
+        if (data.phone) updates.phone = data.phone;
+        if (data.roles) {
+            updates.roles = data.roles;
+            // Re-calculate permissions based on new roles
+            updates.permissions = Array.from(new Set(data.roles.flatMap(role => ROLE_PERMISSIONS[role] || [])));
+        }
+        if (data.status) updates.status = data.status;
+
+        if (data.pin) {
+            updates.pinHash = await this.hashPin(data.pin);
+        }
+
+        const updated = { ...current, ...updates, updatedAt: Date.now() };
+        await this.ledger.upsertStaff(updated);
+    }
 }

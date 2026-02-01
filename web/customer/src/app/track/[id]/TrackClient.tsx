@@ -1,19 +1,19 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { joinRoom, SocketEvents } from '@/shared/utils/socket';
-import { useSocketEvent } from '@/shared/hooks/useSocket';
+import { joinRoom, SocketEvents } from '@shared/utils/socket';
+import { useSocketEvent } from '@shared/hooks/useSocket';
 import { motion } from 'framer-motion';
 import { MapPin, Navigation, Clock, Phone, Package, ShieldCheck, ChevronRight, Star, ArrowLeft } from 'lucide-react';
-import { Button } from '@/shared/components/Button';
-import { Card } from '@/shared/components/Card';
-import { Badge } from '@/shared/components/Badge';
-import { CurrencyDisplay } from '@/shared/components/CurrencyDisplay';
+import { Button } from '@shared/components/Button';
+import { Card } from '@shared/components/Card';
+import { Badge } from '@shared/components/Badge';
+import { CurrencyDisplay } from '@shared/components/CurrencyDisplay';
 import Link from 'next/link';
-import { orderApi, ApiError } from '@/shared/utils/api';
+import { orderApi, ApiError } from '@shared/utils/api';
 import dynamic from 'next/dynamic';
 
-const Map = dynamic(() => import('@/shared/components/Map'), {
+const Map = dynamic(() => import('@shared/components/NetworkMap'), {
     ssr: false,
     loading: () => <div className="h-full w-full bg-slate-900 animate-pulse flex items-center justify-center text-white/20 italic">Initializing Satellite Array...</div>
 });

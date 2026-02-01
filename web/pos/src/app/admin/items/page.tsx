@@ -56,42 +56,48 @@ export default function ItemsManagementPage() {
     const [viewingItem, setViewingItem] = useState<MenuItem | null>(null);
     const [saving, setSaving] = useState(false);
 
-    // Mock data for demonstration
+    // Load real data from product engine
     useEffect(() => {
-        const mockItems: MenuItem[] = [
-            {
-                id: '1',
-                name: 'Wagyu Burger',
-                description: 'Premium Japanese Wagyu beef patty with truffle aioli',
-                price: 45.99,
-                category: 'Burgers',
-                image: '/api/placeholder/200/150',
-                isAvailable: true,
-                preparationTime: 15,
-                cost: 18.50,
-                stock: 25,
-                barcode: '1234567890123',
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            },
-            {
-                id: '2',
-                name: 'Truffle Fries',
-                description: 'Hand-cut fries with black truffle oil and parmesan',
-                price: 12.99,
-                category: 'Sides',
-                image: '/api/placeholder/200/150',
-                isAvailable: true,
-                preparationTime: 8,
-                cost: 3.25,
-                stock: 50,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+        const loadProducts = async () => {
+            if (!isInitialized || !engines.productEngine) {
+                setLoading(false);
+                return;
             }
-        ];
-        setItems(mockItems);
-        setLoading(false);
-    }, []);
+
+            try {
+                setLoading(true);
+                const productList = await engines.productEngine.getAllProducts();
+                
+                // Convert to MenuItem format
+                const menuItems: MenuItem[] = productList.map((product: any) => ({
+                    id: product.id,
+                    name: product.name,
+                    description: product.description || '',
+                    price: product.price,
+                    category: product.category || 'Uncategorized',
+                    image: product.image,
+                    isAvailable: product.isActive !== false,
+                    preparationTime: product.preparationTime,
+                    cost: product.cost,
+                    stock: product.stock,
+                    barcode: product.barcode,
+                    customizations: product.customizations,
+                    createdAt: product.createdAt || new Date().toISOString(),
+                    updatedAt: product.updatedAt || new Date().toISOString()
+                }));
+                
+                setItems(menuItems);
+            } catch (error) {
+                console.error('Failed to load products:', error);
+                // Fallback to empty array
+                setItems([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadProducts();
+    }, [isInitialized, engines.productEngine]);
 
     const filteredItems = items.filter(item => {
         const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -105,11 +111,27 @@ export default function ItemsManagementPage() {
     const handleSaveItem = async (itemData: Partial<MenuItem>) => {
         setSaving(true);
         try {
-            // Mock API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (!engines.productEngine) {
+                throw new Error('Product engine not initialized');
+            }
 
             if (editingItem) {
                 // Update existing item
+                await engines.productEngine.updateProduct(editingItem.id, {
+                    name: itemData.name || '',
+                    description: itemData.description || '',
+                    price: itemData.price || 0,
+                    category: itemData.category || 'Uncategorized',
+                    image: itemData.image,
+                    isActive: itemData.isAvailable,
+                    preparationTime: itemData.preparationTime,
+                    cost: itemData.cost,
+                    stock: itemData.stock,
+                    barcode: itemData.barcode,
+                    customizations: itemData.customizations
+                });
+
+                // Update local state
                 setItems(prev => prev.map(item =>
                     item.id === editingItem.id
                         ? { ...item, ...itemData, updatedAt: new Date().toISOString() }
@@ -117,21 +139,36 @@ export default function ItemsManagementPage() {
                 ));
             } else {
                 // Add new item
-                const newItem: MenuItem = {
-                    id: Date.now().toString(),
+                const newProduct = await engines.productEngine.createProduct({
                     name: itemData.name || '',
                     description: itemData.description || '',
                     price: itemData.price || 0,
                     category: itemData.category || 'Uncategorized',
                     image: itemData.image,
-                    isAvailable: itemData.isAvailable ?? true,
+                    isActive: itemData.isAvailable ?? true,
                     preparationTime: itemData.preparationTime,
                     cost: itemData.cost,
                     stock: itemData.stock,
                     barcode: itemData.barcode,
-                    customizations: itemData.customizations,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
+                    customizations: itemData.customizations
+                });
+
+                // Add to local state
+                const newItem: MenuItem = {
+                    id: newProduct.id,
+                    name: newProduct.name,
+                    description: newProduct.description || '',
+                    price: newProduct.price,
+                    category: newProduct.category || 'Uncategorized',
+                    image: newProduct.image,
+                    isAvailable: newProduct.isActive !== false,
+                    preparationTime: newProduct.preparationTime,
+                    cost: newProduct.cost,
+                    stock: newProduct.stock,
+                    barcode: newProduct.barcode,
+                    customizations: newProduct.customizations,
+                    createdAt: newProduct.createdAt || new Date().toISOString(),
+                    updatedAt: newProduct.updatedAt || new Date().toISOString()
                 };
                 setItems(prev => [...prev, newItem]);
             }
@@ -140,6 +177,7 @@ export default function ItemsManagementPage() {
             setEditingItem(null);
         } catch (error) {
             console.error('Failed to save item:', error);
+            alert('Failed to save item. Please try again.');
         } finally {
             setSaving(false);
         }
@@ -149,11 +187,15 @@ export default function ItemsManagementPage() {
         if (!confirm('Are you sure you want to delete this item?')) return;
 
         try {
-            // Mock API call
-            await new Promise(resolve => setTimeout(resolve, 500));
+            if (!engines.productEngine) {
+                throw new Error('Product engine not initialized');
+            }
+
+            await engines.productEngine.deleteProduct(itemId);
             setItems(prev => prev.filter(item => item.id !== itemId));
         } catch (error) {
             console.error('Failed to delete item:', error);
+            alert('Failed to delete item. Please try again.');
         }
     };
 
@@ -175,11 +217,8 @@ export default function ItemsManagementPage() {
                         <ArrowLeft size={20} />
                     </Link>
                     <div>
-                        <div className="flex items-center gap-4 mb-2">
-                            <h1 className="text-4xl font-black text-text-main">Items Management</h1>
-                            {demoMode && <Badge className="bg-orange-500 text-white">DEMO DATA</Badge>}
-                        </div>
-                        <p className="text-text-muted font-medium text-lg">Manage menu items, inventory, and pricing</p>
+                        <h1 className="text-3xl font-bold text-gray-900">Products Management</h1>
+                        <p className="text-gray-600 font-medium">Manage menu items, inventory, and pricing</p>
                     </div>
                 </div>
 

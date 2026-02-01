@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from './Button';
 import { Card } from './Card';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@shared/contexts/AuthContext';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -182,9 +182,15 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'login', defaultMethod
                     setError(result.error || 'Failed to connect wallet');
                 }
             } else {
-                // For demo purposes, we'll simulate wallet signature
+                // Request real wallet signature
                 const message = `Sign in to NileLink\n\nTimestamp: ${Date.now()}`;
-                const result = await loginWithWallet(walletAddress, 'demo_signature', message);
+                const signature = await web3Service.signMessage(message);
+                if (!signature) {
+                    setError('Signature request denied');
+                    setIsLoading(false);
+                    return;
+                }
+                const result = await loginWithWallet(walletAddress, signature, message);
                 if (result.success) {
                     onClose();
                 } else {
@@ -223,11 +229,10 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'login', defaultMethod
                             setActiveTab('login');
                             resetForm();
                         }}
-                        className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                            activeTab === 'login'
+                        className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${activeTab === 'login'
                                 ? 'bg-white text-text-primary shadow-sm'
                                 : 'text-text-muted hover:text-text-primary'
-                        }`}
+                            }`}
                     >
                         Login
                     </button>
@@ -236,11 +241,10 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'login', defaultMethod
                             setActiveTab('register');
                             resetForm();
                         }}
-                        className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                            activeTab === 'register'
+                        className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${activeTab === 'register'
                                 ? 'bg-white text-text-primary shadow-sm'
                                 : 'text-text-muted hover:text-text-primary'
-                        }`}
+                            }`}
                     >
                         Register
                     </button>
@@ -250,33 +254,30 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'login', defaultMethod
                 <div className="flex p-1 mx-6 mt-4 bg-bg-accent rounded-lg">
                     <button
                         onClick={() => setActiveMethod('email')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md text-sm font-medium transition-all ${
-                            activeMethod === 'email'
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md text-sm font-medium transition-all ${activeMethod === 'email'
                                 ? 'bg-primary text-white shadow-sm'
                                 : 'text-text-muted hover:text-text-primary'
-                        }`}
+                            }`}
                     >
                         <Mail size={16} />
                         Email
                     </button>
                     <button
                         onClick={() => setActiveMethod('phone')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md text-sm font-medium transition-all ${
-                            activeMethod === 'phone'
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md text-sm font-medium transition-all ${activeMethod === 'phone'
                                 ? 'bg-primary text-white shadow-sm'
                                 : 'text-text-muted hover:text-text-primary'
-                        }`}
+                            }`}
                     >
                         <Smartphone size={16} />
                         Phone
                     </button>
                     <button
                         onClick={() => setActiveMethod('wallet')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md text-sm font-medium transition-all ${
-                            activeMethod === 'wallet'
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md text-sm font-medium transition-all ${activeMethod === 'wallet'
                                 ? 'bg-primary text-white shadow-sm'
                                 : 'text-text-muted hover:text-text-primary'
-                        }`}
+                            }`}
                     >
                         <Wallet size={16} />
                         Wallet

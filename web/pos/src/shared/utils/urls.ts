@@ -36,6 +36,4 @@ export const URLS = {
     supplier: getAppUrl('supplier'),
     dashboard: getAppUrl('dashboard'),
     unified: getAppUrl('unified'),
-    api: IS_DEV ? 'http://localhost:3001/api' : 'https://api.nilelink.app/api',
-    docs: IS_DEV ? `http://docs.${DOMAIN}:3001/api/docs` : `https://docs.${DOMAIN}`,
 };

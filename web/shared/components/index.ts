@@ -8,3 +8,9 @@ export { NeuralHUD } from './NeuralHUD';
 export { CommandConsole } from './CommandConsole';
 export { ModeBanner } from './ModeBanner';
 export { NeuralMesh } from './NeuralMesh';
+
+// Modern Premium Components (v2.0)
+export { ModernCard } from './ModernCard';
+export { ModernButton } from './ModernButton';
+export { ModernStatCard } from './ModernStatCard';
+export { ModernBadge } from './ModernBadge';

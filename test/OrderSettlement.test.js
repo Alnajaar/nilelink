@@ -52,6 +52,8 @@ describe('OrderSettlement', function () {
             ownerPhoneHash: ethers.keccak256(ethers.toUtf8Bytes('+1234567890')),
             legalNameHash: ethers.keccak256(ethers.toUtf8Bytes('Legal Name')),
             localNameHash: ethers.keccak256(ethers.toUtf8Bytes('Local Name')),
+            metadataCid: ethers.keccak256(ethers.toUtf8Bytes('QmDummyMetadataCID')),
+            catalogCid: ethers.keccak256(ethers.toUtf8Bytes('QmDummyCatalogCID')),
             country: COUNTRY_LB,
             localCurrency: CURRENCY_LBP,
             dailyRateLimitUsd6: DAILY_RATE_LIMIT,
@@ -91,7 +93,7 @@ describe('OrderSettlement', function () {
                 )
             )
                 .to.emit(orderSettlement, 'PaymentIntentCreated')
-                .withArgs(ORDER_ID, restaurant.address, customer.address, ORDER_AMOUNT_USD6, PAYMENT_METHOD_CRYPTO, anyValue);
+                .withArgs(ORDER_ID, restaurant.address, customer.address, ORDER_AMOUNT_USD6, PAYMENT_METHOD_CRYPTO, anyValue, anyValue, anyValue);
 
             const order = await orderSettlement.orders(ORDER_ID);
             expect(order.restaurant).to.equal(restaurant.address);
@@ -113,7 +115,7 @@ describe('OrderSettlement', function () {
                 orderSettlement.connect(customer).pay(ORDER_ID, ORDER_AMOUNT_USD6)
             )
                 .to.emit(orderSettlement, 'PaymentReceived')
-                .withArgs(ORDER_ID, customer.address, ORDER_AMOUNT_USD6, anyValue)
+                .withArgs(ORDER_ID, customer.address, restaurant.address, ORDER_AMOUNT_USD6, anyValue, PAYMENT_METHOD_CRYPTO, anyValue)
                 .to.emit(orderSettlement, 'PaymentSettled');
 
             const order = await orderSettlement.orders(ORDER_ID);

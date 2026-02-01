@@ -40,7 +40,11 @@ export const AppSwitcher: React.FC = () => {
                     </svg>
                 }
             >
-                <span className="font-semibold tracking-tight">NileLink</span>
+                <img
+                    src="/logo.png"
+                    alt="NileLink Logo"
+                    className="w-8 h-8 object-contain"
+                />
             </Button>
 
             {isOpen && (

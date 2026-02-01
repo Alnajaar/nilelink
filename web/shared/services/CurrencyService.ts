@@ -209,11 +209,13 @@ export class CurrencyService {
     private static instance: CurrencyService;
     private baseCurrency: string = 'USD';
     private exchangeRates: Map<string, ExchangeRate> = new Map();
+    private customMerchantRates: Map<string, number> = new Map();
     private lastUpdate: number = 0;
     private updateInterval: number = 3600000; // 1 hour
 
     private constructor() {
         this.initializeExchangeRates();
+        this.loadCustomRatesFromStorage();
     }
 
     static getInstance(): CurrencyService {
@@ -280,6 +282,48 @@ export class CurrencyService {
     }
 
     /**
+     * Set a custom merchant daily rate (Local to 1 USD)
+     */
+    setCustomMerchantRate(currencyCode: string, rate: number): void {
+        this.customMerchantRates.set(currencyCode, rate);
+        if (typeof window !== 'undefined') {
+            const ratesObj = Object.fromEntries(this.customMerchantRates);
+            localStorage.setItem('nilelink_custom_currency_rates', JSON.stringify(ratesObj));
+        }
+        console.log(`[Currency Service] 💹 Custom rate set: 1 USD = ${rate} ${currencyCode}`);
+    }
+
+    /**
+     * Clear custom merchant rate (return to auto)
+     */
+    clearCustomMerchantRate(currencyCode: string): void {
+        this.customMerchantRates.delete(currencyCode);
+        if (typeof window !== 'undefined') {
+            const ratesObj = Object.fromEntries(this.customMerchantRates);
+            localStorage.setItem('nilelink_custom_currency_rates', JSON.stringify(ratesObj));
+        }
+    }
+
+    /**
+     * Load custom rates from local storage
+     */
+    private loadCustomRatesFromStorage(): void {
+        if (typeof window !== 'undefined') {
+            try {
+                const stored = localStorage.getItem('nilelink_custom_currency_rates');
+                if (stored) {
+                    const ratesObj = JSON.parse(stored);
+                    Object.entries(ratesObj).forEach(([code, rate]) => {
+                        this.customMerchantRates.set(code, rate as number);
+                    });
+                }
+            } catch (err) {
+                console.warn('Failed to load custom currency rates:', err);
+            }
+        }
+    }
+
+    /**
      * Detect currency from country code
      */
     detectCurrencyFromCountry(countryCode: string): string {
@@ -337,6 +381,16 @@ export class CurrencyService {
      * Get exchange rate between two currencies
      */
     private getExchangeRate(from: string, to: string): number {
+        // Prioritize custom merchant rates for target currency if base is USD
+        if (from === 'USD' && this.customMerchantRates.has(to)) {
+            return this.customMerchantRates.get(to)!;
+        }
+
+        // Handle reverse (Currency to USD) if custom rate exists
+        if (to === 'USD' && this.customMerchantRates.has(from)) {
+            return 1 / this.customMerchantRates.get(from)!;
+        }
+
         const key = `${from}_${to}`;
         const rate = this.exchangeRates.get(key);
         return rate?.rate || 1;

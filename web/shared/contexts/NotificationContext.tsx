@@ -3,63 +3,89 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface Notification {
-    id: string;
-    type: 'success' | 'error' | 'warning' | 'info';
-    title: string;
-    message?: string;
-    duration?: number;
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  isAdminOnly?: boolean;
+  createdAt: Date;
+  read: boolean;
 }
 
 interface NotificationContextType {
-    notifications: Notification[];
-    addNotification: (notification: Omit<Notification, 'id'>) => void;
-    removeNotification: (id: string) => void;
-    clearNotifications: () => void;
+  notifications: Notification[];
+  unreadCount: number;
+  addNotification: (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => void;
+  markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+  removeNotification: (id: string) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
-    const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([
+    {
+      id: '1',
+      title: 'Free Delivery Available',
+      message: 'Special offer: Free delivery on orders over $20 today only!',
+      type: 'success',
+      isAdminOnly: true,
+      createdAt: new Date(),
+      read: false
+    }
+  ]);
 
-    const addNotification = (notification: Omit<Notification, 'id'>) => {
-        const id = Date.now().toString();
-        const newNotification = { ...notification, id };
+  const unreadCount = notifications.filter(n => !n.read).length;
 
-        setNotifications(prev => [...prev, newNotification]);
-
-        // Auto remove after duration
-        if (notification.duration !== 0) {
-            setTimeout(() => {
-                removeNotification(id);
-            }, notification.duration || 5000);
-        }
+  const addNotification = (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => {
+    const newNotification: Notification = {
+      ...notification,
+      id: Math.random().toString(36).substr(2, 9),
+      createdAt: new Date(),
+      read: false
     };
+    setNotifications(prev => [newNotification, ...prev]);
+  };
 
-    const removeNotification = (id: string) => {
-        setNotifications(prev => prev.filter(n => n.id !== id));
-    };
-
-    const clearNotifications = () => {
-        setNotifications([]);
-    };
-
-    return (
-        <NotificationContext.Provider value={{
-            notifications,
-            addNotification,
-            removeNotification,
-            clearNotifications
-        }}>
-            {children}
-        </NotificationContext.Provider>
+  const markAsRead = (id: string) => {
+    setNotifications(prev =>
+      prev.map(notification =>
+        notification.id === id ? { ...notification, read: true } : notification
+      )
     );
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(prev =>
+      prev.map(notification => ({ ...notification, read: true }))
+    );
+  };
+
+  const removeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(notification => notification.id !== id));
+  };
+
+  return (
+    <NotificationContext.Provider
+      value={{
+        notifications,
+        unreadCount,
+        addNotification,
+        markAsRead,
+        markAllAsRead,
+        removeNotification
+      }}
+    >
+      {children}
+    </NotificationContext.Provider>
+  );
 }
 
-export function useNotification() {
-    const context = useContext(NotificationContext);
-    if (context === undefined) {
-        throw new Error('useNotification must be used within a NotificationProvider');
-    }
-    return context;
+export function useNotifications() {
+  const context = useContext(NotificationContext);
+  if (context === undefined) {
+    throw new Error('useNotifications must be used within a NotificationProvider');
+  }
+  return context;
 }

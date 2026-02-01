@@ -56,6 +56,8 @@ describe('DisputeResolution', function () {
             ownerPhoneHash: ethers.keccak256(ethers.toUtf8Bytes('+123')),
             legalNameHash: ethers.keccak256(ethers.toUtf8Bytes('Legal Name')),
             localNameHash: ethers.keccak256(ethers.toUtf8Bytes('Local Name')),
+            metadataCid: ethers.keccak256(ethers.toUtf8Bytes('QmDummyMetadataCID')),
+            catalogCid: ethers.keccak256(ethers.toUtf8Bytes('QmDummyCatalogCID')),
             country: COUNTRY_LB,
             localCurrency: CURRENCY_LBP,
             dailyRateLimitUsd6: ethers.parseUnits('10000', 6),

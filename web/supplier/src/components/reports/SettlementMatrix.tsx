@@ -1,11 +1,11 @@
 "use client";
 
 import React from 'react';
-import { Card } from '@/shared/components/Card';
-import { Badge } from '@/shared/components/Badge';
-import { Button } from '@/shared/components/Button';
-import { CurrencyDisplay } from '@/shared/components/CurrencyDisplay';
-import { FileDown, Calendar, ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { Card } from '@shared/components/Card';
+import { Badge } from '@shared/components/Badge';
+import { Button } from '@shared/components/Button';
+import { CurrencyDisplay } from '@shared/components/CurrencyDisplay';
+import { FileDown, Calendar, ShieldCheck, ArrowUpRight, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface Settlement {

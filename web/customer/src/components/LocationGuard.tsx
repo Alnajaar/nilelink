@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { MapPin, Navigation, Bell } from 'lucide-react';
-import { Button } from '@/shared/components/Button';
-import { Card } from '@/shared/components/Card';
+import { Button } from '@shared/components/Button';
+import { Card } from '@shared/components/Card';
 import { useCustomer } from '@/contexts/CustomerContext';
 
 export const LocationGuard = ({ children }: { children: React.ReactNode }) => {
@@ -40,13 +40,18 @@ export const LocationGuard = ({ children }: { children: React.ReactNode }) => {
                 setIsLoading(false);
             },
             (err) => {
-                console.error(err);
-                setError('Unable to retrieve your location. Please enable location services manually.');
+                console.error('Geolocation Error:', { code: err.code, message: err.message });
+                let msg = 'Unable to retrieve your location.';
+                if (err.code === 1) msg = 'Location access denied. Please enable it in browser settings.';
+                else if (err.code === 2) msg = 'Location unavailable at the moment.';
+                else if (err.code === 3) msg = 'Location request timed out.';
+
+                setError(msg);
                 setIsLoading(false);
             },
             {
                 enableHighAccuracy: true,
-                timeout: 10000,
+                timeout: 5000,
                 maximumAge: 0
             }
         );

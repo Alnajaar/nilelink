@@ -31,7 +31,7 @@ export const UniversalHeader: React.FC<UniversalHeaderProps> = ({
     const status = propStatus || networkStatus;
 
     return (
-        <header className="sticky top-0 z-40 w-full border-b border-black/5 bg-background-light/80 backdrop-blur-md">
+        <header className="sticky top-0 z-40 w-full border-b border-border-default/50 bg-background-primary/80 backdrop-blur-3xl">
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 <div className="flex items-center gap-4">
                     <AppSwitcher />

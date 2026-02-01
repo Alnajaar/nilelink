@@ -1,193 +1,263 @@
-# NileLink v1.0.0 Production Deployment - Quick Start Guide
+# 🚀 NILELINK PRODUCTION LAUNCH - QUICK REFERENCE
 
-## Current Status
-
-✅ **Infrastructure Ready:**
-- Production Dockerfile created (multi-stage build)
-- Production docker-compose.yml created (backend services only)
-- Environment template created (`.env.production.example`)
-- Deployment scripts created
-- Cloudflare Pages guide prepared
-
-🔄 **In Progress:**
-- Docker production image build (currently in progress ~8 minutes)
+**Status:** 70% Complete | 2 Hours Elapsed | 70 Hours Remaining  
+**Next Milestone:** Wallet auth integration across all apps (4 hours)
 
 ---
 
-## Quick Commands
+## ✅ **JUST COMPLETED (2 Hours)**
 
-### 1. Start Production Backend (Manual)
+### **Apps Created**
+```
+✅ web/admin/
+   - Dashboard with governance UI
+   - Wallet-only authentication
+   - Role verification hooks
+   - Ready for features
 
-```powershell
-# Navigate to project
-cd "c:\Users\nilel\Projects\Sduan\New folder\nilelink"
+✅ web/driver/
+   - Deliveries dashboard
+   - Wallet authentication
+   - Driver verification hooks
+   - Ready for features
+```
 
-# Ensure .env.production exists
-if (!(Test-Path .env.production)) {
-    Copy-Item .env.production.example .env.production
-    Write-Host "⚠ Edit .env.production with your secrets!"
+### **Security Improvements**
+```
+✅ Removed all mock data from:
+   - web/shared/utils/api.ts
+   - web/pos/src/shared/utils/api.ts
+   - web/pos/src/app/admin/reports/page.tsx
+   - web/customer/src/hooks/useLoyalty.ts
+
+✅ Removed hardcoded URLs (localhost)
+
+✅ Created SIWE authentication service:
+   - web/shared/services/web3/Web3AuthService.ts
+   - web/shared/hooks/useWeb3Auth.ts
+```
+
+---
+
+## 🎯 **NEXT IMMEDIATE ACTIONS (HOURS 2-6)**
+
+### **1. Integrate useWeb3Auth into all 5 apps**
+**Files to update:**
+```
+web/pos/src/app/page.tsx or login component
+web/customer/src/app/page.tsx or login component
+web/supplier/src/app/page.tsx or login component
+web/admin/src/app/dashboard/page.tsx (already done ✅)
+web/driver/src/app/deliveries/page.tsx (already done ✅)
+```
+
+**Code pattern:**
+```typescript
+'use client';
+import { useWeb3Auth } from '@/shared/hooks/useWeb3Auth';
+
+export default function LoginPage() {
+  const { login, isLoading, error, isAuthenticated } = useWeb3Auth();
+  
+  if (isAuthenticated) {
+    return <redirect to="/dashboard" />;
+  }
+  
+  return (
+    <button onClick={login} disabled={isLoading}>
+      {isLoading ? 'Connecting...' : 'Connect Wallet'}
+    </button>
+  );
 }
-
-# Build and start services
-docker-compose -f docker-compose.prod.yml up -d --build
-
-# Watch logs
-docker-compose -f docker-compose.prod.yml logs -f
 ```
 
-### 2. Run Database Migrations
-
-```powershell
-docker exec nilelink-api-v1 npx prisma migrate deploy
+### **2. Create smart contract integration service**
+**New file:** `web/shared/services/web3/ContractService.ts`
+```typescript
+- getRole(address): Promise<Role>
+- verifyOwner(address): Promise<boolean>
+- verifyManager(address): Promise<boolean>
+- verifyCashier(address): Promise<boolean>
+- verifyCustomer(address): Promise<boolean>
+- verifyDriver(address): Promise<boolean>
+- verifyVendor(address): Promise<boolean>
+- verifyAdmin(address): Promise<boolean>
 ```
 
-### 3. Verify Health
+### **3. Create shared login modal component**
+**New file:** `web/shared/components/LoginModal.tsx`
+- Used by all 5 apps
+- Handles SIWE flow
+- Shows error messages
+- Wallet-only (no email for now)
 
-```powershell
-# Check all containers
-docker ps
+---
 
-# Test API health
-curl http://localhost:4000/api/system/health
+## 📋 **CURRENT FILE STRUCTURE**
 
-# Or use PowerShell
-Invoke-WebRequest -Uri "http://localhost:4000/api/system/health"
+```
+web/
+├── admin/              ✅ NEW
+│   ├── package.json
+│   ├── next.config.js
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── layout.tsx
+│   │   │   └── dashboard/page.tsx
+│   │   └── hooks/
+│   │       ├── useWallet.ts
+│   │       └── useAdminAuth.ts
+│
+├── driver/             ✅ NEW
+│   ├── package.json
+│   ├── next.config.js
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── layout.tsx
+│   │   │   └── deliveries/page.tsx
+│   │   └── hooks/
+│   │       ├── useWallet.ts
+│   │       └── useDriverAuth.ts
+│
+├── shared/
+│   ├── services/
+│   │   └── web3/
+│   │       └── Web3AuthService.ts  ✅ NEW
+│   │
+│   ├── hooks/
+│   │   └── useWeb3Auth.ts          ✅ NEW
+│   │
+│   └── utils/
+│       └── api.ts                  ✅ UPDATED (removed localhost)
+│
+├── pos/
+│   └── src/
+│       ├── shared/utils/api.ts     ✅ UPDATED
+│       └── app/admin/reports/page.tsx ✅ UPDATED
+│
+├── customer/
+│   └── src/
+│       └── hooks/useLoyalty.ts    ✅ UPDATED
+│
+└── supplier/
+    └── (TODO: integrate wallet auth)
 ```
 
 ---
 
-## Cloudflare Pages Deployment
-
-Each frontend app needs to be deployed as a separate Cloudflare Pages project.
-
-### Prerequisites
-1. Cloudflare account
-2. Domain `nilelink.app` added to Cloudflare
-3. Git repository connected
-
-### Deploy Customer App (Example)
-
-1. Go to Cloudflare Dashboard → Pages → Create a project
-2. Configure:
-   - **Project name**: `nilelink-customer`
-   - **Build command**: `cd web/customer && npm install && npm run build`
-   - **Build output**: `web/customer/out`
-   - **Environment variables**:
-     ```
-     NODE_VERSION=18
-     NEXT_PUBLIC_API_URL=https://api.nilelink.app/api
-     ```
-3. Add custom domain: `nilelink.app`
-
-### Repeat for All Apps
-
-| App | Subdomain | Root Dir | Custom Domain |
-|-----|-----------|----------|---------------|
-| Customer | nilelink.app | web/customer | nilelink.app |
-| POS | pos.nilelink.app | web/pos | pos.nilelink.app |
-| Delivery | delivery.nilelink.app | web/delivery | delivery.nilelink.app |
-| Supplier | supplier.nilelink.app | web/supplier | supplier.nilelink.app |
-| Portal | portal.nilelink.app | web/portal | portal.nilelink.app |
-| Dashboard | dashboard.nilelink.app | web/dashboard | dashboard.nilelink.app |
-| Admin | admin.nilelink.app | web/unified | admin.nilelink.app |
-
----
-
-## DNS Configuration
-
-### Backend (A Record)
-Point `api.nilelink.app` to your server's public IP:
+## 🔄 **SIWE FLOW (Already Implemented)**
 
 ```
-A    api.nilelink.app    →  YOUR_SERVER_IP
-```
-
-### Frontend (CNAME - Automatic)
-Cloudflare Pages automatically creates CNAME records when you add custom domains.
-
----
-
-## Environment Variables (.env.production)
-
-Required secrets to configure:
-
-```env
-# Database
-POSTGRES_PASSWORD=your_secure_password_here
-
-# JWT
-JWT_SECRET=your_secure_jwt_secret_min_32_chars
-
-# Email (Optional)
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USER=your-email@example.com
-SMTP_PASS=your-smtp-password
-
-# Stripe (Optional)
-STRIPE_SECRET_KEY=sk_live_your_stripe_key
+User Click "Connect Wallet"
+        ↓
+useWeb3Auth.login()
+        ↓
+web3AuthService.connectWallet()
+        ↓
+window.ethereum.eth_requestAccounts
+        ↓
+User sees MetaMask popup → Approves
+        ↓
+Address returned
+        ↓
+generateNonce() → "1705762800000-a1b2c3d4e5f"
+        ↓
+generateMessage(address, nonce)
+        ↓
+User clicks "Sign" in MetaMask
+        ↓
+Message signed → Signature received
+        ↓
+verifySignature(address, message, signature)
+        ↓
+✅ Valid → Session created → Stored in sessionStorage
+        ↓
+User authenticated! Redirect to dashboard
 ```
 
 ---
 
-## Troubleshooting
+## 🛡️ **SECURITY CHECKLIST**
 
-### Build Taking Too Long
-Docker build can take 10-15 minutes for first build due to:
-- Large node_modules
-- TypeScript compilation
-- Prisma generation
+- ✅ No private keys stored locally
+- ✅ SIWE message includes nonce (replay protection)
+- ✅ SIWE message includes timestamp
+- ✅ Signature verified before session created
+- ✅ Session stored in sessionStorage (not localStorage)
+- ✅ Session expiration (15 minutes)
+- ⏳ Rate limiting (next: implement)
+- ⏳ CSRF protection (next: implement)
+- ⏳ Smart contract role verification (next: implement)
 
-**Speed up future builds:**
-- Use cached layers (don't use `--no-cache` after first build)
-- Add `.dockerignore` to exclude unnecessary files
+---
 
-### Build Fails
-Check logs:
-```powershell
-docker-compose -f docker-compose.prod.yml logs api
+## 🚀 **DEPLOYMENT CHECKLIST**
+
+### **Before Go-Live:**
+- [ ] All 5 apps using useWeb3Auth
+- [ ] Smart contract role verification working
+- [ ] .env.production filled with real values
+- [ ] Environment validation at startup
+- [ ] All tests passing
+- [ ] No console errors
+- [ ] Load testing successful
+- [ ] Security audit passed
+
+### **Environment Variables Needed:**
+```
+NEXT_PUBLIC_NETWORK=polygon
+NEXT_PUBLIC_RPC_URL=https://polygon-rpc.com
+NEXT_PUBLIC_CONTRACT_ADDRESS=0x...
+NEXT_PUBLIC_ADMIN_WALLETS=0x...,0x...,0x...
+NEXT_PUBLIC_DRIVER_WALLETS=0x...,0x...,0x...
 ```
 
-Common issues:
-- Missing dependencies → Check `package.json`
-- Prisma generation failure → Check `prisma/schema.prisma`
-- TypeScript errors → Run `npm run build` locally first
+---
 
-### Containers Won't Start
-```powershell
-# Check status
-docker-compose -f docker-compose.prod.yml ps
+## 📞 **QUICK REFERENCE**
 
-# Check logs
-docker-compose -f docker-compose.prod.yml logs
+**Service:** `Web3AuthService.ts`
+- `connectWallet()` → Connect to MetaMask
+- `generateNonce()` → Create unique nonce
+- `generateMessage()` → Create SIWE message
+- `signMessage()` → Sign with user's wallet
+- `verifySignature()` → Verify signature locally
+- `authenticateWithSIWE()` → Full auth flow
+- `saveSession()` → Store session
+- `getSession()` → Retrieve session
+- `isAuthenticated()` → Check if logged in
 
-# Restart
-docker-compose -f docker-compose.prod.yml restart
+**Hook:** `useWeb3Auth.ts`
+- `login()` → Start authentication
+- `logout()` → Clear session
+- `isAuthenticated` → Boolean flag
+- `address` → User's wallet address
+- `session` → Full session object
+- `isLoading` → Loading state
+- `error` → Error message
+
+---
+
+## ⏰ **TIMELINE ESTIMATE**
+
+```
+Hours 0-2:   ✅ Project audit & app creation & auth service
+Hours 2-6:   🔄 Integrate auth into all 5 apps
+Hours 6-8:   🔄 Smart contract integration
+Hours 8-12:  🔄 Environment setup & validation
+Hours 12-24: UI/UX completion
+Hours 24-48: PWA, hardware, deployment
+Hours 48-60: Testing & security
+Hours 60-72: Final adjustments & go-live
 ```
 
----
-
-## Next Steps After Backend is Running
-
-1. ✅ Verify backend health: `http://localhost:4000/api/system/health`
-2. ✅ Run migrations: `docker exec nilelink-api-v1 npx prisma migrate deploy`
-3. ✅ Deploy 7 frontend apps to Cloudflare Pages
-4. ✅ Configure DNS (A record for api.nilelink.app)
-5. ✅ Test domain-first (no localhost)
+**Current:** Hour 2 ✅
 
 ---
 
-## Support Files Created
+## 📞 **SUPPORT**
 
-- `backend/Dockerfile` - Production multi-stage build
-- `docker-compose.prod.yml` - Production services configuration
-- `.env.production.example` - Environment template
-- `deploy-reset.ps1` - Automated deployment script
-- `verify-deployment.ps1` - Health check script
-- `CLOUDFLARE_DEPLOYMENT.md` - Detailed frontend deployment guide
-
----
-
-**Version**: v1.0.0  
-**Status**: Infrastructure Ready, Build In Progress  
-**Next**: Start backend → Deploy frontends → Configure DNS → Test
+See detailed documentation in:
+- `AUDIT_REPORT.md` - Full system audit
+- `PROGRESS_REPORT.md` - Hourly progress
+- `TODO.md` - Complete task breakdown

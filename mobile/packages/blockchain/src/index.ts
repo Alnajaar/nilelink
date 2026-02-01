@@ -38,3 +38,4 @@ export function createMagicWalletStub(): NileLinkWallet {
     }
   };
 }
+export * from './GraphService';

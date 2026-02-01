@@ -1,0 +1,106 @@
+'use client';
+
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { io, Socket } from 'socket.io-client';
+import { useAuth } from './AuthContext';
+
+interface SocketContextType {
+    socket: Socket | null;
+    isConnected: boolean;
+}
+
+const SocketContext = createContext<SocketContextType | undefined>(undefined);
+
+export function SocketProvider({ children }: { children: ReactNode }) {
+    const [socket, setSocket] = useState<Socket | null>(null);
+    const [isConnected, setIsConnected] = useState(false);
+    const { user } = useAuth();
+
+    useEffect(() => {
+        // Determine backend URL
+        // In a fully decentralized system, we'd use blockchain events instead of centralized sockets
+        // For backward compatibility, we'll still check for centralized API
+        // But in true decentralized mode, this would connect to blockchain event listeners
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        
+        // If no API URL is set, we're in fully decentralized mode
+        if (!apiUrl) {
+          // In a real implementation, connect to blockchain event listeners instead
+          console.log('Running in fully decentralized mode - no socket connection needed');
+          return; // Early return to avoid connecting to centralized socket
+        }
+        
+        const socketUrl = apiUrl.replace('/api', '');
+
+        console.log('Connecting to socket at:', socketUrl);
+
+        const socketInstance = io(socketUrl, {
+            auth: {
+                token: localStorage.getItem('nilelink_auth_token')
+            },
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
+            autoConnect: false // Wait until we explicitly connect
+        });
+
+        setSocket(socketInstance);
+
+        socketInstance.on('connect', () => {
+            console.log('Socket connected:', socketInstance.id);
+            setIsConnected(true);
+        });
+
+        socketInstance.on('disconnect', () => {
+            console.log('Socket disconnected');
+            setIsConnected(false);
+        });
+
+        socketInstance.on('connect_error', (err) => {
+            console.error('Socket connection error:', err);
+        });
+
+        return () => {
+            socketInstance.disconnect();
+        };
+    }, []);
+
+    useEffect(() => {
+        if (socket && user) {
+            // Update auth token if user changes (e.g. login)
+            socket.auth = { token: localStorage.getItem('nilelink_auth_token') };
+            if (!socket.connected) {
+                socket.connect();
+            }
+
+            // Join user specific room
+            socket.emit('join', user.id);
+
+            // If restaurant staff, join restaurant room
+            if (user.role === 'STAFF' || user.role === 'OWNER') {
+                // In a real app we'd get businessId from user or context
+                const businessId = (user as any).businessId; // Verify this field exists in your User type
+                if (businessId) {
+                    console.log('Joining restaurant room:', businessId);
+                    socket.emit('joinRestaurant', businessId);
+                }
+            }
+        } else if (socket && !user) {
+            socket.disconnect();
+        }
+    }, [socket, user]);
+
+    return (
+        <SocketContext.Provider value={{ socket, isConnected }}>
+            {children}
+        </SocketContext.Provider>
+    );
+}
+
+export function useSocket() {
+    const context = useContext(SocketContext);
+    if (context === undefined) {
+        throw new Error('useSocket must be used within a SocketProvider');
+    }
+    return context;
+}

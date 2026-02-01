@@ -8,20 +8,21 @@ import {
     Mail, Phone, Save, ArrowLeft
 } from 'lucide-react';
 
-import { useAuth } from '@/shared/contexts/AuthContext';
-import { Button } from '@/shared/components/Button';
-import { Card } from '@/shared/components/Card';
+import { useAuth } from '@shared/providers/FirebaseAuthProvider';
+import { Button } from '@shared/components/Button';
+import { Card } from '@shared/components/Card';
+import AuthGuard from '@shared/components/AuthGuard';
 
 export default function SettingsPage() {
     const router = useRouter();
     const { user, isLoading } = useAuth();
 
     const [settings, setSettings] = useState({
-        businessName: 'Main Warehouse',
-        contactPerson: 'Ahmed Hassan',
-        email: 'ahmed@warehouse.com',
-        phone: '+20 123 456 7890',
-        address: '123 Industrial Zone, Cairo, Egypt',
+        businessName: user?.displayName?.split(' - ')[1] || 'My Business',
+        contactPerson: user?.displayName?.split(' - ')[0] || user?.displayName || 'Supplier',
+        email: user?.email || '',
+        phone: '',
+        address: '',
         notifications: {
             orderAlerts: true,
             lowStockAlerts: true,

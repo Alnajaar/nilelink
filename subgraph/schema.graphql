@@ -1,0 +1,383 @@
+type ProtocolStats @entity(immutable: true) {
+  id: ID! # Always "global"
+  totalRestaurants: BigInt!
+  totalOrders: BigInt!
+  totalVolumeUsd6: BigInt!
+  activeDisputes: BigInt!
+  totalInvestmentsUsd6: BigInt!
+  protocolFeesCollectedUsd6: BigInt!
+  totalDeliveries: BigInt!
+  activeDeliveries: BigInt!
+  totalSuppliers: BigInt!
+  activeSuppliers: BigInt!
+  lastUpdated: BigInt!
+}
+
+type Restaurant @entity(immutable: true) {
+  id: ID! # Restaurant address
+  metadataCid: Bytes!
+  catalogCid: Bytes!
+  country: String!
+  localCurrency: String!
+  dailyRateLimitUsd6: BigInt!
+  status: Int!
+  owner: User!
+  commissionRate: BigDecimal!
+  settlementWallet: Bytes
+  tokenId: BigInt
+  businessType: String
+  plan: String
+  rating: BigDecimal
+  reviewCount: BigInt!
+  totalReviews: BigInt!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  orders: [Order!]! @derivedFrom(field: "restaurant")
+  settlements: [Settlement!]! @derivedFrom(field: "restaurant")
+  deliveries: [Delivery!]! @derivedFrom(field: "restaurant")
+}
+
+type User @entity(immutable: true) {
+  id: ID! # User address
+  email: String
+  phone: String
+  walletAddress: Bytes!
+  username: String
+  displayName: String
+  role: String!
+  status: String!
+  lastLoginAt: BigInt
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  orders: [Order!]! @derivedFrom(field: "customer")
+  deliveries: [Delivery!]! @derivedFrom(field: "customer")
+  reputation: UserReputation
+  ownedRestaurants: [Restaurant!]! @derivedFrom(field: "owner")
+}
+
+type UserReputation @entity(immutable: true) {
+  id: ID! # User address
+  score: Int!
+  totalOrders: BigInt!
+  totalSpentUsd6: BigInt!
+  successfulDeliveries: BigInt!
+  disputeCount: BigInt!
+  lastUpdated: BigInt!
+}
+
+type Order @entity(immutable: true) {
+  id: ID! # OrderId bytes16 as string
+  orderNumber: String! # Human-readable order number
+  restaurant: Restaurant!
+  customer: User!
+  deliveryDriver: User
+  amountUsd6: BigInt!
+  taxAmountUsd6: BigInt!
+  deliveryFeeUsd6: BigInt!
+  platformFeeUsd6: BigInt!
+  discountAmountUsd6: BigInt!
+  totalAmountUsd6: BigInt!
+  method: Int!
+  status: Int!
+  paymentStatus: Int!
+  paymentTransactionId: String
+  cryptoTxHash: Bytes
+  deliveryAddress: String
+  specialInstructions: String
+  createdAt: BigInt!
+  confirmedAt: BigInt
+  preparedAt: BigInt
+  pickedUpAt: BigInt
+  deliveredAt: BigInt
+  cancelledAt: BigInt
+  items: String # IPFS CID of detailed items
+  delivery: Delivery
+  payments: [Payment!]! @derivedFrom(field: "order")
+}
+
+type Payment @entity(immutable: true) {
+  id: ID! # Payment ID
+  order: Order!
+  amount: BigDecimal!
+  currency: String!
+  paymentMethod: String!
+  paymentProvider: String
+  transactionId: String
+  externalTransactionId: String
+  cryptoTxHash: Bytes
+  cryptoChainId: Int
+  status: Int!
+  processingFee: BigDecimal!
+  interchangeFee: BigDecimal!
+  platformFee: BigDecimal!
+  fromWallet: Bytes
+  toWallet: Bytes
+  gasUsed: BigInt
+  gasPrice: BigInt
+  initiatedAt: BigInt!
+  processedAt: BigInt
+  completedAt: BigInt
+  failedAt: BigInt
+  failureReason: String
+  riskScore: BigDecimal
+  createdAt: BigInt!
+}
+
+type Settlement @entity(immutable: true) {
+  id: ID! # Settlement ID
+  restaurant: Restaurant!
+  periodStart: BigInt!
+  periodEnd: BigInt!
+  settlementDate: BigInt!
+  grossSales: BigDecimal!
+  platformFees: BigDecimal!
+  paymentFees: BigDecimal!
+  refunds: BigDecimal!
+  adjustments: BigDecimal!
+  netAmount: BigDecimal!
+  totalOrders: BigInt!
+  successfulOrders: BigInt!
+  refundedOrders: BigInt!
+  paymentMethod: String
+  paymentReference: String
+  cryptoTxHash: Bytes
+  status: Int!
+  processedAt: BigInt
+  completedAt: BigInt
+  createdAt: BigInt!
+  updatedAt: BigInt!
+}
+
+type Delivery @entity(immutable: true) {
+  id: ID! # Delivery ID (orderId)
+  order: Order!
+  restaurant: Restaurant!
+  customer: User!
+  assignedDriver: Driver!
+  status: Int!
+  amountUsd6: BigInt!
+  zoneId: Int!
+  priority: Int!
+  specialInstructions: String
+  createdAt: BigInt!
+  assignedAt: BigInt
+  pickedUpAt: BigInt
+  deliveredAt: BigInt
+  cancelledAt: BigInt
+  routeHash: Bytes # IPFS CID of optimized route
+  proofOfDelivery: ProofOfDelivery
+  deliveryZone: DeliveryZone!
+}
+
+type DeliveryZone @entity(immutable: true) {
+  id: ID! # Zone ID as string
+  name: String!
+  boundaryHash: Bytes! # IPFS CID of geo boundary
+  baseFeeUsd6: BigInt!
+  perKmFeeUsd6: BigInt!
+  estimatedTimeMinutes: Int!
+  isActive: Boolean!
+  totalDeliveries: BigInt!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  deliveries: [Delivery!]! @derivedFrom(field: "deliveryZone")
+}
+
+type ProofOfDelivery @entity(immutable: true) {
+  id: ID! # Proof hash
+  order: Order!
+  delivery: Delivery!
+  driver: User!
+  proofHash: Bytes!
+  locationHash: Bytes!
+  timestamp: BigInt!
+  proofSignature: Bytes!
+  oracleProof: Bytes
+  status: Int!
+  verifiedAt: BigInt
+  verifiedBy: Bytes
+  createdAt: BigInt!
+}
+
+type Driver @entity(immutable: true) {
+  id: ID! # Driver address
+  user: User!
+  licenseNumber: String!
+  vehicleType: Int!
+  isActive: Boolean!
+  isAvailable: Boolean!
+  rating: BigDecimal!
+  totalDeliveries: BigInt!
+  completedDeliveries: BigInt!
+  walletAddress: Bytes!
+  currentLocation: Bytes
+  lastLocationUpdate: BigInt
+  zoneId: Int!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  deliveries: [Delivery!]! @derivedFrom(field: "assignedDriver")
+}
+
+type Supplier @entity(immutable: true) {
+  id: ID! # Supplier address
+  businessName: String!
+  contactName: String!
+  email: String
+  phone: String
+  businessType: String!
+  industry: String!
+  country: String!
+  localCurrency: String!
+  status: Int!
+  reputationScore: Int!
+  registeredAt: BigInt!
+  lastVerifiedAt: BigInt
+  lastActiveAt: BigInt!
+  metadataCid: Bytes
+  documentsCid: Bytes
+  verifier: Bytes
+  totalOrders: BigInt!
+  totalVolumeUsd6: BigInt!
+  activeOrders: BigInt!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  purchaseOrders: [PurchaseOrder!]! @derivedFrom(field: "supplier")
+}
+
+type PurchaseOrder @entity(immutable: true) {
+  id: ID! # Purchase order ID
+  restaurant: Restaurant!
+  supplier: Supplier!
+  status: Int!
+  itemsHash: Bytes! # IPFS CID of order items
+  totalAmountUsd6: BigInt!
+  currency: String!
+  createdAt: BigInt!
+  approvedAt: BigInt
+  fulfilledAt: BigInt
+  dueDate: BigInt!
+  deliveryTermsHash: Bytes
+  approvedBy: Bytes
+  notes: String
+  creditUsed: BigInt! # Credit amount used
+  createdAtBlock: BigInt!
+}
+
+type InventoryItem @entity(immutable: true) {
+  id: ID! # Item ID
+  restaurant: Restaurant!
+  supplier: Supplier
+  name: String!
+  category: String!
+  tokenId: BigInt
+  metadataCid: String
+  currentStock: BigInt!
+  reorderPoint: BigInt!
+  unitCostUsd6: BigInt!
+  currency: String!
+  lastUpdated: BigInt!
+  expiryDate: BigInt
+  batchNumber: Bytes
+  location: String
+  trackExpiry: Boolean!
+  isActive: Boolean!
+  totalMovements: BigInt!
+  createdAt: BigInt!
+  movements: [InventoryMovement!]! @derivedFrom(field: "item")
+}
+
+type InventoryMovement @entity(immutable: true) {
+  id: ID! # Movement ID
+  item: InventoryItem!
+  movementType: Int!
+  quantity: BigInt!
+  unitCostUsd6: BigInt!
+  currency: String!
+  referenceId: Bytes # PO ID, sale ID, etc.
+  reason: String!
+  performedBy: Bytes!
+  timestamp: BigInt!
+}
+
+type Reputation @entity(immutable: true) {
+  id: ID! # Entity address (restaurant, supplier, driver)
+  entityType: String! # "restaurant", "supplier", "driver"
+  score: Int!
+  totalOrders: BigInt!
+  totalVolumeUsd6: BigInt!
+  refundCount: BigInt!
+  disputeCount: BigInt!
+  successfulDeliveries: BigInt!
+  lastUpdated: BigInt!
+}
+
+type Dispute @entity(immutable: true) {
+  id: ID! # Dispute ID
+  order: Order!
+  claimant: Bytes!
+  claimAmountUsd6: BigInt!
+  openedAt: BigInt!
+  deadlineAt: BigInt!
+  resolution: Int!
+  reasonHash: Bytes!
+  status: Int!
+  resolvedAt: BigInt
+  resolvedBy: Bytes
+  refundAmountUsd6: BigInt!
+  evidence: [String!] # IPFS CIDs
+  createdAt: BigInt!
+  updatedAt: BigInt!
+}
+
+type CurrencyRate @entity(immutable: true) {
+  id: ID! # Currency pair (e.g., "USD_AED")
+  fromCurrency: String!
+  toCurrency: String!
+  rate: BigDecimal!
+  oracle: Bytes!
+  updatedAt: BigInt!
+  lastUpdated: BigInt!
+}
+
+type FraudAlert @entity(immutable: true) {
+  id: ID! # Alert ID
+  subject: Bytes!
+  anomalyType: Bytes!
+  severity: Int!
+  detailsHash: Bytes!
+  timestamp: BigInt!
+  resolved: Boolean!
+  resolvedAt: BigInt
+  resolvedBy: Bytes
+}
+
+type Investment @entity(immutable: true) {
+  id: ID! # Investment ID
+  investor: Bytes!
+  restaurant: Restaurant!
+  amountUsd6: BigInt!
+  ownershipBps: Int! # Basis points (10000 = 100%)
+  investedAt: BigInt!
+  lastClaimedAt: BigInt
+  totalClaimedUsd6: BigInt!
+  status: String! # "active", "divested", "defaulted"
+  createdAt: BigInt!
+  updatedAt: BigInt!
+}
+
+type CrossChainTx @entity(immutable: true) {
+  id: ID! # Transaction ID
+  sourceChain: String!
+  targetChain: String!
+  sourceTxHash: Bytes!
+  status: String!
+  amount: BigDecimal!
+  sender: Bytes!
+  receiver: Bytes!
+  bridgeProvider: String!
+  metadata: String # JSON metadata
+  initiatedAt: BigInt!
+  completedAt: BigInt
+  failedAt: BigInt
+  createdAt: BigInt!
+}

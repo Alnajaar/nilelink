@@ -1,83 +1,96 @@
 /**
  * SupplierLedger - Private B2B Ledger for Supplier Hub
- * Manages supply events, catalogs, and credit balances.
+ * Manages supply events, catalogs, and credit balances via Prisma API.
  */
 
 export interface SupplyEvent {
     id: string;
-    type: 'ORDER_ACCEPTED' | 'ORDER_SHIPPED' | 'ORDER_DELIVERED' | 'PAYMENT_RECEIVED' | 'DEBT_ADJUSTED';
-    timestamp: number;
-    clientId: string;
-    payload: any;
-    hash: string;
+    type: 'ORDER_PLACED' | 'PAYMENT_RECEIVED' | 'DEBT_ADJUSTED' | 'LIMIT_INCREASED';
+    timestamp: string;
+    accountId: string;
+    amount: number;
+    description?: string;
+    account?: any;
 }
 
 export interface CreditRecord {
-    clientId: string;
-    clientName: string;
+    id: string;
+    merchantId: string;
+    merchantName: string;
     balance: number; // Positive = Debt owed to supplier
-    limit: number;
-    lastPaymentDate: number | null;
+    creditLimit: number;
+    lastPaymentAt: string | null;
+    riskLevel: string;
 }
 
 export class SupplierLedger {
-    private dbName = 'nl_supplier_ledger';
+    private supplierId: string | null = null;
 
-    constructor() {
-        if (typeof window !== 'undefined' && !localStorage.getItem(this.dbName)) {
-            this.init();
+    constructor(supplierId?: string) {
+        this.supplierId = supplierId || null;
+    }
+
+    setSupplierId(id: string) {
+        this.supplierId = id;
+    }
+
+    /**
+     * Fetch all ledger data for the current supplier
+     */
+    async getData(): Promise<{ events: SupplyEvent[], credits: CreditRecord[] }> {
+        if (!this.supplierId) {
+            console.warn('[Ledger] No supplierId provided, returning empty set.');
+            return { events: [], credits: [] };
+        }
+
+        try {
+            const response = await fetch(`/api/ledger?supplierId=${this.supplierId}`);
+            if (!response.ok) throw new Error('Failed to fetch ledger data');
+            return await response.json();
+        } catch (error) {
+            console.error('[Ledger] Fetch failed:', error);
+            return { events: [], credits: [] };
         }
     }
 
-    private init() {
-        const initialData = {
-            events: [],
-            credits: [
-                { clientId: 'c1', clientName: 'Grand Cairo Grill', balance: 1250.00, limit: 5000, lastPaymentDate: Date.now() - 86400000 * 5 },
-                { clientId: 'c2', clientName: 'Sultan Bakery', balance: 450.00, limit: 2000, lastPaymentDate: Date.now() - 86400000 * 12 },
-                { clientId: 'c3', clientName: 'Giza Sushi House', balance: 0, limit: 3000, lastPaymentDate: null }
-            ],
-            catalog: [
-                { id: 'p1', name: 'Ground Beef', unit: 'kg', price: 12.00, stock: 450 },
-                { id: 'p2', name: 'White Flour', unit: 'bag', price: 45.00, stock: 120 },
-                { id: 'p3', name: 'Olive Oil', unit: 'L', price: 8.50, stock: 85 }
-            ]
-        };
-        localStorage.setItem(this.dbName, JSON.stringify(initialData));
-    }
+    /**
+     * Record a new financial event (Debt or Payment)
+     */
+    async recordEvent(data: {
+        merchantId: string,
+        merchantName?: string,
+        type: SupplyEvent['type'],
+        amount: number,
+        description?: string
+    }): Promise<boolean> {
+        if (!this.supplierId) return false;
 
-    async recordEvent(type: SupplyEvent['type'], clientId: string, payload: any): Promise<SupplyEvent> {
-        const data = this.getData();
-        const event: SupplyEvent = {
-            id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2),
-            type,
-            timestamp: Date.now(),
-            clientId,
-            payload,
-            hash: `h_${Date.now()}` // Mock hash
-        };
-        data.events.push(event);
-        this.saveData(data);
-        return event;
-    }
+        try {
+            const response = await fetch('/api/ledger', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    supplierId: this.supplierId,
+                    ...data
+                })
+            });
 
-    getData() {
-        if (typeof window === 'undefined') return { events: [], credits: [], catalog: [] };
-        const raw = localStorage.getItem(this.dbName);
-        return raw ? JSON.parse(raw) : { events: [], credits: [], catalog: [] };
-    }
-
-    private saveData(data: any) {
-        if (typeof window === 'undefined') return;
-        localStorage.setItem(this.dbName, JSON.stringify(data));
-    }
-
-    async updateCreditBalance(clientId: string, amount: number) {
-        const data = this.getData();
-        const idx = data.credits.findIndex((c: any) => c.clientId === clientId);
-        if (idx !== -1) {
-            data.credits[idx].balance += amount;
-            this.saveData(data);
+            return response.ok;
+        } catch (error) {
+            console.error('[Ledger] Save failed:', error);
+            return false;
         }
+    }
+
+    /**
+     * Utility to update credit balance (wraps recordEvent)
+     */
+    async updateCreditBalance(merchantId: string, amount: number, description?: string) {
+        return this.recordEvent({
+            merchantId,
+            type: amount < 0 ? 'PAYMENT_RECEIVED' : 'DEBT_ADJUSTED',
+            amount,
+            description
+        });
     }
 }

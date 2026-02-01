@@ -1,0 +1,31 @@
+scripts/verify-protocol-integrity.ts(84,53): error TS2345: Argument of type '{ username: string; phone: string; pin: string; roles: POS_ROLE.CASHIER[]; }' is not assignable to parameter of type '{ username: string; phone: string; pin: string; roles: POS_ROLE[]; permissions?: PERMISSION[]; branchId: string; }'.
+  Property 'branchId' is missing in type '{ username: string; phone: string; pin: string; roles: POS_ROLE.CASHIER[]; }' but required in type '{ username: string; phone: string; pin: string; roles: POS_ROLE[]; permissions?: PERMISSION[]; branchId: string; }'.
+src/app/dashboard/page.tsx(12,27): error TS2307: Cannot find module '@/components/ui/GlassCard' or its corresponding type declarations.
+src/app/kitchen-display/page.tsx(10,27): error TS2307: Cannot find module '@/shared/contexts/SocketContext' or its corresponding type declarations.
+src/app/orders/approval/page.tsx(10,27): error TS2307: Cannot find module '@/shared/contexts/SocketContext' or its corresponding type declarations.
+src/app/orders/page.tsx(38,53): error TS2367: This comparison appears to be unintentional because the types '"PENDING" | "CONFIRMED" | "PREPARING" | "READY" | "COMPLETED" | "CANCELLED"' and '"completed" | "pending" | "cancelled"' have no overlap.
+src/app/products/page.tsx(35,37): error TS2339: Property 'filter' does not exist on type 'any[] | { products: Product[]; total: number; page?: number; pageSize?: number; }'.
+  Property 'filter' does not exist on type '{ products: Product[]; total: number; page?: number; pageSize?: number; }'.
+src/app/products/page.tsx(108,57): error TS2339: Property 'length' does not exist on type 'any[] | { products: Product[]; total: number; page?: number; pageSize?: number; }'.
+  Property 'length' does not exist on type '{ products: Product[]; total: number; page?: number; pageSize?: number; }'.
+src/app/products/page.tsx(109,66): error TS2339: Property 'filter' does not exist on type 'any[] | { products: Product[]; total: number; page?: number; pageSize?: number; }'.
+  Property 'filter' does not exist on type '{ products: Product[]; total: number; page?: number; pageSize?: number; }'.
+src/app/products/page.tsx(127,25): error TS2339: Property 'filter' does not exist on type 'any[] | { products: Product[]; total: number; page?: number; pageSize?: number; }'.
+  Property 'filter' does not exist on type '{ products: Product[]; total: number; page?: number; pageSize?: number; }'.
+src/app/reports/page.tsx(21,42): error TS2307: Cannot find module '@/shared/components/NeuralIntelligenceBridge' or its corresponding type declarations.
+src/app/reports/page.tsx(22,27): error TS2307: Cannot find module '@/shared/components/GlassCard' or its corresponding type declarations.
+src/app/terminal/ledger/page.tsx(39,5): error TS2304: Cannot find name 'useEffect'.
+src/app/terminal/page.tsx(24,33): error TS2307: Cannot find module '@/shared/hooks/useIntelligence' or its corresponding type declarations.
+src/app/terminal/page.tsx(25,33): error TS2307: Cannot find module '@/shared/components/NeuralUpsellHUD' or its corresponding type declarations.
+src/app/terminal/page.tsx(56,29): error TS2552: Cannot find name 'useRef'. Did you mean 'user'?
+src/app/terminal/page.tsx(138,36): error TS2304: Cannot find name 'hardwareStatus'.
+src/app/terminal/page.tsx(143,38): error TS2304: Cannot find name 'hardwareStatus'.
+src/app/terminal/payment/page.tsx(150,22): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(156,23): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(302,60): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(302,268): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(319,42): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(324,43): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/contexts/POSContext.tsx(113,33): error TS2448: Block-scoped variable 'engines' used before its declaration.
+src/contexts/POSContext.tsx(113,54): error TS2448: Block-scoped variable 'engines' used before its declaration.
+src/contexts/POSContext.tsx(113,75): error TS2448: Block-scoped variable 'engines' used before its declaration.

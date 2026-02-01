@@ -4,6 +4,7 @@ import { JournalEngine } from '../src/lib/accounting/JournalEngine';
 import { EventEngine } from '../src/lib/events/EventEngine';
 import { LocalLedger } from '../src/lib/storage/LocalLedger';
 import { EventType } from '../src/lib/events/types';
+import { POS_ROLE } from '../src/utils/permissions';
 
 /**
  * Protocol Integrity Verification Script
@@ -84,7 +85,8 @@ async function runAudit() {
             username: 'Test Operator',
             phone: '12345678',
             pin: '123456',
-            roles: ['CASHIER']
+            roles: [POS_ROLE.CASHIER] as POS_ROLE[],
+            branchId: 'br-1'
         });
 
         assert(staff.uniqueCode.length === 8, 'Operator ID must be 8 digits');

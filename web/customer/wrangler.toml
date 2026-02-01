@@ -1,3 +1,10 @@
 name = "nilelink-customer"
-pages_build_output_dir = "out"
+pages_build_output_dir = ".next"
 compatibility_date = "2024-12-24"
+
+[build]
+command = "npm run build"
+cwd = "."
+
+[build.upload]
+format = "service-worker"

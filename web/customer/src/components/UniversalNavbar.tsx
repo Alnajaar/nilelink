@@ -1,10 +1,14 @@
 "use client";
 
 import React from 'react';
-import { Zap, Menu, Globe, ChevronDown } from 'lucide-react';
+import { Zap, Menu, Globe, ChevronDown, Bell } from 'lucide-react';
 import Link from 'next/link';
+import { useNotifications } from '../contexts/NotificationContext';
+import { NotificationBadge } from './ui/NotificationBadge';
 
 export function UniversalNavbar() {
+    const { unreadCount } = useNotifications();
+    
     return (
         <nav className="relative z-50 border-b border-surface bg-primary px-6 lg:px-12 py-5 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3 group">
@@ -32,6 +36,15 @@ export function UniversalNavbar() {
                     EN
                     <ChevronDown size={12} />
                 </div>
+                
+                {/* Notification Bell */}
+                <div className="relative">
+                    <button className="p-2 text-nav-text hover:bg-surface rounded-lg transition-colors relative">
+                        <Bell size={20} />
+                        <NotificationBadge count={unreadCount} />
+                    </button>
+                </div>
+                
                 <Link
                     href="https://dashboard.nilelink.app"
                     className="bg-surface text-text hover:bg-background px-4 py-2.5 text-[10px] font-bold rounded-lg border border-primary transition-colors"

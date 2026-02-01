@@ -32,7 +32,7 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [simulatedState, setSimulatedState] = useState({
         tps: 842.5,
         blockHeight: 19204300,
-        activeSignals: [],
+        activeSignals: [] as string[],
         currentStage: 'IDLE' as any
     });
 

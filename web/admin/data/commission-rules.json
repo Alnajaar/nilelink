@@ -1,0 +1,34 @@
+[
+    {
+        "id": "1",
+        "businessType": "RESTAURANT",
+        "country": "AE",
+        "orderCommissionPct": 5.0,
+        "deliveryCommissionPct": 2.5,
+        "isActive": true
+    },
+    {
+        "id": "2",
+        "businessType": "GROCERY",
+        "country": "AE",
+        "orderCommissionPct": 3.0,
+        "deliveryCommissionPct": 1.5,
+        "isActive": true
+    },
+    {
+        "id": "3",
+        "businessType": "PHARMACY",
+        "country": "AE",
+        "orderCommissionPct": 2.0,
+        "deliveryCommissionPct": 1.0,
+        "isActive": true
+    },
+    {
+        "id": "4",
+        "businessType": "RETAIL",
+        "country": "AE",
+        "orderCommissionPct": 4.0,
+        "deliveryCommissionPct": 2.0,
+        "isActive": false
+    }
+]

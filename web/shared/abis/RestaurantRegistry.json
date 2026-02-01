@@ -1,0 +1,30 @@
+[
+  {
+    "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
+    "name": "getRestaurant",
+    "outputs": [{"components": [{"internalType": "address", "name": "owner", "type": "address"}, {"internalType": "string", "name": "name", "type": "string"}, {"internalType": "string", "name": "cuisine", "type": "string"}, {"internalType": "bool", "name": "active", "type": "bool"}], "internalType": "struct RestaurantRegistry.Restaurant", "name": "restaurant", "type": "tuple"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
+    "name": "isRestaurantOwner",
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
+    "name": "getOwnerRestaurants",
+    "outputs": [{"internalType": "address[]", "name": "", "type": "address[]"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "string", "name": "name", "type": "string"}, {"internalType": "string", "name": "cuisine", "type": "string"}],
+    "name": "registerRestaurant",
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

@@ -65,3 +65,4 @@ out/
 build/
 dist/
 *.tsbuildinfo
+/generated/prisma

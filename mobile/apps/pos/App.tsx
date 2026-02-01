@@ -16,20 +16,15 @@ const store = configureStore();
 
 export default function App() {
   useEffect(() => {
-    // App.tsx
-    import { SQLiteAdapter, setSyncStorage } from '@nilelink/sync-engine';
-
-    // ... imports
-
     // Initialize database and saga context on app start
     const initApp = async () => {
       try {
         const db = await initializeDatabase();
 
-        // Initialize Sync Engine Storage Adapter
-        const adapter = new SQLiteAdapter();
-        adapter.setDatabase(db);
-        setSyncStorage(adapter);
+        // TODO: Initialize Sync Engine Storage Adapter when sync-engine package is available
+        // const adapter = new SQLiteAdapter();
+        // adapter.setDatabase(db);
+        // setSyncStorage(adapter);
 
         initializeSagaContext(db);
       } catch (error) {

@@ -2,26 +2,30 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../providers/AuthProvider';
 
 interface AuthGuardProps {
     children: React.ReactNode;
     requiredRole?: string | string[];
     redirectTo?: string;
+    appName?: string;
+    useWeb3Auth?: boolean;
 }
 
 export default function AuthGuard({
     children,
     requiredRole,
     redirectTo = '/auth/login',
+    appName,
+    useWeb3Auth = false,
 }: AuthGuardProps) {
-    const { user, loading } = useAuth();
+    const { user, isLoading } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
     const [isAuthorized, setIsAuthorized] = useState(false);
 
     useEffect(() => {
-        if (!loading) {
+        if (!isLoading) {
             if (!user) {
                 // Not authenticated, redirect to login
                 const currentPath = pathname + (window.location.search || '');
@@ -43,10 +47,10 @@ export default function AuthGuard({
                 setIsAuthorized(true);
             }
         }
-    }, [user, loading, requiredRole, router, pathname, redirectTo]);
+    }, [user, isLoading, requiredRole, router, pathname, redirectTo]);
 
     // Show loading state
-    if (loading || (!user && !isAuthorized)) {
+    if (isLoading || (!user && !isAuthorized)) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-primary">
                 <div className="text-center">

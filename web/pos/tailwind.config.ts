@@ -1,6 +1,8 @@
 import type { Config } from "tailwindcss";
+const sharedConfig = require('../shared/tailwind.config.shared.js');
 
 const config: Config = {
+    presets: [sharedConfig],
     content: [
         "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
         "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -10,47 +12,58 @@ const config: Config = {
     theme: {
         extend: {
             colors: {
-                // STRICT 4-COLOR SYSTEM - NO EXCEPTIONS
-                primary: '#00C389',      // Core identity, buttons, active states
-                surface: '#d2dad1',      // Cards, panels, forms, sidebars
-                text: '#372c2d',         // All text, headings, numbers, icons
-                background: '#f9f8f4',   // Page backgrounds, canvas
+                // POS Specific overrides that bridge v1 system to v2 variables
+                primary: 'var(--color-primary)',
+                secondary: 'var(--color-secondary)',
+                accent: 'var(--color-accent)',
 
-                // Component aliases using only the 4 colors
-                'bg-body': '#f9f8f4',
-                'bg-card': '#d2dad1',
-                'bg-subtle': '#d2dad1',
-                'text-primary': '#372c2d',
-                'text-secondary': '#372c2d',
-                'text-muted': '#372c2d',
-                'border': '#d2dad1',
-                'border-focus': '#00C389',
+                // Backgrounds
+                background: {
+                    DEFAULT: 'var(--color-bg-primary)',
+                    primary: 'var(--color-bg-primary)',
+                    secondary: 'var(--color-bg-secondary)',
+                    tertiary: 'var(--color-bg-tertiary)',
+                    card: 'var(--color-bg-card)',
+                },
 
-                // Button system
-                'button-primary': '#00C389',
+                // Surface & Panel colors for POS grid
+                surface: {
+                    DEFAULT: 'var(--color-bg-surface)',
+                    card: 'var(--color-bg-card)',
+                    raised: 'var(--color-bg-elevated)',
+                },
+
+                // Critical: Map text to shared variables for proper contrast on mesh-bg
+                text: {
+                    primary: 'var(--color-text-primary)',
+                    secondary: 'var(--color-text-secondary)',
+                    tertiary: 'var(--color-text-tertiary)',
+                    muted: 'var(--color-text-muted)',
+                },
+
+                // Status colors
+                success: 'var(--color-success)',
+                warning: 'var(--color-warning)',
+                error: 'var(--color-error)',
+                info: 'var(--color-info)',
+
+                // Border colors
+                border: {
+                    DEFAULT: 'var(--color-border-default)',
+                    subtle: 'var(--color-border-subtle)',
+                    medium: 'var(--color-border-medium)',
+                    strong: 'var(--color-border-strong)',
+                },
+
+                // POS Button Specifics (Legacy fix)
+                'button-primary': 'var(--color-primary)',
                 'button-secondary': 'transparent',
-
-                // Navigation
-                'nav-bg': '#00C389',
-                'nav-text': '#f9f8f4',
-                'nav-active': '#d2dad1',
-
-                // Status (no red/green)
-                success: '#00C389',
-                warning: '#372c2d',
-                error: '#372c2d',
-            },
-            borderRadius: {
-                '3xl': '1.5rem',
-                '4xl': '2rem',
-                '5xl': '2.5rem',
-                '6xl': '3rem',
             },
             boxShadow: {
-                'sm': 'var(--shadow-sm)',
-                'md': 'var(--shadow-md)',
-                'lg': 'var(--shadow-lg)',
-                'xl': 'var(--shadow-xl)',
+                'glow-primary': 'var(--shadow-glow-primary)',
+                'glow-accent': 'var(--shadow-glow-accent)',
+                'glow-success': 'var(--shadow-glow-success)',
+                'glow-error': 'var(--shadow-glow-error)',
             }
         },
     },

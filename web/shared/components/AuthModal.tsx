@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Mail,
     Phone,
-    Wallet,
+    Fingerprint,
     Eye,
     EyeOff,
     X,
@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from './Button';
 import { Card } from './Card';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../providers/FirebaseAuthProvider';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -284,8 +284,8 @@ export function AuthModal({
                             : 'text-text-muted hover:text-text-primary'
                             }`}
                     >
-                        <Wallet size={16} />
-                        Wallet
+                        <Fingerprint size={16} />
+                        Identity
                     </button>
                 </div>
 
@@ -553,13 +553,13 @@ export function AuthModal({
                         <form onSubmit={handleWalletAuth} className="space-y-4">
                             <div className="text-center">
                                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Wallet size={32} className="text-primary" />
+                                    <Fingerprint size={32} className="text-primary" />
                                 </div>
                                 <h3 className="text-lg font-semibold text-text-primary mb-2">
-                                    Connect Your Wallet
+                                    Anchor Secure Identity
                                 </h3>
                                 <p className="text-sm text-text-muted">
-                                    Sign in securely using your crypto wallet
+                                    Access your node securely via identity anchoring
                                 </p>
                             </div>
 
@@ -577,10 +577,10 @@ export function AuthModal({
                                         <CheckCircle size={20} className="text-success" />
                                         <div>
                                             <div className="text-sm font-medium text-success-dark">
-                                                Wallet Connected
+                                                Identity Anchored
                                             </div>
                                             <div className="text-xs text-success">
-                                                {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                                                Node ID: {walletAddress.slice(0, 8)}
                                             </div>
                                         </div>
                                     </div>
@@ -589,7 +589,7 @@ export function AuthModal({
                                         isLoading={isLoading}
                                         className="w-full py-3 text-white bg-primary hover:bg-primary-dark"
                                     >
-                                        Sign & Login
+                                        Verify & Sync
                                     </Button>
                                 </div>
                             )}

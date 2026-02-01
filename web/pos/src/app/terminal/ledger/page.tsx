@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ShieldCheck, Clock, AlertTriangle, Search, Filter,
@@ -153,13 +153,22 @@ export default function AdvancedLedger() {
 
                     <div className="flex items-center gap-6">
                         <PermissionGuard require={PERMISSION.LEDGER_VIEW}>
-                            <Button
-                                variant="outline"
-                                className="h-14 px-8 rounded-2xl border-border-subtle font-black uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all bg-white shadow-xl"
-                            >
-                                <Download size={18} className="mr-3" />
-                                Export Protocol
-                            </Button>
+                            <div className="flex gap-4">
+                                <Button
+                                    onClick={() => alert('Initiating Zero-Knowledge Proof for Escrow Settlement...')}
+                                    className="h-14 px-8 bg-black text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/20 group"
+                                >
+                                    <ShieldCheck size={18} className="mr-3 text-primary animate-pulse" />
+                                    Commit to On-Chain Escrow
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className="h-14 px-8 rounded-2xl border-border-subtle font-black uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all bg-white shadow-xl"
+                                >
+                                    <Download size={18} className="mr-3" />
+                                    Export Protocol
+                                </Button>
+                            </div>
                         </PermissionGuard>
                     </div>
                 </div>
@@ -229,8 +238,8 @@ export default function AdvancedLedger() {
                                 key={type}
                                 onClick={() => setFilterType(type)}
                                 className={`h-full px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${filterType === type
-                                        ? 'bg-primary text-white shadow-lg'
-                                        : 'text-text-primary/40 hover:text-text-primary hover:bg-neutral'
+                                    ? 'bg-primary text-white shadow-lg'
+                                    : 'text-text-primary/40 hover:text-text-primary hover:bg-neutral'
                                     }`}
                             >
                                 {type.replace('_', ' ')}

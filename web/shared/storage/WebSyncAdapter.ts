@@ -1,13 +1,13 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { ISyncStorage } from '@nilelink/sync-engine';
-import { SyncEvent } from '@nilelink/sync-engine/dist/types/sync.types'; // Path might need adjustment depending on build
+import { ISyncStorage, SyncEvent } from '@nilelink/sync-engine';
 
 interface SyncDB extends DBSchema {
     events: {
         key: string;
         value: SyncEvent & { synced: boolean; streamId: string };
-        indexes: { 'by-synced': number }; // 0 or 1
+        indexes: { 'by-synced': boolean };
     };
+    [key: string]: any;
 }
 
 export class WebSyncAdapter implements ISyncStorage {

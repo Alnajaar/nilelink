@@ -12,18 +12,25 @@ export class CustomerEngine {
     }
 
     async placeOrder(merchant: any, cart: any): Promise<string> {
-        const orderId = `ORD-${Math.floor(Math.random() * 9000) + 1000}`;
         const timestamp = Date.now();
+        const orderHash = (await import('ethers')).ethers.keccak256(
+            (await import('ethers')).ethers.toUtf8Bytes(`${merchant.id}-${timestamp}-${Math.random()}`)
+        );
+        const orderId = `ORD-${orderHash.substring(2, 10).toUpperCase()}`;
 
         const receipt: ImmutableReceipt = {
             id: orderId,
             merchantName: merchant.name,
             merchantId: merchant.id,
-            items: cart,
-            total: cart.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0),
+            total: cart.reduce((acc: number, item: any) => acc + (item.price * (item.quantity || 1)), 0),
+            items: cart.map((item: any) => ({
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity || 1
+            })),
             timestamp,
             status: 'PENDING',
-            orderHash: `hash_${orderId}_${timestamp}` // In prod, use SHA-256
+            orderHash
         };
 
         await this.ledger.saveReceipt(receipt);
@@ -31,10 +38,20 @@ export class CustomerEngine {
     }
 
     async getMerchantStatus(id: string): Promise<'OPEN' | 'CLOSED' | 'BUSY'> {
-        // Mocking protocol events
-        const hours = new Date().getHours();
-        if (hours < 9 || hours > 23) return 'CLOSED';
-        if (hours > 12 && hours < 14) return 'BUSY';
-        return 'OPEN';
+        try {
+            const graphService = (await import('@shared/services/GraphService')).default;
+            const data = await graphService.getRestaurantById(id);
+
+            if (!data || !data.restaurant) return 'CLOSED';
+
+            // Subgraph status check (mapped to protocol enum)
+            const status = data.restaurant.status?.toLowerCase();
+            if (status === 'active') return 'OPEN';
+            if (status === 'busy') return 'BUSY';
+            return 'CLOSED';
+        } catch (error) {
+            console.error('[CustomerEngine] Failed to fetch on-chain merchant status:', error);
+            return 'CLOSED';
+        }
     }
 }

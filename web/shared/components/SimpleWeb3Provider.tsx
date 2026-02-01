@@ -107,7 +107,7 @@ export default function SimpleWeb3Provider({ children }: SimpleWeb3ProviderProps
                         params: [{
                             chainId: '0x13882',
                             chainName: 'Polygon Amoy Testnet',
-                            rpcUrls: ['https://rpc-amoy.polygon.technology'],
+                            rpcUrls: ['https://polygon-amoy.g.alchemy.com/v2/cpZnu19BVqFOEeVPFwV8r'],
                             nativeCurrency: {
                                 name: 'POL',
                                 symbol: 'POL',

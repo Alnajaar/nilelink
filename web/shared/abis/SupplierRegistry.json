@@ -1,0 +1,30 @@
+[
+  {
+    "inputs": [{"internalType": "address", "name": "supplier", "type": "address"}],
+    "name": "isSupplier",
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "supplier", "type": "address"}],
+    "name": "getSupplierInfo",
+    "outputs": [{"components": [{"internalType": "address", "name": "supplier", "type": "address"}, {"internalType": "string", "name": "name", "type": "string"}, {"internalType": "bool", "name": "active", "type": "bool"}], "internalType": "struct SupplierRegistry.SupplierInfo", "name": "info", "type": "tuple"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "supplier", "type": "address"}],
+    "name": "getSupplierProducts",
+    "outputs": [{"internalType": "address[]", "name": "", "type": "address[]"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "supplier", "type": "address"}, {"internalType": "string", "name": "productName", "type": "string"}, {"internalType": "uint256", "name": "quantity", "type": "uint256"}],
+    "name": "addProduct",
+    "outputs": [{"internalType": "address", "name": "productId", "type": "address"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

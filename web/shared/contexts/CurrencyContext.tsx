@@ -12,7 +12,7 @@ interface CurrencyContextType {
     setLocalCurrency: (code: CurrencyCode) => void;
     setExchangeRate: (rate: number) => void;
     toggleCurrencyMode: () => void;
-    formatPrice: (amountInUsd: number) => string;
+    formatPrice: (amountInUsd: number, options?: { hideSymbol?: boolean }) => string;
     convertPrice: (amountInUsd: number) => number;
 }
 
@@ -56,16 +56,23 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({
         return amountInUsd * exchangeRate;
     };
 
-    const formatPrice = (amountInUsd: number) => {
+    const formatPrice = (amountInUsd: number, options?: { hideSymbol?: boolean }) => {
         const currency = useLocalCurrency ? localCurrency : 'USD';
         const value = useLocalCurrency ? amountInUsd * exchangeRate : amountInUsd;
 
-        return new Intl.NumberFormat('en-US', {
+        const formatted = new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: currency,
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
         }).format(value);
+
+        if (options?.hideSymbol) {
+            // Remove everything except numbers, dots, and commas
+            return formatted.replace(/[^\d.,]/g, '').trim();
+        }
+
+        return formatted;
     };
 
     return (

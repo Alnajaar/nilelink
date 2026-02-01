@@ -1,17 +1,13 @@
-import dynamic from 'next/dynamic';
+import React from 'react';
+import TrackingClient from './TrackingClient';
 
-import AuthGuard from '@shared/components/AuthGuard';
+// Enable dynamic parameters to handle unknown order IDs
+export const dynamicParams = true;
 
-const TrackClient = dynamic(() => import('./TrackClient'), { ssr: false });
+// Force dynamic rendering to handle unknown order IDs during static export
+export const dynamic = 'force-dynamic';
 
-export function generateStaticParams() {
-    return [{ id: '1' }];
-}
-
-export default function TrackPage({ params }: { params: { id: string } }) {
-    return (
-        <AuthGuard>
-            <TrackClient id={params.id} />
-        </AuthGuard>
-    );
+export default async function OrderTrackingPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    return <TrackingClient orderId={id} />;
 }

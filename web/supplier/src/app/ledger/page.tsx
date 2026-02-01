@@ -14,24 +14,40 @@ import {
     Filter
 } from 'lucide-react';
 import { CreditEngine } from '@/lib/engines/CreditEngine';
+import { useAuth } from '@shared/providers/AuthProvider';
 
 import AuthGuard from '@shared/components/AuthGuard';
 
 export default function CreditLedger() {
+    const { user } = useAuth();
     const [clients, setClients] = useState<any[]>([]);
     const [creditEngine] = useState(() => new CreditEngine());
 
     useEffect(() => {
+        if (!user?.walletAddress && !user?.id) return;
+
         const load = async () => {
-            const data = creditEngine['ledger'].getData();
-            const enhanced = await Promise.all(data.credits.map(async (c: any) => {
-                const status = await creditEngine.getCreditStatus(c.clientId);
-                return { ...c, ...status };
+            const supplierId = user.id || user.walletAddress;
+            if (!supplierId) return;
+
+            creditEngine.setSupplierId(supplierId);
+            const data = await creditEngine['ledger'].getData();
+
+            const enhanced = await Promise.all((data.credits || []).map(async (c: any) => {
+                const status = await creditEngine.getCreditStatus(c.merchantId);
+                return {
+                    ...c,
+                    ...status,
+                    clientId: c.merchantId, // Support legacy variable names in UI
+                    clientName: c.merchantName,
+                    limit: c.creditLimit,
+                    lastPaymentDate: c.lastPaymentAt
+                };
             }));
             setClients(enhanced);
         };
         load();
-    }, [creditEngine]);
+    }, [creditEngine, user]);
 
     return (
         <AuthGuard requiredRole={['VENDOR', 'ADMIN', 'SUPER_ADMIN']}>

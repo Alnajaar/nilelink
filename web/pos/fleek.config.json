@@ -1,0 +1,15 @@
+{
+    "sites": [
+        {
+            "name": "nilelink-pos",
+            "dist": "out",
+            "buildCommand": "npm run build",
+            "baseDir": "web/pos",
+            "publicDir": "web/pos/public",
+            "environment": {
+                "NEXT_PUBLIC_DECENTRALIZED": "true",
+                "NEXT_PUBLIC_BLOCKCHAIN_NETWORK": "polygon"
+            }
+        }
+    ]
+}

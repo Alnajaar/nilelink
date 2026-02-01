@@ -1,13 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // Only use static export for production builds
-    ...(process.env.NODE_ENV === 'production' && {
-        output: 'export',
-        trailingSlash: true,
-        images: {
-            unoptimized: true,
-        },
-    }),
+    images: {
+        unoptimized: true,
+    },
+    serverExternalPackages: ['@rainbow-me/rainbowkit', 'wagmi', 'viem'],
     typescript: {
         ignoreBuildErrors: true,
     },
@@ -16,6 +12,15 @@ const nextConfig = {
     },
     webpack: (config) => {
         config.resolve.alias['@shared'] = require('path').resolve(__dirname, '../shared');
+
+        // Handle problematic imports more aggressively
+        config.externals = [
+            ...config.externals,
+            'pino-pretty',
+            'lokijs',
+            'encoding',
+        ];
+
         return config;
     }
 }

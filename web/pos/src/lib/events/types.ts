@@ -65,6 +65,35 @@ export enum EventType {
     SUPPLIER_ORDER_VERIFIED = 'SUPPLIER_ORDER_VERIFIED',
     SUPPLIER_PAYMENT_MADE = 'SUPPLIER_PAYMENT_MADE',
 
+    // Security & Theft Prevention Events
+    ITEM_SCANNED = 'ITEM_SCANNED',
+    ITEM_SCAN_VERIFIED = 'ITEM_SCAN_VERIFIED',
+    ITEM_BAGGED = 'ITEM_BAGGED',
+    BAG_WEIGHT_VERIFIED = 'BAG_WEIGHT_VERIFIED',
+    TRANSACTION_LOCKED = 'TRANSACTION_LOCKED',
+    TRANSACTION_UNLOCKED = 'TRANSACTION_UNLOCKED',
+    CASHIER_SESSION_STARTED = 'CASHIER_SESSION_STARTED',
+    CASHIER_SESSION_ENDED = 'CASHIER_SESSION_ENDED',
+    SCAN_DUPLICATE_DETECTED = 'SCAN_DUPLICATE_DETECTED',
+    ALERT_TRIGGERED = 'ALERT_TRIGGERED',
+    ALERT_ACKNOWLEDGED = 'ALERT_ACKNOWLEDGED',
+    FRAUD_ANOMALY_DETECTED = 'FRAUD_ANOMALY_DETECTED',
+    INVENTORY_LOCK_INTENT = 'INVENTORY_LOCK_INTENT',
+    INVENTORY_LOCK_REJECTED = 'INVENTORY_LOCK_REJECTED',
+    EAS_TAG_UNLOCKED = 'EAS_TAG_UNLOCKED',
+    EAS_GATE_TRIGGERED = 'EAS_GATE_TRIGGERED',
+    CAMERA_EVENT_RECORDED = 'CAMERA_EVENT_RECORDED',
+    CAMERA_CONNECTED = 'CAMERA_CONNECTED',
+    CAMERA_DISCONNECTED = 'CAMERA_DISCONNECTED',
+    CAMERA_TAMPER_DETECTED = 'CAMERA_TAMPER_DETECTED',
+
+    // Print Events
+    PRINT_JOB_QUEUED = 'PRINT_JOB_QUEUED',
+    PRINTER_JOB_STARTED = 'PRINTER_JOB_STARTED',
+    PRINTER_JOB_COMPLETED = 'PRINTER_JOB_COMPLETED',
+    PRINTER_ERROR = 'PRINTER_ERROR',
+    PRINTER_STATUS_CHANGED = 'PRINTER_STATUS_CHANGED',
+
     // System Events
     BRANCH_OPENED = 'BRANCH_OPENED',
     BRANCH_CLOSED = 'BRANCH_CLOSED',
@@ -297,6 +326,206 @@ export interface StaffShiftEndedEvent extends BaseEvent {
     };
 }
 
+// ============= Security & Theft Prevention Events =============
+
+export interface ItemScannedEvent extends BaseEvent {
+    type: EventType.ITEM_SCANNED;
+    payload: {
+        transactionId: string;
+        productId: string;
+        productName: string;
+        barcode: string;
+        quantity: number;
+        unitPrice: number;
+        weight?: number;  // For weight-based items
+        scannerId: string;
+        cashierId: string;
+        status: 'scanned' | 'verified' | 'bagged' | 'paid';
+    };
+}
+
+export interface ItemBaggedEvent extends BaseEvent {
+    type: EventType.ITEM_BAGGED;
+    payload: {
+        transactionId: string;
+        productId: string;
+        baggingScaleId?: string;
+        expectedWeight?: number;
+        actualWeight?: number;
+        weightVariance?: number;
+        verified: boolean;
+    };
+}
+
+export interface BagWeightVerifiedEvent extends BaseEvent {
+    type: EventType.BAG_WEIGHT_VERIFIED;
+    payload: {
+        transactionId: string;
+        totalExpectedWeight: number;
+        totalActualWeight: number;
+        variance: number;
+        tolerance: number;
+        verified: boolean;
+        baggingScaleId: string;
+    };
+}
+
+export interface TransactionLockedEvent extends BaseEvent {
+    type: EventType.TRANSACTION_LOCKED;
+    payload: {
+        transactionId: string;
+        reason: 'unpaid_items' | 'weight_mismatch' | 'security_check' | 'manual_hold';
+        lockedBy: string;
+        lockTimestamp: number;
+        unlockedBy?: string;
+        unlockTimestamp?: number;
+    };
+}
+
+export interface CashierSessionStartedEvent extends BaseEvent {
+    type: EventType.CASHIER_SESSION_STARTED;
+    payload: {
+        sessionId: string;
+        cashierId: string;
+        cashierName: string;
+        stationId: string;
+        startTime: number;
+        permissions: string[];
+        openingBalance?: number;
+    };
+}
+
+export interface CashierSessionEndedEvent extends BaseEvent {
+    type: EventType.CASHIER_SESSION_ENDED;
+    payload: {
+        sessionId: string;
+        cashierId: string;
+        endTime: number;
+        duration: number;
+        transactionsProcessed: number;
+        totalRevenue: number;
+        closingBalance?: number;
+    };
+}
+
+export interface ScanDuplicateDetectedEvent extends BaseEvent {
+    type: EventType.SCAN_DUPLICATE_DETECTED;
+    payload: {
+        transactionId: string;
+        productId: string;
+        duplicateTimestamp: number;
+        scannerId: string;
+        cashierId: string;
+        action: 'blocked' | 'allowed' | 'flagged';
+    };
+}
+
+export interface AlertTriggeredEvent extends BaseEvent {
+    type: EventType.ALERT_TRIGGERED;
+    payload: {
+        alertId: string;
+        severity: 'low' | 'medium' | 'high' | 'critical';
+        category: 'security' | 'theft' | 'system' | 'operational';
+        title: string;
+        message: string;
+        context: Record<string, any>;
+        source: string;
+        acknowledged: boolean;
+        acknowledgedBy?: string;
+        acknowledgedAt?: number;
+    };
+}
+
+export interface AlertAcknowledgedEvent extends BaseEvent {
+    type: EventType.ALERT_ACKNOWLEDGED;
+    payload: {
+        alertId: string;
+        acknowledgedBy: string;
+        timestamp: number;
+        notes?: string;
+    };
+}
+
+export interface EASEvent extends BaseEvent {
+    type: EventType.EAS_GATE_TRIGGERED | EventType.EAS_TAG_UNLOCKED;
+    payload: {
+        transactionId?: string;
+        tagId?: string;
+        gateId: string;
+        action: 'entry' | 'exit' | 'unlock' | 'lock' | 'alarm' | 'tamper';
+        timestamp: number;
+        authorized: boolean;
+        items?: Array<{
+            productId: string;
+            quantity: number;
+        }>;
+    };
+}
+
+export interface CameraEventRecordedEvent extends BaseEvent {
+    type: EventType.CAMERA_EVENT_RECORDED;
+    payload: {
+        cameraId: string;
+        timestamp: number;
+        eventType: 'motion' | 'person_detected' | 'item_pickup' | 'checkout_activity';
+        transactionId?: string;
+        location: {
+            x: number;
+            y: number;
+            zone: string;
+        };
+        confidence: number;
+        metadata: Record<string, any>;
+    };
+}
+
+export interface FraudAnomalyDetectedEvent extends BaseEvent {
+    type: EventType.FRAUD_ANOMALY_DETECTED;
+    payload: {
+        anomalyId: string;
+        cashierId: string;
+        sessionId: string;
+        anomalyType: 'EXCESSIVE_VOID' | 'EXCESSIVE_REFUND' | 'HIGH_DISCOUNT_FREQUENCY' | 'SUSPICIOUS_TIMING' | 'LIMIT_BREACH';
+        severity: number;
+        transactionId?: string;
+        amount?: number;
+        threshold?: number;
+        details: string;
+    };
+}
+
+export interface InventoryLockIntentEvent extends BaseEvent {
+    type: EventType.INVENTORY_LOCK_INTENT;
+    payload: {
+        intentId: string;
+        productId: string;
+        quantity: number;
+        sessionId: string;
+        timestamp: number;
+    };
+}
+
+export interface InventoryLockRejectedEvent extends BaseEvent {
+    type: EventType.INVENTORY_LOCK_REJECTED;
+    payload: {
+        intentId: string;
+        reason: string;
+        availableStock: number;
+        timestamp: number;
+    };
+}
+
+export interface CameraLifecycleEvent extends BaseEvent {
+    type: EventType.CAMERA_CONNECTED | EventType.CAMERA_DISCONNECTED | EventType.CAMERA_TAMPER_DETECTED;
+    payload: {
+        cameraId: string;
+        location: string;
+        status: string;
+        timestamp: number;
+        reason?: string;
+    };
+}
+
 // ============= Union Type for All Events =============
 
 export type EconomicEvent =
@@ -315,7 +544,25 @@ export type EconomicEvent =
     | CashDrawerOpenedEvent
     | CashDrawerClosedEvent
     | StaffShiftStartedEvent
-    | StaffShiftEndedEvent;
+    | StaffShiftEndedEvent
+    | ItemScannedEvent
+    | ItemBaggedEvent
+    | BagWeightVerifiedEvent
+    | TransactionLockedEvent
+    | CashierSessionStartedEvent
+    | CashierSessionEndedEvent
+    | ScanDuplicateDetectedEvent
+    | AlertTriggeredEvent
+    | AlertAcknowledgedEvent
+    | FraudAnomalyDetectedEvent
+    | InventoryLockIntentEvent
+    | InventoryLockRejectedEvent
+    | InventoryLockRejectedEvent
+    | PrinterStatusEvent
+    | PrinterJobEvent
+    | CameraLifecycleEvent
+    | EASEvent
+    | CameraEventRecordedEvent;
 
 // ============= Event Metadata =============
 

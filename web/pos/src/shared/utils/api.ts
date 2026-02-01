@@ -1,20 +1,9 @@
 import Cookies from 'js-cookie';
 
 const getApiUrl = () => {
-    if (typeof window === 'undefined') {
-        return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-    }
-
-    const host = window.location.hostname;
-
-    // If we're on the production domain (nilelink.app or any subdomain)
-    if (host.endsWith('nilelink.app')) {
-        // Use the centralized api subdomain
-        return `https://api.nilelink.app/api`;
-    }
-
-    // Fallback for local development or other environments
-    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    // NileLink is 100% Decentralized - all data via smart contracts
+    // No centralized API endpoints in production
+    return process.env.NEXT_PUBLIC_API_URL || '';
 };
 
 const API_URL = getApiUrl();
@@ -83,6 +72,34 @@ export const authApi = {
     logout: () =>
         apiRequest('/auth/logout', {
             method: 'POST',
+        }),
+
+    forgotPassword: (email: string) =>
+        apiRequest('/auth/forgot-password', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+            requireAuth: false,
+        }),
+
+    resetPassword: (token: string, password: string) =>
+        apiRequest('/auth/reset-password', {
+            method: 'POST',
+            body: JSON.stringify({ token, password }),
+            requireAuth: false,
+        }),
+
+    verifyEmail: (token: string) =>
+        apiRequest('/auth/verify-email', {
+            method: 'POST',
+            body: JSON.stringify({ token }),
+            requireAuth: false,
+        }),
+
+    resendVerification: (email: string) =>
+        apiRequest('/auth/resend-verification', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+            requireAuth: false,
         }),
 };
 

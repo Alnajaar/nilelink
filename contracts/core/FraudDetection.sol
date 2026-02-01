@@ -2,8 +2,8 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../interfaces/SmartContract_Interfaces.sol";
 import "../libraries/NileLinkLibs.sol";
@@ -12,12 +12,12 @@ import "../libraries/NileLinkLibs.sol";
 /// @notice Automated anomaly detection and transaction blocking for NileLink Protocol
 contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
     using Address for address;
-    
+
     // Anomaly tracking
     mapping(bytes32 => AnomalyData) public anomalies;
     mapping(bytes32 => bool) public blockedTransactions;
     mapping(address => RuleSet) public restaurantRules;
-    
+
     struct AnomalyData {
         bytes32 subject;
         bytes32 anomalyType;
@@ -27,7 +27,7 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         bool resolved;
         address resolvedBy;
     }
-    
+
     struct RuleSet {
         uint256 maxOrderAmount; // Maximum order amount in USD with 6 decimals
         uint256 maxOrdersPerHour; // Maximum orders per hour
@@ -35,38 +35,37 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         uint16 maxRefundRateBps; // Maximum refund rate in basis points
         bool customRulesEnabled;
     }
-    
+
     // Default anomaly thresholds
-    uint256 public constant DEFAULT_MAX_ORDER_AMOUNT = 10000 * 10**6; // $10,000
+    uint256 public constant DEFAULT_MAX_ORDER_AMOUNT = 10000 * 10 ** 6; // $10,000
     uint256 public constant DEFAULT_MAX_ORDERS_PER_HOUR = 50;
-    uint256 public constant DEFAULT_MAX_DAILY_VOLUME = 100000 * 10**6; // $100,000
+    uint256 public constant DEFAULT_MAX_DAILY_VOLUME = 100000 * 10 ** 6; // $100,000
     uint16 public constant DEFAULT_MAX_REFUND_RATE_BPS = 500; // 5%
-    
+
     // Volume tracking for anomaly detection
     mapping(address => HourlyVolume) public hourlyVolume;
     mapping(address => DailyStats) public dailyStats;
-    
+
     struct HourlyVolume {
         uint256 ordersCount;
         uint256 volumeUsd6;
         uint256 startTime;
     }
-    
+
     struct DailyStats {
         uint256 totalOrders;
         uint256 totalVolumeUsd6;
         uint256 refundCount;
         uint256 startDate;
     }
-    
+
     // Governance
     mapping(address => bool) public governance;
-    
+
     // Events
     // Events
     // AnomalyFlagged, TransactionBlocked inherited from IFraudDetection
 
-    
     event RuleSetUpdated(
         address indexed restaurant,
         uint256 maxOrderAmount,
@@ -75,18 +74,22 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         uint16 maxRefundRateBps,
         uint64 timestamp
     );
-    
-    event AnomalyResolved(bytes32 indexed anomalyId, address indexed resolver, uint64 timestamp);
-    
+
+    event AnomalyResolved(
+        bytes32 indexed anomalyId,
+        address indexed resolver,
+        uint64 timestamp
+    );
+
     modifier onlyGovernance() {
         if (!governance[msg.sender] && owner() != msg.sender) {
             revert NileLinkLibs.Unauthorized();
         }
         _;
     }
-    
-    constructor() Ownable() {}
-    
+
+    constructor() Ownable(msg.sender) {}
+
     /// @notice Flag an anomaly in the system
     /// @param subject Subject being flagged (restaurant address, orderId, etc.)
     /// @param anomalyType Type of anomaly detected
@@ -99,10 +102,12 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         bytes32 detailsHash
     ) public override whenNotPaused {
         require(severity >= 1 && severity <= 10, "Invalid severity");
-        
+
         // Create unique anomaly ID
-        bytes32 anomalyId = keccak256(abi.encodePacked(subject, anomalyType, block.timestamp));
-        
+        bytes32 anomalyId = keccak256(
+            abi.encodePacked(subject, anomalyType, block.timestamp)
+        );
+
         // Store anomaly data
         anomalies[anomalyId] = AnomalyData({
             subject: subject,
@@ -113,15 +118,21 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
             resolved: false,
             resolvedBy: address(0)
         });
-        
+
         // Automatically block high-severity anomalies
         if (severity >= 8) {
             blockedTransactions[subject] = true;
         }
-        
-        emit AnomalyFlagged(subject, anomalyType, severity, detailsHash, uint64(block.timestamp));
+
+        emit AnomalyFlagged(
+            subject,
+            anomalyType,
+            severity,
+            detailsHash,
+            uint64(block.timestamp)
+        );
     }
-    
+
     /// @notice Block a specific transaction
     /// @param txRef Transaction reference (hash, orderId, etc.)
     /// @param reasonHash Hash of blocking reason
@@ -130,17 +141,19 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         bytes32 reasonHash
     ) external override onlyGovernance whenNotPaused {
         blockedTransactions[txRef] = true;
-        
+
         emit TransactionBlocked(txRef, reasonHash, uint64(block.timestamp));
     }
-    
+
     /// @notice Check if a transaction is blocked
     /// @param txRef Transaction reference
     /// @return blocked Whether the transaction is blocked
-    function isBlocked(bytes32 txRef) external view override returns (bool blocked) {
+    function isBlocked(
+        bytes32 txRef
+    ) external view override returns (bool blocked) {
         return blockedTransactions[txRef];
     }
-    
+
     /// @notice Check for anomalies in order creation
     /// @param restaurant Restaurant address
     /// @param orderId Order identifier
@@ -152,16 +165,21 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
         address restaurant,
         bytes16 orderId,
         uint256 amount
-    ) external whenNotPaused returns (
-        bool isAnomaly,
-        uint8 severity,
-        string memory recommendedAction
-    ) {
+    )
+        external
+        whenNotPaused
+        returns (
+            bool isAnomaly,
+            uint8 severity,
+            string memory recommendedAction
+        )
+    {
         // Check if restaurant has custom rules
         RuleSet storage rules = restaurantRules[restaurant];
-        uint256 maxOrderAmount = rules.customRulesEnabled ? 
-            rules.maxOrderAmount : DEFAULT_MAX_ORDER_AMOUNT;
-        
+        uint256 maxOrderAmount = rules.customRulesEnabled
+            ? rules.maxOrderAmount
+            : DEFAULT_MAX_ORDER_AMOUNT;
+
         // Check order amount
         if (amount > maxOrderAmount) {
             flagAnomaly(
@@ -170,18 +188,23 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
                 _calculateSeverity(amount, maxOrderAmount),
                 keccak256(bytes("Order amount exceeds threshold"))
             );
-            
-            return (true, _calculateSeverity(amount, maxOrderAmount), "BLOCK_ORDER");
+
+            return (
+                true,
+                _calculateSeverity(amount, maxOrderAmount),
+                "BLOCK_ORDER"
+            );
         }
-        
+
         // Update hourly volume tracking
         _updateHourlyVolume(restaurant, amount);
-        
+
         // Check hourly order limits
         HourlyVolume storage hourly = hourlyVolume[restaurant];
-        uint256 maxOrdersPerHour = rules.customRulesEnabled ? 
-            rules.maxOrdersPerHour : DEFAULT_MAX_ORDERS_PER_HOUR;
-            
+        uint256 maxOrdersPerHour = rules.customRulesEnabled
+            ? rules.maxOrdersPerHour
+            : DEFAULT_MAX_ORDERS_PER_HOUR;
+
         if (hourly.ordersCount > maxOrdersPerHour) {
             flagAnomaly(
                 bytes32(uint256(uint160(restaurant))),
@@ -189,16 +212,17 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
                 7,
                 keccak256(bytes("Orders per hour exceed threshold"))
             );
-            
+
             return (true, 7, "REVIEW_ORDER");
         }
-        
+
         // Check daily volume limits
         _updateDailyStats(restaurant, amount);
         DailyStats storage daily = dailyStats[restaurant];
-        uint256 maxDailyVolume = rules.customRulesEnabled ? 
-            rules.maxDailyVolume : DEFAULT_MAX_DAILY_VOLUME;
-            
+        uint256 maxDailyVolume = rules.customRulesEnabled
+            ? rules.maxDailyVolume
+            : DEFAULT_MAX_DAILY_VOLUME;
+
         if (daily.totalVolumeUsd6 > maxDailyVolume) {
             flagAnomaly(
                 bytes32(uint256(uint160(restaurant))),
@@ -206,13 +230,13 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
                 6,
                 keccak256(bytes("Daily volume exceeds threshold"))
             );
-            
+
             return (true, 6, "REVIEW_ORDER");
         }
-        
+
         return (false, 0, "APPROVE");
     }
-    
+
     /// @notice Check for refund anomalies
     /// @param restaurant Restaurant address
     /// @param orderId Order identifier
@@ -225,16 +249,17 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
     ) external whenNotPaused returns (bool isAnomaly) {
         // Update refund tracking
         dailyStats[restaurant].refundCount++;
-        
+
         // Calculate refund rate
-        uint256 refundRate = dailyStats[restaurant].refundCount * 10000 / 
+        uint256 refundRate = (dailyStats[restaurant].refundCount * 10000) /
             (dailyStats[restaurant].totalOrders + 1);
-        
+
         // Get refund rate limit
         RuleSet storage rules = restaurantRules[restaurant];
-        uint16 maxRefundRate = rules.customRulesEnabled ? 
-            rules.maxRefundRateBps : DEFAULT_MAX_REFUND_RATE_BPS;
-        
+        uint16 maxRefundRate = rules.customRulesEnabled
+            ? rules.maxRefundRateBps
+            : DEFAULT_MAX_REFUND_RATE_BPS;
+
         if (refundRate > maxRefundRate) {
             flagAnomaly(
                 bytes32(uint256(uint160(restaurant))),
@@ -242,13 +267,13 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
                 8,
                 keccak256(bytes("Refund rate exceeds threshold"))
             );
-            
+
             return true;
         }
-        
+
         return false;
     }
-    
+
     /// @notice Update custom rules for a restaurant
     /// @param restaurant Restaurant address
     /// @param maxOrderAmount Maximum order amount in USD with 6 decimals
@@ -264,7 +289,7 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
     ) external onlyGovernance {
         NileLinkLibs.validateAddress(restaurant);
         require(maxRefundRateBps <= 10000, "Invalid refund rate");
-        
+
         restaurantRules[restaurant] = RuleSet({
             maxOrderAmount: maxOrderAmount,
             maxOrdersPerHour: maxOrdersPerHour,
@@ -272,7 +297,7 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
             maxRefundRateBps: maxRefundRateBps,
             customRulesEnabled: true
         });
-        
+
         emit RuleSetUpdated(
             restaurant,
             maxOrderAmount,
@@ -282,74 +307,110 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
             uint64(block.timestamp)
         );
     }
-    
+
     /// @notice Get anomaly rules for a restaurant
     /// @param restaurant Restaurant address
     /// @return rules RuleSet structure
     /// @return customEnabled Whether custom rules are enabled
-    function getAnomalyRules(address restaurant) 
-        external 
-        view 
-        returns (RuleSet memory rules, bool customEnabled) 
-    {
+    function getAnomalyRules(
+        address restaurant
+    ) external view returns (RuleSet memory rules, bool customEnabled) {
         RuleSet storage ruleSet = restaurantRules[restaurant];
         return (ruleSet, ruleSet.customRulesEnabled);
     }
-    
+
     /// @notice Get anomaly data
     /// @param anomalyId Anomaly identifier
     /// @return anomaly Anomaly data structure
-    function getAnomaly(bytes32 anomalyId) external view returns (AnomalyData memory anomaly) {
+    function getAnomaly(
+        bytes32 anomalyId
+    ) external view returns (AnomalyData memory anomaly) {
         return anomalies[anomalyId];
     }
-    
+
+    /// @notice Get reputation score for a restaurant (0-100)
+    /// @param restaurant Restaurant address
+    /// @return score Reputation score
+    function getReputationScore(
+        address restaurant
+    ) public view returns (uint8 score) {
+        DailyStats storage daily = dailyStats[restaurant];
+        if (daily.totalOrders == 0) return 50; // Neutral starting point
+
+        // Base score starts at 70
+        int256 currentScore = 70;
+
+        // Add for volume (max +20)
+        uint256 volumeBonus = daily.totalVolumeUsd6 / (1000 * 10 ** 6); // +1 per $1000
+        currentScore += int256(volumeBonus > 20 ? 20 : volumeBonus);
+
+        // Subtract for refunds (max -40)
+        uint256 refundPenalty = (daily.refundCount * 100) / daily.totalOrders; // 0-100%
+        currentScore -= int256((refundPenalty * 4) / 10); // refund rate * 0.4
+
+        // Subtract for recent anomalies (not resolved)
+        // Note: Simple heuristic for on-chain calculation
+        if (blockedTransactions[bytes32(uint256(uint160(restaurant)))]) {
+            currentScore -= 50;
+        }
+
+        if (currentScore < 0) return 0;
+        if (currentScore > 100) return 100;
+        return uint8(uint256(currentScore));
+    }
+
     /// @notice Resolve an anomaly (remove block)
     /// @param anomalyId Anomaly identifier
     function resolveAnomaly(bytes32 anomalyId) external onlyGovernance {
         AnomalyData storage anomaly = anomalies[anomalyId];
         require(!anomaly.resolved, "Already resolved");
-        
+
         anomaly.resolved = true;
         anomaly.resolvedBy = msg.sender;
-        
+
         // Remove block if it was applied
         blockedTransactions[anomaly.subject] = false;
-        
+
         emit AnomalyResolved(anomalyId, msg.sender, uint64(block.timestamp));
     }
-    
+
     /// @notice Get restaurant volume statistics
     /// @param restaurant Restaurant address
     /// @return hourly Hourly volume data
     /// @return daily Daily statistics
-    function getRestaurantStats(address restaurant) 
-        external 
-        view 
-        returns (HourlyVolume memory hourly, DailyStats memory daily) 
+    function getRestaurantStats(
+        address restaurant
+    )
+        external
+        view
+        returns (HourlyVolume memory hourly, DailyStats memory daily)
     {
         return (hourlyVolume[restaurant], dailyStats[restaurant]);
     }
-    
+
     /// @notice Calculate severity based on amount and threshold
     /// @param amount Current amount
     /// @param threshold Threshold amount
     /// @return severity Severity level (1-10)
-    function _calculateSeverity(uint256 amount, uint256 threshold) internal pure returns (uint8 severity) {
+    function _calculateSeverity(
+        uint256 amount,
+        uint256 threshold
+    ) internal pure returns (uint8 severity) {
         uint256 ratio = (amount * 100) / threshold; // Percentage over threshold
-        
+
         if (ratio <= 110) return 3; // 0-10% over
         if (ratio <= 150) return 5; // 10-50% over
         if (ratio <= 200) return 7; // 50-100% over
         return 9; // 100%+ over
     }
-    
+
     /// @notice Update hourly volume tracking
     /// @param restaurant Restaurant address
     /// @param amount Order amount
     function _updateHourlyVolume(address restaurant, uint256 amount) internal {
         HourlyVolume storage hourly = hourlyVolume[restaurant];
         uint256 hourStart = (block.timestamp / 1 hours) * 1 hours;
-        
+
         if (hourly.startTime != hourStart) {
             // New hour, reset counters
             hourly.ordersCount = 1;
@@ -360,14 +421,14 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
             hourly.volumeUsd6 += amount;
         }
     }
-    
+
     /// @notice Update daily statistics
     /// @param restaurant Restaurant address
     /// @param amount Order amount
     function _updateDailyStats(address restaurant, uint256 amount) internal {
         DailyStats storage daily = dailyStats[restaurant];
         uint256 dayStart = (block.timestamp / 1 days) * 1 days;
-        
+
         if (daily.startDate != dayStart) {
             // New day, reset counters
             daily.totalOrders = 1;
@@ -379,20 +440,23 @@ contract FraudDetection is IFraudDetection, Ownable, Pausable, ReentrancyGuard {
             daily.totalVolumeUsd6 += amount;
         }
     }
-    
+
     /// @notice Add or remove governance address
     /// @param account Account to modify
     /// @param isGovernance Whether to add or remove
-    function setGovernance(address account, bool isGovernance) external onlyOwner {
+    function setGovernance(
+        address account,
+        bool isGovernance
+    ) external onlyOwner {
         NileLinkLibs.validateAddress(account);
         governance[account] = isGovernance;
     }
-    
+
     /// @notice Pause contract operations
     function pause() external onlyOwner {
         _pause();
     }
-    
+
     /// @notice Unpause contract operations
     function unpause() external onlyOwner {
         _unpause();

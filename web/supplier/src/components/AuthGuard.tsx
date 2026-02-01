@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@shared/contexts/AuthContext';
+import { useAuth } from '@shared/providers/FirebaseAuthProvider';
 import { Loader2 } from 'lucide-react';
 
 interface AuthGuardProps {

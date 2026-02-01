@@ -1,0 +1,38 @@
+src/app/admin/onboarding/page.tsx(162,34): error TS2322: Type '{ children: Element; mode: string; }' is not assignable to type 'IntrinsicAttributes & { children: ReactNode; }'.
+  Property 'mode' does not exist on type 'IntrinsicAttributes & { children: ReactNode; }'.
+src/app/dashboard/page.tsx(31,72): error TS2304: Cannot find name 'Network'.
+src/app/get-started/page.tsx(187,38): error TS2322: Type '{ children: Element; mode: string; }' is not assignable to type 'IntrinsicAttributes & { children: ReactNode; }'.
+  Property 'mode' does not exist on type 'IntrinsicAttributes & { children: ReactNode; }'.
+src/app/orders/page.tsx(38,53): error TS2367: This comparison appears to be unintentional because the types '"PREPARING" | "READY" | "COMPLETED" | "CANCELLED" | "PENDING" | "CONFIRMED"' and '"pending" | "completed" | "cancelled"' have no overlap.
+src/app/products/page.tsx(35,37): error TS2339: Property 'filter' does not exist on type 'any[] | { products: Product[]; total: number; page?: number; pageSize?: number; }'.
+  Property 'filter' does not exist on type '{ products: Product[]; total: number; page?: number; pageSize?: number; }'.
+src/app/products/page.tsx(108,57): error TS2339: Property 'length' does not exist on type 'any[] | { products: Product[]; total: number; page?: number; pageSize?: number; }'.
+  Property 'length' does not exist on type '{ products: Product[]; total: number; page?: number; pageSize?: number; }'.
+src/app/products/page.tsx(109,66): error TS2339: Property 'filter' does not exist on type 'any[] | { products: Product[]; total: number; page?: number; pageSize?: number; }'.
+  Property 'filter' does not exist on type '{ products: Product[]; total: number; page?: number; pageSize?: number; }'.
+src/app/products/page.tsx(127,25): error TS2339: Property 'filter' does not exist on type 'any[] | { products: Product[]; total: number; page?: number; pageSize?: number; }'.
+  Property 'filter' does not exist on type '{ products: Product[]; total: number; page?: number; pageSize?: number; }'.
+src/app/terminal/cash/page.tsx(352,38): error TS2322: Type '{ children: Element[]; mode: string; }' is not assignable to type 'IntrinsicAttributes & { children: ReactNode; }'.
+  Property 'mode' does not exist on type 'IntrinsicAttributes & { children: ReactNode; }'.
+src/app/terminal/ledger/page.tsx(266,50): error TS2322: Type '{ children: Element[]; mode: string; }' is not assignable to type 'IntrinsicAttributes & { children: ReactNode; }'.
+  Property 'mode' does not exist on type 'IntrinsicAttributes & { children: ReactNode; }'.
+src/app/terminal/ledger/page.tsx(268,49): error TS2339: Property 'tr' does not exist on type '{ div: ForwardRefExoticComponent<Omit<any, "ref"> & RefAttributes<unknown>>; button: ForwardRefExoticComponent<Omit<any, "ref"> & RefAttributes<unknown>>; ... 16 more ...; li: ForwardRefExoticComponent<...>; }'.
+src/app/terminal/ledger/page.tsx(328,50): error TS2339: Property 'tr' does not exist on type '{ div: ForwardRefExoticComponent<Omit<any, "ref"> & RefAttributes<unknown>>; button: ForwardRefExoticComponent<Omit<any, "ref"> & RefAttributes<unknown>>; ... 16 more ...; li: ForwardRefExoticComponent<...>; }'.
+src/app/terminal/payment/page.tsx(150,22): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(156,23): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(302,60): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(302,268): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(319,42): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/payment/page.tsx(324,43): error TS2552: Cannot find name 'motion'. Did you mean 'Option'?
+src/app/terminal/recipes/page.tsx(151,34): error TS2322: Type '{ children: Element; mode: string; }' is not assignable to type 'IntrinsicAttributes & { children: ReactNode; }'.
+  Property 'mode' does not exist on type 'IntrinsicAttributes & { children: ReactNode; }'.
+src/components/admin/AddStaffModal.tsx(100,38): error TS2322: Type '{ children: Element[]; mode: string; }' is not assignable to type 'IntrinsicAttributes & { children: ReactNode; }'.
+  Property 'mode' does not exist on type 'IntrinsicAttributes & { children: ReactNode; }'.
+src/components/DashboardLayout.tsx(105,38): error TS2322: Type '{ children: Element; mode: string; }' is not assignable to type 'IntrinsicAttributes & { children: ReactNode; }'.
+  Property 'mode' does not exist on type 'IntrinsicAttributes & { children: ReactNode; }'.
+src/components/KitchenDisplaySystem.tsx(261,28): error TS2322: Type '{ children: Element | Element[]; mode: string; }' is not assignable to type 'IntrinsicAttributes & { children: ReactNode; }'.
+  Property 'mode' does not exist on type 'IntrinsicAttributes & { children: ReactNode; }'.
+src/components/OrderNotificationCenter.tsx(87,24): error TS2322: Type '{ children: Element[]; mode: string; }' is not assignable to type 'IntrinsicAttributes & { children: ReactNode; }'.
+  Property 'mode' does not exist on type 'IntrinsicAttributes & { children: ReactNode; }'.
+../shared/components/NeuralIntelligenceBridge.tsx(67,30): error TS2322: Type '{ children: Element; mode: string; }' is not assignable to type 'IntrinsicAttributes & { children: ReactNode; }'.
+  Property 'mode' does not exist on type 'IntrinsicAttributes & { children: ReactNode; }'.

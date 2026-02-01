@@ -1,0 +1,27 @@
+{
+  "deployer": "0xd1A6C4698fB9940449CedC5bDecB431222EA727E",
+  "network": "amoy",
+  "timestamp": "2026-01-30T12:35:29.656Z",
+  "contracts": {
+    "swarmIntelligence": "0xeAF4BB4A07d6e8584f07f256B52042F956b15e91",
+    "adaptiveDefense": "0x76d41bA1E7dE736f003052CA3Ae10C3BAaC1dFa6",
+    "predictiveThreatModel": "0x878eE7d571a0F738679BdBcA0d2bbC388a730a76",
+    "restaurantRegistry": "0x38D57dc538f4009452c3979a99256892EDa4dC9C",
+    "orderSettlement": "0x719F8A5f9700657dA090abABdF1c9F740491CCb9",
+    "currencyExchange": "0x2B9649De5f9E3050cAc4494FA5c06027EA7f05f7",
+    "disputeResolution": "0x0111a23ef6bA340952BE28A6804D7389Db043316",
+    "fraudDetection": "0x5C566AAFA13e546b9FABf6df081ED756DfCBDfA5",
+    "nileLinkProtocol": "0x98Dc3Ae669ae676fA261C38951C5dC01dB4d5768",
+    "investorVault": "0xA26EC90328Be97b4124D36d84B031222d5FfF79C",
+    "supplierCredit": "0x8c43c230D85232E1c1C7725944C4f9bcc570002A",
+    "deliveryCoordinator": "0x496589A5E1b9f6A9550aDCaaa5164f0dc7F92814",
+    "proofOfDelivery": "0x4Df9De8C142A29320c4C1D9259fD61fe0584A234",
+    "supplierRegistry": "0x974612B35e3d67361C33C5faC96E0F499980F36f",
+    "supplyChain": "0xb66dADaea090B9786699B4adEAdEF045C4d435e9",
+    "bridgeCoordinator": "0x72A0B897C9aE76C4329B082E8BFE888D85c3ddeB",
+    "marketplace": "0xf81B286b77EC59628F8E490A5AC9c18c484193cA",
+    "mockBridgeProvider": "0xF6038607B7C36029e06eF685e46F80535A47BDEF",
+    "securityOrchestrator": "0x3bc0f17083003bf706388c6860b0395894c6C682",
+    "coreAIOracle": "0xe9c984d77c38Cf197F46678c126677c343FF7e96"
+  }
+}

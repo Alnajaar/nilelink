@@ -1,155 +1,274 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import {
-    ShoppingBag,
-    Users,
-    Search,
-    ArrowRight,
-    Star,
-    Clock,
-    Bike
+  ShoppingBag,
+  Search,
+  ArrowRight,
+  Star,
+  Clock,
+  Bike,
+  Flame,
+  TrendingUp,
+  MapPin,
+  ChevronRight
 } from 'lucide-react';
-
 import { DemandPulse } from '@/components/DemandPulse';
+import { PremiumCard } from '@/components/shared/PremiumCard';
+import { PremiumButton } from '@/components/shared/PremiumButton';
+import { useRestaurants } from '@/hooks/useRestaurants';
+import { AIFlashDeal } from '@/components/AIFlashDeal';
+import AuthGuard from '@shared/components/AuthGuard';
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2
+    }
+  }
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+};
 
 export default function DiscoveryPage() {
-    const mockRestaurants = [
-        {
-            id: 1,
-            name: 'Cairo Healthy Kitchen',
-            category: 'Healthy',
-            rating: 4.9,
-            time: '20 min',
-            delivery: '$1.50'
-        },
-        {
-            id: 2,
-            name: 'Zamalek Bakery',
-            category: 'Bakery',
-            rating: 4.7,
-            time: '15 min',
-            delivery: '$2.00'
-        },
-        {
-            id: 3,
-            name: 'Nile Pizza Co',
-            category: 'Pizza',
-            rating: 4.8,
-            time: '25 min',
-            delivery: '$2.50'
-        }
-    ];
+  const [searchQuery, setSearchQuery] = useState('');
 
-    return (
-        <div className="min-h-screen bg-gray-50 pb-20">
-            <DemandPulse />
+  const { restaurants, isLoading: restaurantsLoading } = useRestaurants();
 
-            {/* Header */}
-            <header className="bg-white shadow-sm p-4">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-xl font-bold text-blue-600">NileLink Customer</h1>
-                    <div className="flex items-center gap-3">
-                        <Link href="/auth/login">
-                            <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                                Login
-                            </button>
-                        </Link>
-                    </div>
-                </div>
-            </header>
+  // Filter featured/popular restaurants
+  const mockRestaurants = restaurants.filter(r => r.badge === 'Popular' || r.badge === 'Trending').slice(0, 6);
 
-            <main className="container mx-auto p-4 space-y-8">
-                {/* Search */}
-                <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                        className="w-full h-14 pl-12 pr-4 bg-white border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium placeholder:text-gray-400"
-                        placeholder="What are you craving?"
-                    />
-                </div>
+  const categories = [
+    { id: 1, name: 'Fast Food', icon: '🍔' },
+    { id: 2, name: 'Pizza', icon: '🍕' },
+    { id: 3, name: 'Asian', icon: '🥡' },
+    { id: 4, name: 'Healthy', icon: '🥗' },
+    { id: 5, name: 'Desserts', icon: '🍰' },
+    { id: 6, name: 'Drinks', icon: '🧃' }
+  ];
 
-                {/* Featured Restaurant */}
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-green-600 to-green-800 text-white relative overflow-hidden shadow-xl">
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-2 mb-4">
-                            <span className="bg-white/20 text-white px-2 py-1 rounded text-xs font-medium">AI PICK</span>
-                            <span className="text-xs text-green-200">Recommended for you</span>
-                        </div>
-                        <h3 className="text-2xl font-bold mb-2">Create Your Own Bowl</h3>
-                        <p className="text-sm text-green-100/80 mb-6">Cairo Healthy Kitchen • 20 min • 4.9 ⭐</p>
-                        <Link href="/checkout">
-                            <button className="bg-white text-green-700 hover:bg-green-50 font-bold py-3 px-6 rounded-xl transition-colors flex items-center gap-2">
-                                Order Now <ArrowRight size={16} />
-                            </button>
-                        </Link>
-                    </div>
-                </div>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <DemandPulse />
 
-                {/* Restaurant List */}
-                <div>
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold text-gray-800 uppercase tracking-tight">Nearby Restaurants</h3>
-                        <span className="text-sm font-medium text-blue-600 cursor-pointer hover:underline">View All</span>
-                    </div>
+      {/* Hero Section */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="relative py-16 md:py-24 px-4 md:px-0"
+      >
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-text-primary mb-6 leading-tight">
+                Discover Food,
+                <span className="text-gradient block mt-2">Order with Confidence</span>
+              </h1>
+              <p className="text-lg text-text-secondary mb-8 max-w-2xl mx-auto">
+                The most advanced food discovery and ordering platform in the NileLink ecosystem. Real-time delivery tracking, verified merchants, and seamless payments.
+              </p>
+            </motion.div>
+          </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {mockRestaurants.map((restaurant) => (
-                            <Link href={`/shop/${restaurant.id}`} key={restaurant.id}>
-                                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all group">
-                                    <div className="h-40 bg-gray-100 relative overflow-hidden">
-                                        <div className="absolute inset-0 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform duration-500">
-                                            🍽️
-                                        </div>
-                                    </div>
-                                    <div className="p-4">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <h4 className="text-lg font-bold text-gray-800">{restaurant.name}</h4>
-                                            <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-md">
-                                                <Star size={12} className="text-yellow-500" fill="currentColor" />
-                                                <span className="text-xs font-bold text-gray-800">{restaurant.rating}</span>
-                                            </div>
-                                        </div>
-                                        <p className="text-sm text-gray-600 font-medium mb-3">{restaurant.category} • $</p>
-
-                                        <div className="flex items-center gap-4 text-sm font-medium text-gray-500">
-                                            <span className="flex items-center gap-1">
-                                                <Clock size={14} /> {restaurant.time}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Bike size={14} /> {restaurant.delivery}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-            </main>
-
-            {/* Mobile Nav */}
-            <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 px-6 py-2 pb-6 z-50 md:hidden">
-                <div className="flex justify-around items-center">
-                    <button className="flex flex-col items-center gap-1 text-blue-600 p-2">
-                        <Search size={24} />
-                        <span className="text-xs font-bold uppercase tracking-widest">Shop</span>
-                    </button>
-                    <Link href="/checkout">
-                        <button className="flex flex-col items-center gap-1 text-gray-400 p-2 hover:text-blue-600 transition-colors">
-                            <ShoppingBag size={24} />
-                            <span className="text-xs font-bold uppercase tracking-widest">Cart</span>
-                        </button>
-                    </Link>
-                    <Link href="/auth/login">
-                        <button className="flex flex-col items-center gap-1 text-gray-400 p-2 hover:text-blue-600 transition-colors">
-                            <Users size={24} />
-                            <span className="text-xs font-bold uppercase tracking-widest">Profile</span>
-                        </button>
-                    </Link>
-                </div>
+          {/* Search Bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="max-w-2xl mx-auto mb-12"
+          >
+            <div className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary w-5 h-5" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="What are you craving today?"
+                className="w-full pl-12 pr-6 py-4 rounded-2xl border-2 border-gray-200 bg-white text-text-primary placeholder-text-tertiary focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition-all shadow-md"
+              />
+              <PremiumButton
+                variant="primary"
+                size="sm"
+                className="absolute right-2 top-1/2 -translate-y-1/2"
+              >
+                <Search size={18} />
+              </PremiumButton>
             </div>
+          </motion.div>
+
+          {/* Featured Categories */}
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-3 md:grid-cols-6 gap-4 mb-12"
+          >
+            {categories.map((category) => (
+              <motion.button
+                key={category.id}
+                variants={item}
+                className="group flex flex-col items-center gap-3 p-4 rounded-2xl hover:bg-white transition-all duration-300 shadow-sm hover:shadow-md"
+              >
+                <div className="text-4xl group-hover:scale-110 transition-transform duration-300">
+                  {category.icon}
+                </div>
+                <span className="text-xs font-bold text-text-secondary group-hover:text-text-primary transition-colors text-center">
+                  {category.name}
+                </span>
+              </motion.button>
+            ))}
+          </motion.div>
         </div>
-    );
+      </motion.div>
+
+      {/* AI-Powered Featured Promo */}
+      <AIFlashDeal onDealClick={() => console.log('Deal clicked')} />
+
+      {/* Restaurants Grid */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className="max-w-6xl mx-auto px-4 pb-24"
+      >
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-black text-text-primary mb-2">Nearby Restaurants</h2>
+              <p className="text-text-secondary">Discover top-rated merchants near you</p>
+            </div>
+            <Link href="/restaurants" className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-bold">
+              View All <ChevronRight size={20} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {restaurantsLoading ? (
+              [1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-elevation-1">
+                  <div className="h-40 bg-gray-200 animate-pulse"></div>
+                  <div className="p-5 space-y-4">
+                    <div className="h-5 bg-gray-200 animate-pulse rounded"></div>
+                    <div className="h-4 bg-gray-200 animate-pulse rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 animate-pulse rounded w-1/2"></div>
+                  </div>
+                </div>
+              ))
+            ) : mockRestaurants.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-text-secondary">No restaurants available at the moment</p>
+              </div>
+            ) : mockRestaurants.map((restaurant, idx) => (
+              <motion.div
+                key={restaurant.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+              >
+                <Link href={`/shop/${restaurant.id}`}>
+                  <PremiumCard variant="elevated" hoverable>
+                    <div className="overflow-hidden">
+                      {/* Image */}
+                      <div className="h-40 bg-gradient-to-br from-primary-100 to-accent-100 relative overflow-hidden flex items-center justify-center group">
+                        {restaurant.imageUrl ? (
+                          <img
+                            src={restaurant.imageUrl}
+                            alt={restaurant.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="text-6xl group-hover:scale-125 transition-transform duration-500">
+                            🍽️
+                          </div>
+                        )}
+
+                        {/* Badge */}
+                        {restaurant.badge && (
+                          <div className="absolute top-4 left-4">
+                            <span className="inline-flex items-center gap-1 bg-primary-600 text-white px-3 py-1 rounded-full text-xs font-bold">
+                              {restaurant.badge === 'Popular' && <TrendingUp size={12} />}
+                              {restaurant.badge === 'Trending' && <Flame size={12} />}
+                              {restaurant.badge}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Loyalty Bonus */}
+                        {restaurant.loyaltyBonus && (
+                          <div className="absolute top-4 right-4 bg-error-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                            +{restaurant.loyaltyBonus} pts
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-5 space-y-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-text-primary mb-1">{restaurant.name}</h3>
+                          <p className="text-sm text-text-secondary font-medium">{restaurant.category}</p>
+                        </div>
+
+                        {/* Rating & Stats */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 bg-primary-50 px-2.5 py-1 rounded-lg">
+                              <Star size={14} className="text-primary-600 fill-primary-600" />
+                              <span className="text-sm font-bold text-primary-600">{restaurant.rating}</span>
+                              <span className="text-xs text-text-tertiary">({restaurant.reviewCount})</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Delivery Info */}
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                          <div className="flex items-center gap-4 text-sm font-semibold text-text-secondary">
+                            <span className="flex items-center gap-1">
+                              <Clock size={16} className="text-primary-600" /> {restaurant.deliveryTime}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Bike size={16} className="text-primary-600" /> ${restaurant.deliveryFee.toFixed(2)}
+                            </span>
+                          </div>
+                          <ArrowRight size={18} className="text-primary-600" />
+                        </div>
+                      </div>
+                    </div>
+                  </PremiumCard>
+                </Link>
+              </motion.div>
+            ))
+            }
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Mobile CTA */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        className="fixed bottom-6 left-6 right-6 md:hidden z-40"
+      >
+        <Link href="/checkout">
+          <PremiumButton
+            variant="primary"
+            size="lg"
+            fullWidth
+            icon={<ShoppingBag size={20} />}
+          >
+            View Cart
+          </PremiumButton>
+        </Link>
+      </motion.div>
+    </div>
+  );
 }

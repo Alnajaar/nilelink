@@ -1,5 +1,5 @@
 import type { Config } from "tailwindcss";
-const sharedConfig = require("../shared/tailwind.config.shared");
+const sharedConfig = require("../shared/tailwind.config.shared.js");
 
 const config: Config = {
     presets: [sharedConfig],

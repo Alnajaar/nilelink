@@ -27,6 +27,24 @@ export class OrderLedger {
         const history = this.getHistory();
         history.push(receipt);
         localStorage.setItem(this.storageKey, JSON.stringify(history));
+
+        // Anchor to blockchain for cryptographic proof
+        try {
+            const web3Service = (await import('@shared/services/Web3Service')).default;
+            const cid = `receipt-${receipt.id}`; // In production, this would be an actual IPFS CID
+            await web3Service.anchorEventBatch(receipt.merchantId, cid);
+        } catch (error) {
+            console.warn('[OrderLedger] Failed to anchor receipt to blockchain:', error);
+        }
+
+        // Accrue loyalty points
+        try {
+            const { loyaltyEngine } = await import('./LoyaltyEngine');
+            await loyaltyEngine.processOrderForPoints(receipt);
+        } catch (error) {
+            console.warn('[OrderLedger] Failed to process loyalty points:', error);
+        }
+
         console.log(`[OrderLedger] Trust Record Anchored: ${receipt.id}`);
     }
 

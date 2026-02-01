@@ -1,255 +1,204 @@
-# 🚀 NileLink Cloudflare Pages Deployment Guide
+# Smart Contract Deployment Guide
 
-This guide will help you deploy all NileLink applications to Cloudflare Pages.
+## NileLink POS - Polygon Deployment
+
+This guide covers deploying the `SupplierCommission` and `POSAuthorization` smart contracts to Polygon.
+
+---
 
 ## 📋 Prerequisites
 
-1. **Cloudflare Account**: You need a Cloudflare account with access to the `nilelink.app` domain
-2. **Wrangler CLI**: Install globally with `npm install -g wrangler`
-3. **GitHub Repository**: Code must be pushed to GitHub (✅ Already done!)
+1. **Wallet with MATIC**: Deployer wallet must have MATIC for gas fees
+   - Polygon Mainnet: ~0.1 MATIC
+   - Amoy Testnet: Get free test MATIC from [faucet](https://faucet.polygon.technology/)
 
-## 🎯 Quick Start (Automated Deployment)
+2. **Environment Variables**: Copy `.env.example` to `.env` and fill in:
 
-### Option 1: Using PowerShell Script (Windows)
+   ```bash
+   DEPLOYER_PRIVATE_KEY=your_private_key_here
+   POLYGONSCAN_API_KEY=your_api_key_here
+   ```
 
-```powershell
-# Run the deployment script
-.\deploy-cloudflare.ps1
-```
+3. **Dependencies**: Install Hardhat
 
-### Option 2: Using Bash Script (Linux/Mac/WSL)
+   ```bash
+   npm install --save-dev hardhat @nomicfoundation/hardhat-toolbox
+   npm install dotenv
+   ```
 
-```bash
-# Make the script executable
-chmod +x deploy-cloudflare.sh
+---
 
-# Run the deployment script
-./deploy-cloudflare.sh
-```
+## 🚀 Deployment Steps
 
-The script will:
-- ✅ Check if Wrangler is installed
-- ✅ Authenticate with Cloudflare
-- ✅ Deploy all 7 applications
-- ✅ Show deployment URLs
-
-## 📝 Manual Deployment (Step by Step)
-
-If you prefer to deploy manually or the script fails, follow these steps:
-
-### Step 1: Install Wrangler CLI
+### 1. Compile Contracts
 
 ```bash
-npm install -g wrangler
+npx hardhat compile
 ```
 
-### Step 2: Login to Cloudflare
+### 2. Deploy to Amoy Testnet (Recommended First)
 
 ```bash
-wrangler login
+npm run deploy:amoy
 ```
 
-This will open a browser window for authentication.
-
-### Step 3: Deploy Each Application
-
-#### Deploy Customer App
-```bash
-cd web/customer
-wrangler pages deploy out --project-name=nilelink-customer --branch=main
-cd ../..
-```
-
-#### Deploy Dashboard App
-```bash
-cd web/dashboard
-wrangler pages deploy out --project-name=nilelink-dashboard --branch=main
-cd ../..
-```
-
-#### Deploy Delivery App
-```bash
-cd web/delivery
-wrangler pages deploy out --project-name=nilelink-delivery --branch=main
-cd ../..
-```
-
-#### Deploy Portal App
-```bash
-cd web/portal
-wrangler pages deploy out --project-name=nilelink-portal --branch=main
-cd ../..
-```
-
-#### Deploy POS App
-```bash
-cd web/pos
-wrangler pages deploy out --project-name=nilelink-pos --branch=main
-cd ../..
-```
-
-#### Deploy Supplier App
-```bash
-cd web/supplier
-wrangler pages deploy out --project-name=nilelink-supplier --branch=main
-cd ../..
-```
-
-#### Deploy Unified App
-```bash
-cd web/unified
-wrangler pages deploy out --project-name=nilelink-unified --branch=main
-cd ../..
-```
-
-## 🌐 Configure Custom Domains
-
-After deployment, you need to configure custom domains:
-
-### Method 1: Cloudflare Dashboard
-
-1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
-2. Navigate to **Workers & Pages** → **Pages**
-3. For each project:
-   - Click on the project name
-   - Go to **Custom domains** tab
-   - Click **Set up a custom domain**
-   - Enter the domain (e.g., `customer.nilelink.app`)
-   - Click **Continue**
-   - Cloudflare will automatically configure DNS
-
-### Method 2: Using Wrangler CLI
+### 3. Deploy to Polygon Mainnet
 
 ```bash
-# Customer
-wrangler pages domain add customer.nilelink.app --project-name=nilelink-customer
-
-# Dashboard
-wrangler pages domain add dashboard.nilelink.app --project-name=nilelink-dashboard
-
-# Delivery
-wrangler pages domain add delivery.nilelink.app --project-name=nilelink-delivery
-
-# Portal
-wrangler pages domain add portal.nilelink.app --project-name=nilelink-portal
-
-# POS
-wrangler pages domain add pos.nilelink.app --project-name=nilelink-pos
-
-# Supplier
-wrangler pages domain add supplier.nilelink.app --project-name=nilelink-supplier
-
-# Unified
-wrangler pages domain add unified.nilelink.app --project-name=nilelink-unified
+npm run deploy:polygon
 ```
 
-## 📊 Deployment URLs
+### 4. Verify Deployment
 
-After deployment, your applications will be available at:
+Check the generated file: `deployments/polygon-deployment.json`
 
-| Application | Cloudflare Pages URL | Custom Domain |
-|------------|---------------------|---------------|
-| Customer | https://nilelink-customer.pages.dev | https://customer.nilelink.app |
-| Dashboard | https://nilelink-dashboard.pages.dev | https://dashboard.nilelink.app |
-| Delivery | https://nilelink-delivery.pages.dev | https://delivery.nilelink.app |
-| Portal | https://nilelink-portal.pages.dev | https://portal.nilelink.app |
-| POS | https://nilelink-pos.pages.dev | https://pos.nilelink.app |
-| Supplier | https://nilelink-supplier.pages.dev | https://supplier.nilelink.app |
-| Unified | https://nilelink-unified.pages.dev | https://unified.nilelink.app |
+---
 
-## 🔧 Troubleshooting
+## 📝 Post-Deployment Configuration
 
-### Issue: "Not logged in to Wrangler"
-**Solution**: Run `wrangler login` and authenticate in the browser
+### Update `.env.production`
 
-### Issue: "Project already exists"
-**Solution**: The project was already created. You can:
-- Deploy updates: `wrangler pages deploy out --project-name=nilelink-[app]`
-- Or delete and recreate in the Cloudflare Dashboard
-
-### Issue: "Build output directory not found"
-**Solution**: Make sure you've built the application first:
 ```bash
-cd web/[app-name]
-npm install
-npm run build
+NEXT_PUBLIC_COMMISSION_CONTRACT=0x... # From deployment output
+NEXT_PUBLIC_POS_AUTH_CONTRACT=0x...   # From deployment output
+NEXT_PUBLIC_CHAIN_ID=137              # Polygon Mainnet
 ```
 
-### Issue: "Permission denied"
-**Solution**: Make sure your Cloudflare account has the necessary permissions
+### Update POS Application
 
-## 🔄 Continuous Deployment
+The contract addresses will be automatically used by:
 
-### Option 1: GitHub Integration (Recommended)
+- `OfflineFirstSync.ts` (commission calculation)
+- `SessionManager.ts` (POS authorization verification)
+- `RBACService.ts` (role verification)
 
-1. Go to Cloudflare Dashboard → Workers & Pages → Pages
-2. Click **Create application** → **Pages** → **Connect to Git**
-3. Select your GitHub repository: `Alnajaar/nilelink`
-4. Configure build settings for each app (see build settings below)
-5. Every push to `main` branch will trigger automatic deployment
+---
 
-### Build Settings for GitHub Integration
+## 🔧 Smart Contract Functions
 
-**Customer App:**
-- Build command: `cd web/customer && npm install && npm run build`
-- Build output directory: `web/customer/out`
+### SupplierCommission
 
-**Dashboard App:**
-- Build command: `cd web/dashboard && npm install && npm run build`
-- Build output directory: `web/dashboard/out`
+**Admin Functions** (Super Admin Only):
 
-**Delivery App:**
-- Build command: `cd web/delivery && npm install && npm run build`
-- Build output directory: `web/delivery/out`
+```solidity
+updateRule(address supplier, uint8 percentage, uint256 fixedFee, bool isPercentage)
+deactivateRule(address supplier)
+changeSuperAdmin(address newAdmin)
+```
 
-**Portal App:**
-- Build command: `cd web/portal && npm install && npm run build`
-- Build output directory: `web/portal/out`
+**Public Functions**:
 
-**POS App:**
-- Build command: `cd web/pos && npm install && npm run build`
-- Build output directory: `web/pos/out`
+```solidity
+getCommission(address supplier, uint256 orderAmount) view returns (uint256)
+```
 
-**Supplier App:**
-- Build command: `cd web/supplier && npm install && npm run build`
-- Build output directory: `web/supplier/out`
+**Example Usage**:
 
-**Unified App:**
-- Build command: `cd web/unified && npm install && npm run build`
-- Build output directory: `web/unified/out`
+```typescript
+// POS reads commission on checkout
+const commission = await commissionContract.getCommission(supplierAddress, orderAmount);
+localStorage.setItem('lastKnownCommission', commission.toString());
+```
 
-### Option 2: Wrangler CLI
+### POSAuthorization
 
-Use the deployment scripts provided (`deploy-cloudflare.ps1` or `deploy-cloudflare.sh`)
+**Admin Functions**:
 
-## ✅ Verification Checklist
+```solidity
+authorizeDevice(address deviceWallet, string deviceId)
+deactivateDevice(address deviceWallet)
+addAdmin(address admin)
+removeAdmin(address admin)
+```
 
-After deployment, verify:
+**Public Functions**:
 
-- [ ] All applications are accessible via `.pages.dev` URLs
-- [ ] Custom domains are configured and working
-- [ ] SSL certificates are active (🔒 in browser)
-- [ ] All pages load correctly
-- [ ] Navigation works between pages
-- [ ] API connections are working (if applicable)
-- [ ] No console errors in browser developer tools
+```solidity
+isAuthorized(address deviceWallet) view returns (bool)
+getDeviceInfo(address deviceWallet) view returns (string, bool, uint256, address)
+```
 
-## 📞 Support
+**Example Usage**:
 
-If you encounter issues:
-1. Check Cloudflare Pages build logs
-2. Verify DNS settings in Cloudflare Dashboard
-3. Check application logs in browser console
-4. Review Wrangler CLI output for errors
+```typescript
+// POS checks authorization on startup
+const isAuthorized = await posAuthContract.isAuthorized(walletAddress);
+if (!isAuthorized) throw new Error('Device not authorized');
+```
 
-## 🎉 Success!
+---
 
-Once all applications are deployed and custom domains are configured, your NileLink ecosystem will be live at:
+## 🧪 Testing Deployment
 
-- 🛒 **Customer**: https://customer.nilelink.app
-- 📊 **Dashboard**: https://dashboard.nilelink.app
-- 🚚 **Delivery**: https://delivery.nilelink.app
-- 🌐 **Portal**: https://portal.nilelink.app
-- 💳 **POS**: https://pos.nilelink.app
-- 📦 **Supplier**: https://supplier.nilelink.app
-- 🔗 **Unified**: https://unified.nilelink.app
+### 1. Check Contract on Polygonscan
+
+- Mainnet: `https://polygonscan.com/address/CONTRACT_ADDRESS`
+- Testnet: `https://amoy.polygonscan.com/address/CONTRACT_ADDRESS`
+
+### 2. Test Commission Contract
+
+```bash
+npx hardhat console --network polygon
+```
+
+```javascript
+const commission = await ethers.getContractAt("SupplierCommission", "CONTRACT_ADDRESS");
+await commission.updateRule("0xSupplierAddress", 5, 0, true); // 5% commission
+const result = await commission.getCommission("0xSupplierAddress", ethers.parseEther("100"));
+console.log("Commission:", ethers.formatEther(result)); // Should be 5
+```
+
+### 3. Test POS Authorization
+
+```javascript
+const posAuth = await ethers.getContractAt("POSAuthorization", "CONTRACT_ADDRESS");
+await posAuth.authorizeDevice("0xDeviceWallet", "POS-001");
+const isAuth = await posAuth.isAuthorized("0xDeviceWallet");
+console.log("Authorized:", isAuth); // Should be true
+```
+
+---
+
+## 🔒 Security Best Practices
+
+1. **Private Key**: Never commit `.env` to git
+2. **Super Admin**: Transfer to multi-sig wallet after deployment
+3. **Commission Rates**: Set reasonable limits (e.g., max 20%)
+4. **Device Authorization**: Regularly audit authorized POS devices
+5. **Contract Upgrades**: Consider using proxy pattern for future upgrades
+
+---
+
+## 📊 Gas Costs (Estimated)
+
+| Operation | Polygon Mainnet | Amoy Testnet |
+|-----------|----------------|--------------|
+| Deploy SupplierCommission | ~0.01 MATIC | Free |
+| Deploy POSAuthorization | ~0.015 MATIC | Free |
+| Update Commission Rule | ~0.001 MATIC | Free |
+| Authorize Device | ~0.0008 MATIC | Free |
+
+---
+
+## 🐛 Troubleshooting
+
+### "Insufficient funds for gas"
+
+- Ensure deployer wallet has enough MATIC
+- Check gas price: `npx hardhat gas-reporter`
+
+### "Verification failed"
+
+- Wait 1-2 minutes after deployment
+- Ensure POLYGONSCAN_API_KEY is correct
+- Manually verify on Polygonscan if needed
+
+### "Nonce too high"
+
+- Reset account: `npx hardhat clean`
+- Use `--reset` flag
+
+---
+
+> [!IMPORTANT]
+> After deployment, immediately test the contracts with real POS devices to ensure proper integration before going live.

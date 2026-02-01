@@ -22,11 +22,14 @@ export const NeuralUpsellHUD: React.FC<NeuralUpsellHUDProps> = ({ data, isAnalyz
 
     const { prediction, data: aiData } = data;
 
-    // Find the best upsell or strategy recommendation
-    const strategyRec = aiData.recommendations.find(r => r.toLowerCase().includes('loyalty') || r.toLowerCase().includes('upsell') || r.toLowerCase().includes('offer'))
-        || aiData.recommendations[0];
+    if (!prediction || !aiData) return null;
 
-    const riskLevel = aiData.risk_level;
+    // Find the best upsell or strategy recommendation
+    const strategyRec = aiData.recommendations?.find(r => r.toLowerCase().includes('loyalty') || r.toLowerCase().includes('upsell') || r.toLowerCase().includes('offer'))
+        || aiData.recommendations?.[0]
+        || "Optimize operations with AI insights";
+
+    const riskLevel = aiData.risk_level || 'UNKNOWN';
 
     return (
         <motion.div
@@ -87,7 +90,7 @@ export const NeuralUpsellHUD: React.FC<NeuralUpsellHUDProps> = ({ data, isAnalyz
 
             {/* Warnings Alert */}
             <AnimatePresence>
-                {aiData.concerns.length > 0 && (
+                {(aiData.concerns || []).length > 0 && (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
@@ -96,7 +99,7 @@ export const NeuralUpsellHUD: React.FC<NeuralUpsellHUDProps> = ({ data, isAnalyz
                     >
                         <AlertCircle className="h-3 w-3 text-red-500 shrink-0 mt-0.5" />
                         <p className="text-[9px] font-black text-red-600/80 uppercase tracking-tighter leading-snug">
-                            {aiData.concerns[0]}
+                            {aiData.concerns?.[0]}
                         </p>
                     </motion.div>
                 )}

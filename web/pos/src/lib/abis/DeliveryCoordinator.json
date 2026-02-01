@@ -1,0 +1,1132 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_orderSettlement",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_feeRecipient",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidAddress",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes16",
+        "name": "orderId",
+        "type": "bytes16"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "customer",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "zoneId",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum DeliveryCoordinator.DeliveryPriority",
+        "name": "priority",
+        "type": "uint8"
+      }
+    ],
+    "name": "DeliveryOrderCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes16",
+        "name": "orderId",
+        "type": "bytes16"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum DeliveryCoordinator.DeliveryStatus",
+        "name": "oldStatus",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum DeliveryCoordinator.DeliveryStatus",
+        "name": "newStatus",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "timestamp",
+        "type": "uint64"
+      }
+    ],
+    "name": "DeliveryStatusUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes16",
+        "name": "orderId",
+        "type": "bytes16"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "driver",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "assignedAt",
+        "type": "uint64"
+      }
+    ],
+    "name": "DriverAssigned",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "driver",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum DeliveryCoordinator.VehicleType",
+        "name": "vehicleType",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "zoneId",
+        "type": "uint16"
+      }
+    ],
+    "name": "DriverRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes16",
+        "name": "orderId",
+        "type": "bytes16"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "driver",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "proofHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "timestamp",
+        "type": "uint64"
+      }
+    ],
+    "name": "ProofOfDeliverySubmitted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint16",
+        "name": "zoneId",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "baseFeeUsd6",
+        "type": "uint256"
+      }
+    ],
+    "name": "ZoneCreated",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "activeDeliveries",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes16",
+        "name": "orderId",
+        "type": "bytes16"
+      },
+      {
+        "internalType": "address",
+        "name": "driver",
+        "type": "address"
+      }
+    ],
+    "name": "assignDriver",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes16",
+        "name": "orderId",
+        "type": "bytes16"
+      },
+      {
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "customer",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountUsd6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "restaurantLocation",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "customerLocation",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "enum DeliveryCoordinator.DeliveryPriority",
+        "name": "priority",
+        "type": "uint8"
+      },
+      {
+        "internalType": "string",
+        "name": "specialInstructions",
+        "type": "string"
+      }
+    ],
+    "name": "createDeliveryOrder",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "zoneId",
+        "type": "uint16"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "boundaryHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "baseFeeUsd6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "perKmFeeUsd6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint16",
+        "name": "estimatedTimeMinutes",
+        "type": "uint16"
+      }
+    ],
+    "name": "createDeliveryZone",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "zoneId",
+        "type": "uint16"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes16",
+        "name": "",
+        "type": "bytes16"
+      }
+    ],
+    "name": "deliveryOrders",
+    "outputs": [
+      {
+        "internalType": "bytes16",
+        "name": "orderId",
+        "type": "bytes16"
+      },
+      {
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "customer",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "assignedDriver",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountUsd6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "enum DeliveryCoordinator.DeliveryStatus",
+        "name": "status",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "createdAt",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "assignedAt",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "pickedUpAt",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "deliveredAt",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "routeHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "proofHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "enum DeliveryCoordinator.DeliveryPriority",
+        "name": "priority",
+        "type": "uint8"
+      },
+      {
+        "internalType": "string",
+        "name": "specialInstructions",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint16",
+        "name": "",
+        "type": "uint16"
+      }
+    ],
+    "name": "deliveryZones",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "zoneId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "boundaryHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "baseFeeUsd6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "perKmFeeUsd6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint16",
+        "name": "estimatedTimeMinutes",
+        "type": "uint16"
+      },
+      {
+        "internalType": "bool",
+        "name": "isActive",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "driverDeliveries",
+    "outputs": [
+      {
+        "internalType": "bytes16",
+        "name": "",
+        "type": "bytes16"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "driverTimeoutMinutes",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "drivers",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "driverAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "licenseNumber",
+        "type": "string"
+      },
+      {
+        "internalType": "enum DeliveryCoordinator.VehicleType",
+        "name": "vehicleType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "isActive",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAvailable",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rating",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalDeliveries",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "completedDeliveries",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "walletAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "currentLocation",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "lastLocationUpdate",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint16",
+        "name": "zoneId",
+        "type": "uint16"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "emergencyWithdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "feeRecipient",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint16",
+        "name": "zoneId",
+        "type": "uint16"
+      }
+    ],
+    "name": "getAvailableDrivers",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "availableDrivers",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes16",
+        "name": "orderId",
+        "type": "bytes16"
+      }
+    ],
+    "name": "getDeliveryOrder",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes16",
+            "name": "orderId",
+            "type": "bytes16"
+          },
+          {
+            "internalType": "address",
+            "name": "restaurant",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "customer",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "assignedDriver",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountUsd6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "enum DeliveryCoordinator.DeliveryStatus",
+            "name": "status",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint64",
+            "name": "createdAt",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "assignedAt",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "pickedUpAt",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "deliveredAt",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "routeHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "proofHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "enum DeliveryCoordinator.DeliveryPriority",
+            "name": "priority",
+            "type": "uint8"
+          },
+          {
+            "internalType": "string",
+            "name": "specialInstructions",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct DeliveryCoordinator.DeliveryOrder",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint16",
+        "name": "zoneId",
+        "type": "uint16"
+      }
+    ],
+    "name": "getDeliveryZone",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint16",
+            "name": "zoneId",
+            "type": "uint16"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "boundaryHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "baseFeeUsd6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "perKmFeeUsd6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint16",
+            "name": "estimatedTimeMinutes",
+            "type": "uint16"
+          },
+          {
+            "internalType": "bool",
+            "name": "isActive",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct DeliveryCoordinator.DeliveryZone",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "driver",
+        "type": "address"
+      }
+    ],
+    "name": "getDriver",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "driverAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "licenseNumber",
+            "type": "string"
+          },
+          {
+            "internalType": "enum DeliveryCoordinator.VehicleType",
+            "name": "vehicleType",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "isActive",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isAvailable",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rating",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalDeliveries",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "completedDeliveries",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "walletAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "currentLocation",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint64",
+            "name": "lastLocationUpdate",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint16",
+            "name": "zoneId",
+            "type": "uint16"
+          }
+        ],
+        "internalType": "struct DeliveryCoordinator.Driver",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "maxDeliveriesPerDriver",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nextZoneId",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "",
+        "type": "uint16"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "orderSettlement",
+    "outputs": [
+      {
+        "internalType": "contract OrderSettlement",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes16",
+        "name": "",
+        "type": "bytes16"
+      }
+    ],
+    "name": "orderToZone",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "",
+        "type": "uint16"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "driverAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "licenseNumber",
+        "type": "string"
+      },
+      {
+        "internalType": "enum DeliveryCoordinator.VehicleType",
+        "name": "vehicleType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint16",
+        "name": "zoneId",
+        "type": "uint16"
+      }
+    ],
+    "name": "registerDriver",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalDeliveries",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unpause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_maxDeliveriesPerDriver",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_driverTimeoutMinutes",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_feeRecipient",
+        "type": "address"
+      }
+    ],
+    "name": "updateConfig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes16",
+        "name": "orderId",
+        "type": "bytes16"
+      },
+      {
+        "internalType": "enum DeliveryCoordinator.DeliveryStatus",
+        "name": "newStatus",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "locationProof",
+        "type": "bytes32"
+      }
+    ],
+    "name": "updateDeliveryStatus",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "location",
+        "type": "bytes32"
+      }
+    ],
+    "name": "updateDriverLocation",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

@@ -1,0 +1,971 @@
+[
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "AlreadyProcessed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "Unauthorized",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "isGovernance",
+        "type": "bool"
+      }
+    ],
+    "name": "GovernanceUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes3",
+        "name": "localCurrency",
+        "type": "bytes3"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oracle",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "timestamp",
+        "type": "uint64"
+      }
+    ],
+    "name": "OracleUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "oldLimit",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newLimit",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "timestamp",
+        "type": "uint64"
+      }
+    ],
+    "name": "RateLimitUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "dailyRateLimitUsd6",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "chainlinkOracle",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "metadataCid",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "catalogCid",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum NileLinkTypes.RestaurantStatus",
+        "name": "status",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "timestamp",
+        "type": "uint64"
+      }
+    ],
+    "name": "RestaurantConfigUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "timestamp",
+        "type": "uint64"
+      }
+    ],
+    "name": "RestaurantNotActive",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes2",
+        "name": "country",
+        "type": "bytes2"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes3",
+        "name": "localCurrency",
+        "type": "bytes3"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "metadataCid",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "catalogCid",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "dailyRateLimitUsd6",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "chainlinkOracle",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "timestamp",
+        "type": "uint64"
+      }
+    ],
+    "name": "RestaurantRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "reason",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "timestamp",
+        "type": "uint64"
+      }
+    ],
+    "name": "RestaurantSuspended",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "checkAndUpdateRateLimit",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "allowed",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes3",
+        "name": "",
+        "type": "bytes3"
+      }
+    ],
+    "name": "currencyOracles",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "dailyUsdUsage",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes3",
+        "name": "currency",
+        "type": "bytes3"
+      }
+    ],
+    "name": "getOracle",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "oracle",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      }
+    ],
+    "name": "getRestaurant",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "restaurant",
+            "type": "address"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "ownerPhoneHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "legalNameHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "localNameHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "metadataCid",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "catalogCid",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes2",
+                "name": "country",
+                "type": "bytes2"
+              },
+              {
+                "internalType": "bytes3",
+                "name": "localCurrency",
+                "type": "bytes3"
+              },
+              {
+                "internalType": "uint256",
+                "name": "dailyRateLimitUsd6",
+                "type": "uint256"
+              },
+              {
+                "internalType": "int32",
+                "name": "timezoneOffsetMinutes",
+                "type": "int32"
+              },
+              {
+                "internalType": "uint16",
+                "name": "taxBps",
+                "type": "uint16"
+              },
+              {
+                "internalType": "address",
+                "name": "chainlinkOracle",
+                "type": "address"
+              },
+              {
+                "internalType": "enum NileLinkTypes.RestaurantStatus",
+                "name": "status",
+                "type": "uint8"
+              }
+            ],
+            "internalType": "struct NileLinkTypes.RestaurantConfig",
+            "name": "config",
+            "type": "tuple"
+          },
+          {
+            "internalType": "uint64",
+            "name": "createdAt",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "lastModified",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct NileLinkTypes.RestaurantRecord",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      }
+    ],
+    "name": "getRestaurantStatus",
+    "outputs": [
+      {
+        "internalType": "enum NileLinkTypes.RestaurantStatus",
+        "name": "status",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "balance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint64",
+        "name": "lastSettlementTime",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "governance",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      }
+    ],
+    "name": "isActive",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "lastSettlement",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "ownerPhoneHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "legalNameHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "localNameHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadataCid",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "catalogCid",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes2",
+            "name": "country",
+            "type": "bytes2"
+          },
+          {
+            "internalType": "bytes3",
+            "name": "localCurrency",
+            "type": "bytes3"
+          },
+          {
+            "internalType": "uint256",
+            "name": "dailyRateLimitUsd6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "int32",
+            "name": "timezoneOffsetMinutes",
+            "type": "int32"
+          },
+          {
+            "internalType": "uint16",
+            "name": "taxBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "address",
+            "name": "chainlinkOracle",
+            "type": "address"
+          },
+          {
+            "internalType": "enum NileLinkTypes.RestaurantStatus",
+            "name": "status",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct NileLinkTypes.RestaurantConfig",
+        "name": "config",
+        "type": "tuple"
+      }
+    ],
+    "name": "registerRestaurant",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "restaurants",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "ownerPhoneHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "legalNameHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "localNameHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadataCid",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "catalogCid",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes2",
+            "name": "country",
+            "type": "bytes2"
+          },
+          {
+            "internalType": "bytes3",
+            "name": "localCurrency",
+            "type": "bytes3"
+          },
+          {
+            "internalType": "uint256",
+            "name": "dailyRateLimitUsd6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "int32",
+            "name": "timezoneOffsetMinutes",
+            "type": "int32"
+          },
+          {
+            "internalType": "uint16",
+            "name": "taxBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "address",
+            "name": "chainlinkOracle",
+            "type": "address"
+          },
+          {
+            "internalType": "enum NileLinkTypes.RestaurantStatus",
+            "name": "status",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct NileLinkTypes.RestaurantConfig",
+        "name": "config",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint64",
+        "name": "createdAt",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "lastModified",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "newLimit",
+        "type": "uint256"
+      }
+    ],
+    "name": "setDailyRateLimit",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "isGovernance",
+        "type": "bool"
+      }
+    ],
+    "name": "setGovernance",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes3",
+        "name": "currency",
+        "type": "bytes3"
+      },
+      {
+        "internalType": "address",
+        "name": "oracle",
+        "type": "address"
+      }
+    ],
+    "name": "setOracle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "reason",
+        "type": "string"
+      }
+    ],
+    "name": "suspendRestaurant",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalRestaurants",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unpause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "restaurant",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "ownerPhoneHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "legalNameHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "localNameHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadataCid",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "catalogCid",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes2",
+            "name": "country",
+            "type": "bytes2"
+          },
+          {
+            "internalType": "bytes3",
+            "name": "localCurrency",
+            "type": "bytes3"
+          },
+          {
+            "internalType": "uint256",
+            "name": "dailyRateLimitUsd6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "int32",
+            "name": "timezoneOffsetMinutes",
+            "type": "int32"
+          },
+          {
+            "internalType": "uint16",
+            "name": "taxBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "address",
+            "name": "chainlinkOracle",
+            "type": "address"
+          },
+          {
+            "internalType": "enum NileLinkTypes.RestaurantStatus",
+            "name": "status",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct NileLinkTypes.RestaurantConfig",
+        "name": "config",
+        "type": "tuple"
+      }
+    ],
+    "name": "updateRestaurantConfig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

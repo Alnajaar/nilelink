@@ -1,0 +1,7 @@
+{
+    "type": "CNAME",
+    "name": "pos",
+    "content": "nilelink-pos.pages.dev",
+    "ttl": 1,
+    "proxied": true
+}

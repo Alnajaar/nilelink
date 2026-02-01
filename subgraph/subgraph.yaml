@@ -1,0 +1,232 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  # Restaurant Registry
+  - kind: ethereum
+    name: RestaurantRegistry
+    network: polygon-amoy
+    source:
+      address: "0x38D57dc538f4009452c3979a99256892EDa4dC9C"
+      abi: RestaurantRegistry
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Restaurant
+        - User
+      abis:
+        - name: RestaurantRegistry
+          file: ../artifacts/contracts/core/RestaurantRegistry.sol/RestaurantRegistry.json
+      eventHandlers:
+        - event: RestaurantRegistered(indexed address,indexed bytes2,indexed bytes3,bytes32,bytes32,uint256,address,uint256,string,string,uint64)
+          handler: handleRestaurantRegistered
+        - event: RestaurantConfigUpdated(indexed address,uint256,address,bytes32,bytes32,uint8,uint64)
+          handler: handleRestaurantConfigUpdated
+        - event: RestaurantStatusChanged(indexed address,uint8,uint64)
+          handler: handleRestaurantStatusChanged
+      file: ./src/mapping.ts
+
+  # Order Settlement
+  - kind: ethereum
+    name: OrderSettlement
+    network: polygon-amoy
+    source:
+      address: "0x719F8A5f9700657dA090abABdF1c9F740491CCb9"
+      abi: OrderSettlement
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Order
+        - Payment
+        - Settlement
+      abis:
+        - name: OrderSettlement
+          file: ../artifacts/contracts/core/OrderSettlement.sol/OrderSettlement.json
+      eventHandlers:
+        - event: PaymentIntentCreated(indexed bytes16,indexed address,indexed address,uint256,uint8,bytes32,bytes32,uint64)
+          handler: handlePaymentIntentCreated
+        - event: PaymentReceived(indexed bytes16,indexed address,indexed address,uint256,uint256,uint8,uint64)
+          handler: handlePaymentReceived
+        - event: PaymentSettled(indexed bytes16,indexed address,indexed address,uint256,uint256,uint256,bytes32,uint64)
+          handler: handlePaymentSettled
+      file: ./src/mapping.ts
+
+  # Currency Exchange
+  - kind: ethereum
+    name: CurrencyExchange
+    network: polygon-amoy
+    source:
+      address: "0x2B9649De5f9E3050cAc4494FA5c06027EA7f05f7"
+      abi: CurrencyExchange
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - CurrencyRate
+      abis:
+        - name: CurrencyExchange
+          file: ../artifacts/contracts/core/CurrencyExchange.sol/CurrencyExchange.json
+      eventHandlers:
+        - event: RateUpdated(indexed bytes3,uint256,uint256,indexed address,uint64)
+          handler: handleRateUpdated
+        - event: OracleUpdated(indexed bytes3,indexed address,uint64)
+          handler: handleOracleSet
+      file: ./src/mapping.ts
+
+  # Fraud Detection
+  - kind: ethereum
+    name: FraudDetection
+    network: polygon-amoy
+    source:
+      address: "0x5C566AAFA13e546b9FABf6df081ED756DfCBDfA5"
+      abi: FraudDetection
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - FraudAlert
+        - Reputation
+      abis:
+        - name: FraudDetection
+          file: ../artifacts/contracts/core/FraudDetection.sol/FraudDetection.json
+      eventHandlers:
+        - event: AnomalyFlagged(indexed bytes32,indexed bytes32,uint8,bytes32,uint64)
+          handler: handleAnomalyFlagged
+        - event: TransactionBlocked(indexed bytes32,bytes32,uint64)
+          handler: handleTransactionBlocked
+      file: ./src/mapping.ts
+
+  # Delivery Coordinator
+  - kind: ethereum
+    name: DeliveryCoordinator
+    network: polygon-amoy
+    source:
+      address: "0x496589A5E1b9f6A9550aDCaaa5164f0dc7F92814"
+      abi: DeliveryCoordinator
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Delivery
+        - ProofOfDelivery
+        - Driver
+        - DeliveryZone
+      abis:
+        - name: DeliveryCoordinator
+          file: ../artifacts/contracts/core/DeliveryCoordinator.sol/DeliveryCoordinator.json
+      eventHandlers:
+        - event: DeliveryOrderCreated(indexed bytes16,indexed address,indexed address,uint16,uint8)
+          handler: handleDeliveryOrderCreated
+      file: ./src/mapping.ts
+
+  # Supply Chain
+  - kind: ethereum
+    name: SupplyChain
+    network: polygon-amoy
+    source:
+      address: "0xb66dADaea090B9786699B4adEAdEF045C4d435e9"
+      abi: SupplyChain
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Supplier
+        - PurchaseOrder
+        - InventoryItem
+        - InventoryMovement
+      abis:
+        - name: SupplyChain
+          file: ../artifacts/contracts/core/SupplyChain.sol/SupplyChain.json
+      eventHandlers:
+        - event: PurchaseOrderCreated(indexed bytes16,indexed address,indexed address,uint256,bytes3,uint64)
+          handler: handlePurchaseOrderCreated
+        - event: ProductAdded(indexed bytes16,indexed uint256,indexed address,indexed address,string,string,uint64)
+          handler: handleProductAdded
+      file: ./src/mapping.ts
+
+  # Dispute Resolution
+  - kind: ethereum
+    name: DisputeResolution
+    network: polygon-amoy
+    source:
+      address: "0x5C566AAFA13e546b9FABf6df081ED756DfCBDfA5"
+      abi: DisputeResolution
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Dispute
+      abis:
+        - name: DisputeResolution
+          file: ../artifacts/contracts/core/DisputeResolution.sol/DisputeResolution.json
+      eventHandlers:
+        - event: DisputeOpened(indexed bytes16,indexed address,indexed address,uint256,uint64,bytes32,uint64)
+          handler: handleDisputeOpened
+        - event: DisputeResolved(indexed bytes16,uint8,indexed address,uint256,uint64)
+          handler: handleDisputeResolved
+      file: ./src/mapping.ts
+
+  # Fraud Detection
+  - kind: ethereum
+    name: FraudDetection
+    network: polygon-amoy
+    source:
+      address: "0x5C566AAFA13e546b9FABf6df081ED756DfCBDfA5"
+      abi: FraudDetection
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - FraudAlert
+        - Reputation
+      abis:
+        - name: FraudDetection
+          file: ../artifacts/contracts/core/FraudDetection.sol/FraudDetection.json
+      eventHandlers:
+        - event: AnomalyFlagged(indexed bytes32,indexed bytes32,uint8,bytes32,uint64)
+          handler: handleAnomalyFlagged
+        - event: TransactionBlocked(indexed bytes32,bytes32,uint64)
+          handler: handleTransactionBlocked
+      file: ./src/mapping.ts
+
+  # Supplier Registry
+  - kind: ethereum
+    name: SupplierRegistry
+    network: polygon-amoy
+    source:
+      address: "0x38D57dc538f4009452c3979a99256892EDa4dC9D"
+      abi: SupplierRegistry
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Supplier
+      abis:
+        - name: SupplierRegistry
+          file: ../artifacts/contracts/core/SupplierRegistry.sol/SupplierRegistry.json
+      eventHandlers:
+        - event: SupplierRegistered(indexed address,string,string,string,uint8,string,string,bytes3,bytes3,uint8,bytes32,bytes32,indexed address,uint64)
+          handler: handleSupplierRegistered
+        - event: SupplierStatusChanged(indexed address,uint8,uint64)
+          handler: handleSupplierStatusChanged
+      file: ./src/mapping.ts

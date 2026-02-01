@@ -1,3 +1,15 @@
 name = "nilelink-pos"
-pages_build_output_dir = "out"
-compatibility_date = "2024-12-24"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = ".next"
+
+[env.production]
+routes = [
+  { pattern = "pos.nilelink.app", zone_name = "nilelink.app" }
+]
+
+[build]
+command = "npm run build"
+cwd = "."
+
+[build.upload]
+format = "service-worker"

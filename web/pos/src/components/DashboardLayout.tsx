@@ -18,6 +18,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import SecurityRiskHUD from './ai/SecurityRiskHUD';
+import { OfflineIndicator } from './shared/OfflineIndicator';
+import { TransactionQueue } from './shared/TransactionQueue';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -56,8 +59,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                                 key={item.id}
                                 href={item.href}
                                 className={`flex items-center gap-4 px-5 py-3 rounded-2xl transition-all group ${pathname === item.href || (item.id === 'overview' && pathname === '/')
-                                        ? 'bg-blue-600/10 text-blue-400 border border-blue-500/10'
-                                        : 'text-zinc-500 hover:text-white hover:bg-white/5'
+                                    ? 'bg-blue-600/10 text-blue-400 border border-blue-500/10'
+                                    : 'text-zinc-500 hover:text-white hover:bg-white/5'
                                     }`}
                             >
                                 <item.icon size={20} />
@@ -129,6 +132,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     </AnimatePresence>
                 </main>
             </div>
+            <SecurityRiskHUD />
+            <OfflineIndicator />
+            <TransactionQueue />
         </div>
     );
 }

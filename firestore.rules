@@ -1,0 +1,299 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && getUserData().role == role;
+    }
+    
+    function hasAnyRole(roles) {
+      return isAuthenticated() && getUserData().role in roles;
+    }
+    
+    function isSuperAdmin() {
+      return hasRole('SUPER_ADMIN');
+    }
+    
+    function isAdmin() {
+      return hasAnyRole(['ADMIN', 'SUPER_ADMIN']);
+    }
+    
+    function isOwner(businessId) {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerId == request.auth.uid;
+    }
+    
+    function isActive() {
+      return isAuthenticated() && getUserData().isActive == true;
+    }
+    
+    // ============================================
+    // USERS COLLECTION (CRITICAL - ROLE PROTECTION)
+    // ============================================
+    
+    match /users/{userId} {
+      // Anyone can read their own user document
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Admins can read any user
+      allow read: if isAdmin();
+      
+      // Users can update their own profile (except role and critical fields)
+      allow update: if isAuthenticated() 
+                    && request.auth.uid == userId
+                    && request.resource.data.role == resource.data.role  // Cannot change own role
+                    && request.resource.data.uid == resource.data.uid;   // Cannot change UID
+      
+      // Only SUPER_ADMIN can change roles
+      allow update: if isSuperAdmin() && userId != request.auth.uid; // Cannot demote self
+      
+      // Only SUPER_ADMIN can create users with non-USER roles
+      allow create: if isSuperAdmin() 
+                    || (isAuthenticated() && request.resource.data.role == 'USER');
+      
+      // Only SUPER_ADMIN can delete users
+      allow delete: if isSuperAdmin();
+    }
+    
+    // ============================================
+    // BUSINESSES COLLECTION
+    // ============================================
+    
+    match /businesses/{businessId} {
+      // Anyone can read their own business
+      allow read: if isAuthenticated() && (
+        isOwner(businessId) ||
+        get(/databases/$(database)/documents/employees/$(request.auth.uid + '_' + businessId)).data != null ||
+        isAdmin()
+      );
+      
+      // Only owner can update (admins can also update for support)
+      allow update: if isOwner(businessId) || isAdmin();
+      
+      // Anyone can create a business (they become the owner)
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      
+      // Only SUPER_ADMIN can delete businesses
+      allow delete: if isSuperAdmin();
+    }
+    
+    // ============================================
+    // EMPLOYEES COLLECTION
+    // ============================================
+    
+    match /employees/{employeeId} {
+      // Employees can read their own profile
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Business owners/managers can read their employees
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.businessId) ||
+        isAdmin()
+      );
+      
+      // Only business owners/managers can create/update employees
+      allow create, update: if isAuthenticated() && (
+        isOwner(request.resource.data.businessId) ||
+        isAdmin()
+      );
+      
+      // Only business owners/admins can delete
+      allow delete: if isOwner(resource.data.businessId) || isAdmin();
+    }
+    
+    // ============================================
+    // PRODUCTS COLLECTION
+    // ============================================
+    
+    match /products/{productId} {
+      // Anyone can read products (for customer app)
+      allow read: if true;
+      
+      // Only business owners/managers can write
+      allow create, update, delete: if isAuthenticated() && (
+        isOwner(request.resource.data.businessId) ||
+        isAdmin()
+      );
+    }
+    
+    // ============================================
+    // ORDERS COLLECTION
+    // ============================================
+    
+    match /orders/{orderId} {
+      // Customers can read their own orders
+      allow read: if isAuthenticated() && resource.data.customerId == request.auth.uid;
+      
+      // Business owners/employees can read their orders
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.businessId) ||
+        resource.data.employeeId == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Employees can create orders
+      allow create: if isAuthenticated() && isActive();
+      
+      // Only business owners/admins can update/delete
+      allow update, delete: if isAuthenticated() && (
+        isOwner(resource.data.businessId) ||
+        isAdmin()
+      );
+    }
+    
+    // ============================================
+    // SUPPLIERS COLLECTION
+    // ============================================
+    
+    match /suppliers/{supplierId} {
+      // Anyone can read suppliers (for discovery)
+      allow read: if true;
+      
+      // Suppliers can update their own profile
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Only admins can create/delete suppliers
+      allow create, delete: if isAdmin();
+    }
+    
+    // ============================================
+    // DRIVERS COLLECTION
+    // ============================================
+    
+    match /drivers/{driverId} {
+      // Drivers can read their own profile
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Admins can read all drivers
+      allow read: if isAdmin();
+      
+      // Drivers can update their own profile (limited fields)
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Only admins can create/delete drivers
+      allow create, delete: if isAdmin();
+    }
+    
+    // ============================================
+    // DELIVERIES COLLECTION
+    // ============================================
+    
+    match /deliveries/{deliveryId} {
+      // Customers can read their deliveries
+      allow read: if isAuthenticated() && resource.data.customerId == request.auth.uid;
+      
+      // Drivers can read their assigned deliveries
+      allow read: if isAuthenticated() && resource.data.driverId == request.auth.uid;
+      
+      // Business owners can read their deliveries
+      allow read: if isAuthenticated() && isOwner(resource.data.businessId);
+      
+      // Admins can read all
+      allow read: if isAdmin();
+      
+      // Drivers can update status
+      allow update: if isAuthenticated() && resource.data.driverId == request.auth.uid;
+      
+      // Only system/admins can create deliveries
+      allow create: if isAdmin();
+      
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // CUSTOMERS COLLECTION
+    // ============================================
+    
+    match /customers/{customerId} {
+      // Customers can read/update their own profile
+      allow read, update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Admins can read all customers
+      allow read: if isAdmin();
+      
+      // Anyone can create customer profile
+      allow create: if isAuthenticated();
+    }
+    
+    // ============================================
+    // CONSENTS COLLECTION (GDPR/Legal)
+    // ============================================
+    
+    match /consents/{consentId} {
+      // Users can read their own consents
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Admins can read all consents
+      allow read: if isAdmin();
+      
+      // System can create consents
+      allow create: if isAuthenticated();
+      
+      // Users can update (withdraw) their own consents
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // COUNTRY_COMPLIANCE COLLECTION
+    // ============================================
+    
+    match /country_compliance/{countryCode} {
+      // Anyone can read compliance rules
+      allow read: if true;
+      
+      // Only SUPER_ADMIN can write
+      allow write: if isSuperAdmin();
+    }
+    
+    // ============================================
+    // PLAN_FEATURES COLLECTION
+    // ============================================
+    
+    match /plan_features/{plan} {
+      // Anyone can read plan features
+      allow read: if true;
+      
+      // Only SUPER_ADMIN can write
+      allow write: if isSuperAdmin();
+    }
+    
+    // ============================================
+    // AUDIT_LOGS COLLECTION (IMMUTABLE)
+    // ============================================
+    
+    match /audit_logs/{logId} {
+      // Only admins can read audit logs
+      allow read: if isAdmin();
+      
+      // System can create audit logs (from Cloud Functions)
+      allow create: if true; // Cloud Functions will write these
+      
+      // NOBODY can update or delete audit logs (immutable)
+      allow update, delete: if false;
+    }
+    
+    // ============================================
+    // DEFAULT DENY ALL
+    // ============================================
+    
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

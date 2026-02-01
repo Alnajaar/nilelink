@@ -1,23 +1,53 @@
 "use client";
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './Button';
 import { Card } from './Card';
 import { Badge } from './Badge';
-import { URLS } from '@/shared/utils/urls';
+import { URLS } from '../utils/urls';
+import { useAuth } from '../providers/FirebaseAuthProvider';
 
-const APPS = [
-    { name: 'Portal', url: URLS.portal, description: 'Ecosystem Command' },
-    { name: 'POS System', url: URLS.pos, description: 'Commerce Terminal' },
-    { name: 'Delivery', url: URLS.delivery, description: 'Fleet Network' },
-    { name: 'Customer', url: URLS.customer, description: 'Personal Ledger' },
-    { name: 'Supplier', url: URLS.supplier, description: 'Supply Protocol' },
-    { name: 'Investor', url: URLS.dashboard, description: 'Asset Optimization' },
+const ALL_APPS = [
+    {
+        name: 'POS Terminal',
+        url: URLS.pos,
+        description: 'Next-gen F&B commerce engine',
+        roles: ['OWNER', 'MANAGER', 'CASHIER', 'ADMIN'],
+        key: 'pos'
+    },
+    {
+        name: 'Supply Chain',
+        url: URLS.supplier,
+        description: 'Decentralized inventory & procurement',
+        roles: ['OWNER', 'SUPPLIER', 'ADMIN'],
+        key: 'supplier'
+    },
+    {
+        name: 'Customer App',
+        url: URLS.customer,
+        description: 'Personal ledger & rewards',
+        roles: ['CUSTOMER', 'ADMIN'],
+        key: 'customer'
+    },
+    {
+        name: 'Fleet Manager',
+        url: URLS.delivery,
+        description: 'Real-time logistics & fulfillment',
+        roles: ['DRIVER', 'DISPATCHER', 'ADMIN'],
+        key: 'delivery'
+    },
+    {
+        name: 'Admin Console',
+        url: URLS.portal,
+        description: 'Ecosystem governance & control',
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        key: 'portal'
+    },
 ];
 
 export const AppSwitcher: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const { isConnected, user } = useAuth();
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -28,6 +58,16 @@ export const AppSwitcher: React.FC = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Filter apps based on user role
+    const availableApps = ALL_APPS.filter(app => {
+        if (!isConnected || !user) return false;
+        // Admin roles can access everything
+        const userRole = user.role || 'USER';
+        if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') return true;
+        // Check if user role is in allowed roles for this app
+        return app.roles.includes(userRole);
+    });
 
     return (
         <div className="relative" ref={containerRef}>
@@ -54,7 +94,7 @@ export const AppSwitcher: React.FC = () => {
                         <div className="px-3 py-2 mb-1">
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Ecosystem Nodes</span>
                         </div>
-                        {APPS.map((app) => (
+                        {availableApps.map((app) => (
                             <a
                                 key={app.name}
                                 href={app.url}

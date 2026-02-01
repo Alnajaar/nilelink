@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, SafeAreaView, StatusBar, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { LinearGradient } from 'expo-linear-gradient';
+// import { LinearGradient } from 'expo-linear-gradient'; // Temporarily disabled
 import { useRealTimeJobs } from '../hooks/useRealTimeJobs';
 
 const { width } = Dimensions.get('window');
@@ -19,7 +19,7 @@ export function JobSelectionScreen() {
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
-            <LinearGradient colors={['#0A2540', '#071A2E']} style={styles.fullBg}>
+            <View style={[styles.fullBg, { backgroundColor: '#0A2540' }]}>
 
                 <SafeAreaView>
                     <View style={styles.header}>
@@ -82,18 +82,18 @@ export function JobSelectionScreen() {
                             </View>
 
                             <Pressable
-                                style={styles.acceptButton}
+                                style={[styles.acceptButton, { backgroundColor: '#00C389' }]}
                                 onPress={() => handleAccept(item)}
                             >
-                                <LinearGradient colors={['#00C389', '#009B6E']} style={styles.btnGradient}>
-                                    <Text style={styles.acceptText}>ACCEPT JOB</Text>
+                                <View style={styles.btnGradient}>
+                                    <Text style={[styles.acceptText, { color: '#0A2540' }]}>ACCEPT JOB</Text>
                                     <Ionicons name="flash" size={16} color="#fff" />
-                                </LinearGradient>
+                                </View>
                             </Pressable>
                         </View>
                     )}
                 />
-            </LinearGradient>
+            </View>
         </View>
     );
 }
